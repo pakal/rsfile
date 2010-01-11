@@ -173,7 +173,7 @@ class genericFileIO(RawIOBase):
         # we retrieve the dict of provided arguments, except self
         kwargs = locals()
         del kwargs["self"]
-
+        del kwargs["closefd"] # not needed at inner level
         
 
 
@@ -362,9 +362,9 @@ class genericFileIO(RawIOBase):
 
             current_size = self.size()
             if size < current_size:
-                self._inner_reduce_file(size)
+                self._inner_reduce(size)
             else:
-                self._inner_extend_file(size, zero_fill)        
+                self._inner_extend(size, zero_fill)        
 
             return self.size()
 
@@ -480,17 +480,17 @@ class genericFileIO(RawIOBase):
         
     # # Private methods - no check is made on their argument or the file object state ! # #
         
-    def _inner_create_streams(self, **kwargs):
+    def _inner_create_streams(self, path, read, write, append, must_exist, must_not_exist, synchronized, inheritable, delete_on_close, fileno, handle, closefd):
         self._unsupported("_inner_create_streams")
 
     def _inner_close_streams(self):  
         self._unsupported("_inner_close_streams")  
 
-    def _inner_reduce_file(self, size): 
-        self._unsupported("_inner_reduce_file")  
+    def _inner_reduce(self, size): 
+        self._unsupported("_inner_reduce")  
 
-    def _inner_extend_file(self, size, zero_fill): 
-        self._unsupported("_inner_extend_file")
+    def _inner_extend(self, size, zero_fill): 
+        self._unsupported("_inner_extend")
 
     def _inner_sync(self, metadata):
         self._unsupported("sync")
@@ -559,7 +559,7 @@ if FILE_IMPLEMENTATION == "win32":
         
         
         @_win32_error_converter        
-        def _inner_create_streams(self, path, read, write, append, must_exist, must_not_exist, synchronized, inheritable, delete_on_close, fileno, handle, closefd):
+        def _inner_create_streams(self, path, read, write, append, must_exist, must_not_exist, synchronized, inheritable, delete_on_close, fileno, handle):
 
             #print("Creating file with : ",locals()) #PAKAL
             self._close_via_fileno = False
@@ -568,14 +568,12 @@ if FILE_IMPLEMENTATION == "win32":
             if handle is not None:
                 self._handle = int(handle)
                 #print "FILE OPENED VIA HANDLE ", handle
-                return # nothing else to do
                 
             elif fileno is not None:
                 self._close_via_fileno = True # we shall close stream via its C wrapper
                 self._fileno = fileno
                 #print "FILE OPENED VIA FILENO ", fileno
                 self._handle = win32._get_osfhandle(fileno) # required immediately
-                return
                 
             else: #we open the file with CreateFile
                 #print "FILE OPENED VIA PATH ", path
@@ -613,13 +611,9 @@ if FILE_IMPLEMENTATION == "win32":
                     # thanks to this flag, no need to "fsync" the file with FlushFileBuffers(), it's immediately stored on the disk
                     # Warning - it seems that for some people, metadata is actually NOT written to disk along with data !!!
                     
-                if isinstance(path, unicode):
-                    strname = path.encode(sys.getfilesystemencoding()) # let's take no risks - and do not use locale.getpreferredencoding() 
-                else: 
-                    strname = path
 
                 args = (
-                    strname,
+                    path, # accepts both unicode and bytes
                     desiredAccess, 
                     shareMode,
                     securityAttributes,
@@ -653,7 +647,7 @@ if FILE_IMPLEMENTATION == "win32":
 
 
         @_win32_error_converter    
-        def _inner_reduce_file(self, size): # warning - no check is done !!! 
+        def _inner_reduce(self, size): # warning - no check is done !!! 
             
             self.seek(size) 
             #print "---> inner reduce to ", self.tell()
@@ -661,7 +655,7 @@ if FILE_IMPLEMENTATION == "win32":
 
         
         @_win32_error_converter    
-        def _inner_extend_file(self, size, zero_fill): # warning - no check is done !!!  
+        def _inner_extend(self, size, zero_fill): # warning - no check is done !!!  
             
             if(not zero_fill):
                 self.seek(size)
@@ -798,10 +792,11 @@ if FILE_IMPLEMENTATION == "win32":
                 raise TypeError("Only buffer-like objects can be written to files, not %s objects"%str(type(buffer)))
 
             if self._append: # yep, no atomicity around here, as in truncate()
-                self.seek(0, os.SEEK_END)
+                self._inner_seek(0, os.SEEK_END)
 
-            if self.tell() > self.size():
-                self.truncate(zero_fill=True) # we extend the file with zeros until current file pointer position
+            cur_pos = self._inner_tell()
+            if cur_pos > self._inner_size(): # TODO - document this !!!
+                self._inner_extend(cur_pos, zero_fill=True) # we extend the file with zeros until current file pointer position
 
             (res, bytes_written) = win32.WriteFile(self._handle, bytes(buffer))
             # nothing to do with res, for files, it seems
@@ -934,6 +929,8 @@ if FILE_IMPLEMENTATION == "win32":
 
 elif FILE_IMPLEMENTATION == "posix":
 
+    import fcntl
+    
     class posixFileIO(genericFileIO):      
 
         __POSITION_REFERENCES = {os.SEEK_SET:win32.FILE_BEGIN , os.SEEK_CUR:win32.FILE_CURRENT, os.SEEK_END:win32.FILE_END}
@@ -980,42 +977,106 @@ elif FILE_IMPLEMENTATION == "posix":
         os.O_EXLOCK¶
             """
 
+        # # Private methods - no check is made on their argument or the file object state ! # #
+        
+        def _inner_create_streams(self, path, read, write, append, must_exist, must_not_exist, synchronized, inheritable, delete_on_close, fileno, handle):
 
-
-        def _inner_create_streams(self, path, read, write, append, zerofill, truncate, must_exist, must_not_exist, closefd):   # DEPRECATED
-
-            #UTILISER DELETE on CLOSE et F_FULLSYNC !!!!!!!!            #########   FD_CLOEXEC  O_CLOEXEC linux recent O_APPEND
-            # # # real opening of the file # # #
-            if isinstance(path, int):
-                pass
-                # NOOOOOOO
-
+            
+            # TODO - For delete on close ->  unlink immediately 
+            
+            if handle is not None:
+                self._unsupported("Stream creation from a posix handle")
+                
+            if fileno is not None:
+                self._file = fileno
+            
             else: #we open the file with low level posix IO - the unix "open()"  function
-
-                flags = os.O_SYNC # we want not kernel-level buffering to occur, thuse fsync() will be unrequired
-
+            
+                if isinstance(path, unicode):
+                    strname = path.encode(sys.getfilesystemencoding()) # let's take no risks - and do not use locale.getpreferredencoding() here 
+                else: 
+                    strname = path
+            
+            
+                flags = 0
+                
+                if synchronized :
+                    flags |= os.O_SYNC
+                    
                 if read and write: 
                     flags |= os.O_RDWR
                 elif write: 
                     flags |= os.O_WRONLY
                 else:
                     flags |= os.O_RDONLY
-
-
+            
+            
                 if must_exist:
-                    pass # it's teh default case for open()
+                    pass # it's the default case for open() function
                 elif must_not_exist: 
                     flags |= os.O_CREAT | os.O_EXCL
                 else:
-                    flags |= os.O_CREAT # by default - we create the file if it doesn't exists
-
-                """" NOOO - to be GATHERED in main __init__ method
-                if isinstance(name, unicode):
-                    strname = name.encode(locale.getpreferredencoding()) # let's take no risks
-                else: 
-                    strname = name"""
-
+                    flags |= os.O_CREAT # by default - we create the file iff it doesn't exists
+            
+                # TODO - use linux O_CLOEXEC when available
+                
                 self._fileno = os.open(strname, flags)
+                
+                if not inheritable:
+                    old_flags = fcntl.fcntl(self._fileno, fcntl.F_GETFD, 0);
+                    if not (old_flags & fcntl.FD_CLOEXEC):
+                        fcntl.fcntl(self._fileno, fcntl.F_SETFD, old_flags | fcntl.FD_CLOEXEC);
+                
+                # Here, if delete on close : unlink filepath !!!
+                
+                
+        def _inner_close_streams(self):  
+            self._unsupported("_inner_close_streams")  
+    
+        def _inner_reduce(self, size): 
+            self._unsupported("_inner_reduce")  
+    
+        def _inner_extend(self, size, zero_fill): 
+            self._unsupported("_inner_extend")
+    
+        def _inner_sync(self, metadata):
+            self._unsupported("sync")
+            
+        def _inner_fileno(self):
+            self._unsupported("fileno") # io.UnsupportedOperation subclasses IOError, so we're OK with the official specs
+    
+        # Inherited :
+        #def _inner_handle(self):
+        #   self._unsupported("handle") # io.UnsupportedOperation subclasses IOError, so we're OK with the official specs
+    
+        def _inner_uid(self):
+            self._unsupported("uid")
+     
+        def _inner_times(self):
+            self._unsupported("times")
+            
+        def _inner_size(self):  
+            self._unsupported("size")
+    
+        def _inner_tell(self):
+            self._unsupported("tell")
+    
+        def _inner_seek(self, offset, whence):
+            self._unsupported("seek")
+    
+        def _inner_readinto(self, buffer):
+            self._unsupported("readinto")
+    
+        def _inner_write(self, buffer):
+            self._unsupported("write")
+    
+        def _inner_file_lock(self,shared, timeout, length, offset, whence):
+            self._unsupported("lock_chunk")
+    
+        def _inner_file_unlock(self, length, offset, whence):
+            self._unsupported("unlock_chunk")
+    
+    
 
 
 
@@ -1029,11 +1090,11 @@ elif FILE_IMPLEMENTATION == "posix":
 
         
 
-        def _inner_reduce_file(self, size): # warning - no check is done !!! 
+        def _inner_reduce(self, size): # warning - no check is done !!! 
             os.truncate(self._fileno, size)
             
 
-        def _inner_extend_file(self, size, zero_fill): # warning - no check is done !!!  
+        def _inner_extend(self, size, zero_fill): # warning - no check is done !!!  
             # posix truncation is ALWAYS "zerofill"
             os.truncate(self._fileno, size)
         

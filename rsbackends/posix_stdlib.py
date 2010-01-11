@@ -59,7 +59,7 @@ FCNTL LOCKS ARE BULLSHIT - removed when ANY fd to the file is closed !!!
 FLOCK better, but not NFS....
 -----> file ops must be SHORT 
 ---------> faire system qui ne ferle pas reellement les fd !!! 
----------> laisser à l'utilisateur le choix entre flock (pas nfs ni chunks) et fcntl (broken)
+---------> laisser ï¿½ l'utilisateur le choix entre flock (pas nfs ni chunks) et fcntl (broken)
 If a process uses open(2) (or similar) to obtain more than one 
 descriptor for the same file, these descriptors are treated independently by flock(). 
 An attempt to lock the file using one of these file descriptors 
@@ -107,69 +107,7 @@ def readinto(fd, buffer, count):
     buffer[0:len(data)] = data
 
     
-from 
 
-
-
-
-
-
-        
-    # # Private methods - no check is made on their argument or the file object state ! # #
-        
-    def _inner_create_streams(self, **kwargs):  # TO BE CHANGED !!!!!!!!!!
-        self._unsupported("_inner_create_streams")
-
-    def _inner_close_streams(self):  
-        self._unsupported("_inner_close_streams")  
-
-    def _inner_reduce_file(self, size): 
-        self._unsupported("_inner_reduce_file")  
-
-    def _inner_extend_file(self, size, zero_fill): 
-        self._unsupported("_inner_extend_file")
-
-    def _inner_sync(self, metadata):
-        self._unsupported("sync")
-        
-    def _inner_fileno(self):
-        self._unsupported("fileno") # io.UnsupportedOperation subclasses IOError, so we're OK with the official specs
-
-    def _inner_handle(self):
-        self._unsupported("handle") # io.UnsupportedOperation subclasses IOError, so we're OK with the official specs
-
-    def _inner_uid(self):
-        self._unsupported("uid")
- 
-    def _inner_times(self):
-        self._unsupported("times")
-        
-    def _inner_size(self):  
-        self._unsupported("size")
-
-    def _inner_tell(self):
-        self._unsupported("tell")
-
-    def _inner_seek(self, offset, whence):
-        self._unsupported("seek")
-
-    def _inner_readinto(self, buffer):
-        self._unsupported("readinto")
-
-    def _inner_write(self, buffer):
-        self._unsupported("write")
-
-    def _inner_file_lock(self,shared, timeout, length, offset, whence):
-        self._unsupported("lock_chunk")
-
-    def _inner_file_unlock(self, length, offset, whence):
-        self._unsupported("unlock_chunk")
-    
-    
-    
-    
-    
-    
     
     
     
