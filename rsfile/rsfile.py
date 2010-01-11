@@ -22,8 +22,8 @@ try:
 except ImportError:
     try:
         # ALTERNATIVE BACKENDS #
-        #from rsbackends import pywin32_extensions as win32
-        from rsbackends import pywin32_ctypes as win32 
+        from rsbackends import pywin32_extensions as win32
+        #from rsbackends import pywin32_ctypes as win32 
         FILE_IMPLEMENTATION = "win32"
     except ImportError:
         raise ImportError("Neither fcntl nor pywin32 available... unable to use file locking") # we let propagate
@@ -689,17 +689,19 @@ if FILE_IMPLEMENTATION == "win32":
         
         @_win32_error_converter         
         def _inner_uid(self):
-
+            """
             (dwFileAttributes, ftCreationTime, ftLastAccessTime, 
              ftLastWriteTime, dwVolumeSerialNumber, nFileSizeHigh, 
-             nFileSizeLow, nNumberOfLinks, nFileIndexHigh, nFileIndexLow) = win32.GetFileInformationByHandle(self._handle)
+             nFileSizeLow, nNumberOfLinks, nFileIndexHigh, nFileIndexLow) """
             
-            inode = utilities.double_dwords_to_pyint(nFileIndexLow, nFileIndexHigh)
+            handle_info = win32.GetFileInformationByHandle(self._handle)
             
-            if not dwVolumeSerialNumber or not inode:
+            inode = utilities.double_dwords_to_pyint(handle_info.nFileIndexLow, handle_info.nFileIndexHigh)
+            
+            if not handle_info.dwVolumeSerialNumber or not inode:
                 raise IOError(77, "Impossible to retrieve win32 device/file-id information") # Pakal - to be unified
             
-            return (dwVolumeSerialNumber, inode)
+            return (handle_info.dwVolumeSerialNumber, inode)
             
         
         @_win32_error_converter    
@@ -731,22 +733,16 @@ if FILE_IMPLEMENTATION == "win32":
         @_win32_error_converter
         def _inner_times(self):
   
-            """ PAKAL - to do !!!
-            (dwFileAttributes, ftCreationTime, ftLastAccessTime, 
-             ftLastWriteTime, dwVolumeSerialNumber, nFileSizeHigh, 
-             nFileSizeLow, nNumberOfLinks, nFileIndexHigh, nFileIndexLow) = win32.GetFileInformationByHandle(self._handle)
-            a = "2"+hh
-            # PAKAL - how to get more precise float values !!! ??????
-            #print "ACC TIME -> ", round((ftLastAccessTime - 116444736000000000) / 10000000)
-            ### return round(($FILETIME - 116444736000000000) / 10000000); ??
-            return FileTimes(int(ftLastAccessTime), int(ftLastWriteTime)) # casting to int makes these pywin32 PyTime objects compatible with standard python times !
-            """
+            handle_info = win32.GetFileInformationByHandle(self._handle)
             
             # for now, just use the C compatibility layer !!
             mystat = os.fstat(self.fileno())
-            return FileTimes(mystat.st_atime, mystat.st_mtime) 
+            return FileTimes(access_time = utilities.win32_filetime_to_python_timestamp(handle_info.ftLastAccessTime.dwLowDateTime,
+                                                                                        handle_info.ftLastAccessTime.dwHighDateTime), 
+                             modification_time = utilities.win32_filetime_to_python_timestamp(handle_info.ftLastWriteTime.dwLowDateTime,
+                                                                                               handle_info.ftLastAccessTime.dwHighDateTime)) 
             
-        
+
         @_win32_error_converter    
         def _inner_size(self):
             size = win32.GetFileSize(self._handle)

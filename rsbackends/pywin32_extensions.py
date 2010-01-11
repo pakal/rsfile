@@ -49,12 +49,8 @@ def GetFileInformationByHandle(handle):
     
     info = BY_HANDLE_FILE_INFORMATION()
     
-    mystat = os.fstat(_open_osfhandle(handle))
-    return FileTimes(mystat.st_atime, mystat.st_mtime) 
-    FILETIME
-    
     (info.dwFileAttributes,
-    info.ftCreationTime,
+    _ftCreationTime,
     _ftLastAccessTime,
     _ftLastWriteTime,
     info.dwVolumeSerialNumber,
@@ -63,7 +59,12 @@ def GetFileInformationByHandle(handle):
     info.nNumberOfLinks,
     info.nFileIndexHigh,
     info.nFileIndexLow) = win32file.GetFileInformationByHandle(handle)
-  
+    
+    mystat = os.fstat(_open_osfhandle(handle, 0))
+    info.ftCreationTime = FILETIME(*_utilities.python_timestamp_to_win32_filetime(mystat.st_ctime))
+    info.ftLastAccessTime = FILETIME(*_utilities.python_timestamp_to_win32_filetime(mystat.st_atime))
+    info.ftLastWriteTime = FILETIME(*_utilities.python_timestamp_to_win32_filetime(mystat.st_mtime))
+    
     return info
 
 

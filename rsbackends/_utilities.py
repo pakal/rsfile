@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+
+
 from __future__ import with_statement
 
 
@@ -37,6 +40,7 @@ def double_dwords_to_pyint(loworder, highorder , dwordsize=32): # the arguments 
         return  (highorder << dwordsize) + loworder
 
 
+
 def win32_filetime_to_python_timestamp(loworder, highorder):
     
     win32_timestamp = double_dwords_to_pyint(loworder, highorder)
@@ -48,26 +52,10 @@ def win32_filetime_to_python_timestamp(loworder, highorder):
     """
     return float(win32_timestamp - 116444736000000000) / 10000000 
 
-"""
- decimal — Decimal fixed point and floating point arithmetic¶
 
-New in version 2.4.
 
-The decimal module provides support for decimal floating point arithmetic. It offers several advantages over the float datatype:
-    *
-      Decimal “is based on a floating-point model which was designed with people in mind, and necessarily has a paramount guiding principle – computers must provide an arithmetic that works in the same way as the arithmetic that people learn at school.” – excerpt from the decimal arithmetic specification.
-    *
-      Decimal numbers can be represented exactly. In contrast, numbers like 1.1 do not have an exact representation in binary floating point. End users typically would not expect 1.1 to display as 1.1000000000000001 as it does with binary floating point.
-    *
-      The exactness carries over into arithmetic. In decimal floating point, 0.1 + 0.1 + 0.1 - 0.3 is exactly equal to zero. In binary floating point, the result is 5.5511151231257827e-017. While near to zero, the differences prevent reliable equality testing and differences can accumulate. For this reason, decimal is preferred in accounting applications which have strict equality invariants.
-    *
-      The decimal module incorporates a notion of significant places so that 1.30 + 1.20 is 2.50. The trailing zero is kept to indicate significance. This is the customary presentation for monetary applications. For multiplication, the “schoolbook” approach uses all the figures in the multiplicands. For instance, 1.3 * 1.2 gives 1.56 while 1.30 * 1.20 gives 1.5600.
-    *
-      Unlike hardware based binary floating point, the decimal module has a user alterable precision (defaulting to 28 places) which can be as large as needed for a given problem:
-
-"""
 def python_timestamp_to_win32_filetime(pytimestamp):
-    
+                                                 
     win32_timestamp = int((10000000 * pytimestamp) + 116444736000000000)
     
     (loworder, highorder) = pyint_to_double_dwords(win32_timestamp)
@@ -75,26 +63,9 @@ def python_timestamp_to_win32_filetime(pytimestamp):
     return (loworder, highorder)
 
 
-"""
->>> int((10000000 * float(98527427572 - 116444736000000000) / 10000000) + 116444736000000000)
-98527427568L
->>> 10000000 * float(98527427572 - 116444736000000000) / 10000000
--1.1644463747257243e+17
->>> 98527427572 - 116444736000000000
--116444637472572428L
->>> from __future__ import division
 
->>> 10000000 * float(98527427572 - 116444736000000000) / 10000000
--1.1644463747257243e+17
->>> 8527427572 - 116444736000000000
--116444727472572428L
->>> 10000000 * int(98527427572 - 116444736000000000) / 10000000
--1.1644463747257242e+17
->>> 98527427572 - 116444736000000000
--116444637472572428L
->>> 
 
-"""
+
 
 class TestUtilities(unittest.TestCase):
 
@@ -104,18 +75,26 @@ class TestUtilities(unittest.TestCase):
                         pass
         
         def test_timestamps(self):
+                """Test python and win32 timestamp conversions.
+                
+                Warning - floating point arithmetics makes errors.
+                We could use the decimal module...
+                """
+            
                 num1 = random.randint(0, MAX_DWORD)
                 num2 = random.randint(0, MAX_DWORD)
                 
                 res = win32_filetime_to_python_timestamp(num1, num2)
-                print locals()
                 (num3, num4) = python_timestamp_to_win32_filetime(res)
-                self.assertEqual((num1, num2), (num3, num4))        
+                self.assertTrue(abs(num1 - num3) <= 10000) # low order numbers must be less than 1 ms far (1 unit = 100 ns)
+                self.assertTrue(abs(num2 - num4) <= 1) # high order numbers       
 
                 num1 = random.randint(0, MAX_DWORD)
                 num2 = win32_filetime_to_python_timestamp(*python_timestamp_to_win32_filetime(num1))
-                self.assertEqual(num1, num2)           
+                self.assertTrue(abs(num1 - num2) <= 1)           
 
+                self.assertEqual(python_timestamp_to_win32_filetime(0), pyint_to_double_dwords(116444736000000000))
+                self.assertEqual(win32_filetime_to_python_timestamp(0,0), -11644473600)
 
         def testConversion1(self):
                 num1 = random.randint(0, 2**64-1)
