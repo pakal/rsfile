@@ -67,7 +67,7 @@ may be denied by a lock that the calling process has already placed via another 
 """
 
 
-error = OSError # we expose the type of errors that this backend uses
+error = (OSError, IOError) # we expose the types of errors that this backend uses (fcntl uses IOError, unlike os module functions...)
 
 from ctypes import create_string_buffer # R/W fixed-length buffer
 
@@ -100,13 +100,13 @@ def ltell(fd):
 
 
 def readinto(fd, buffer, count):
-    """
-    We mimic the posix read() system call, which works with buffers.
-    """
+
+     #We mimic here the posix read() system call, which works with buffers.
+ 
     data = _os.read(fd, count)
     buffer[0:len(data)] = data
+    return len(data)
 
-    
 
     
     

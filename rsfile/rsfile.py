@@ -18,7 +18,7 @@ module = sys.modules[__name__]
 try:
     import fcntl	
     import errno
-    FILE_IMPLEMENTATION = "posix"
+    FILE_IMPLEMENTATION = "unix"
 except ImportError:
     try:
         # ALTERNATIVE BACKENDS #
@@ -146,7 +146,7 @@ class genericFileIO(RawIOBase):
                  must_exist=False, must_not_exist=False, # only used on file opening
                  synchronized=False,
                  inheritable=False, 
-                 delete_on_close=False,
+                 hidden=False,
                  
                  fileno=None, 
                  handle=None, 
@@ -208,7 +208,7 @@ class genericFileIO(RawIOBase):
         
         self._synchronized = synchronized
         self._inheritable = inheritable
-        self._delete_on_close = delete_on_close
+        self._hidden = hidden
     
 
         self._name = None # 'name' : descriptor exposed just for retrocompatibility !!!
@@ -217,6 +217,7 @@ class genericFileIO(RawIOBase):
         if path is not None:
             self._name = path
      
+        # TODO - replace this by rsfs methods !!
         self._path = None
         if isinstance(path, basestring):
             try: 
@@ -239,7 +240,7 @@ class genericFileIO(RawIOBase):
 
             if not self.closed:
                 
-                RawIOBase.close(self) # we first mark the stream as closed...
+                RawIOBase.close(self) # we first mark the stream as closed... it flushes, also.
                 
                 if self._full_file_locking_activated:
                     self.unlock_file() # we must use the public function, not to bypass whole_locking logic !              
@@ -332,8 +333,9 @@ class genericFileIO(RawIOBase):
         
     #def readall(self): <inherited>
 
-    #def read(self, n = -1): <inherited> - read() uses readinto() to do its job !
-
+    #def read(self, n = -1): ## NOOOO <inherited> - read() uses readinto() to do its job !
+    # PAKAL - TODO - allow overriding of an _inner_read method !!!!!!!!!!!!!!
+    
     def readinto(self, buffer):
         self._checkClosed()
         self._checkReadable()
@@ -349,7 +351,8 @@ class genericFileIO(RawIOBase):
 
     def truncate(self, size=None, zero_fill=True):
         """
-        TODO PAKAL - what about file pointer ?
+        TODO PAKAL - what about file pointers ?
+        TODO - recheeck code coverage on this, and fallback extend-with-zeros
         """
         with self._multi_syscall_lock: # to be removed, with threadsafe interface ???
             self._checkClosed()
@@ -366,6 +369,19 @@ class genericFileIO(RawIOBase):
             else:
                 self._inner_extend(size, zero_fill)        
 
+                current_size = self.size()
+                if(current_size != size): # no native operation worked for it. so we fill with zeros by ourselves
+
+                    assert current_size < size
+                    self._inner_seek(current_size, os.SEEK_SET)
+                    bytes_to_write = size - current_size
+                    (q, r) = divmod(bytes_to_write, io.DEFAULT_BUFFER_SIZE)
+
+                    for _ in range(q):
+                        padding = '\0'*io.DEFAULT_BUFFER_SIZE
+                        self._inner_write(padding)
+                    self._inner_write('\0'*r)
+                    
             return self.size()
 
     def flush(self):
@@ -480,7 +496,7 @@ class genericFileIO(RawIOBase):
         
     # # Private methods - no check is made on their argument or the file object state ! # #
         
-    def _inner_create_streams(self, path, read, write, append, must_exist, must_not_exist, synchronized, inheritable, delete_on_close, fileno, handle, closefd):
+    def _inner_create_streams(self, path, read, write, append, must_exist, must_not_exist, synchronized, inheritable, hidden, fileno, handle, closefd):
         self._unsupported("_inner_create_streams")
 
     def _inner_close_streams(self):  
@@ -522,7 +538,7 @@ class genericFileIO(RawIOBase):
     def _inner_write(self, buffer):
         self._unsupported("write")
 
-    def _inner_file_lock(self,shared, timeout, length, offset, whence):
+    def _inner_file_lock(self, shared, timeout, length, offset, whence):
         self._unsupported("lock_chunk")
 
     def _inner_file_unlock(self, length, offset, whence):
@@ -545,7 +561,7 @@ if FILE_IMPLEMENTATION == "win32":
         __POSITION_REFERENCES = {os.SEEK_SET:win32.FILE_BEGIN , os.SEEK_CUR:win32.FILE_CURRENT, os.SEEK_END:win32.FILE_END}
 
         # Warning - this is to be used as a static method ! #
-        def _win32_error_converter(f):
+        def _win32_error_converter(f): #@NoSelf
             @functools.wraps(f)
             def wrapper(self, *args, **kwds):
                 try:
@@ -559,7 +575,7 @@ if FILE_IMPLEMENTATION == "win32":
         
         
         @_win32_error_converter        
-        def _inner_create_streams(self, path, read, write, append, must_exist, must_not_exist, synchronized, inheritable, delete_on_close, fileno, handle):
+        def _inner_create_streams(self, path, read, write, append, must_exist, must_not_exist, synchronized, inheritable, hidden, fileno, handle):
 
             #print("Creating file with : ",locals()) #PAKAL
             self._close_via_fileno = False
@@ -603,8 +619,11 @@ if FILE_IMPLEMENTATION == "win32":
                     securityAttributes = None
                 
                 flagsAndAttributes = win32.FILE_ATTRIBUTE_NORMAL   
-                if delete_on_close:
+                
+                #### NO - TODO - PAKAL - use RSFS to delete it immediately !!!
+                if hidden:
                     flagsAndAttributes |= win32.FILE_FLAG_DELETE_ON_CLOSE
+                    
                 if synchronized:
                     flagsAndAttributes |= win32.FILE_FLAG_WRITE_THROUGH 
                     # DO NOT USE FILE_FLAG_NO_BUFFERING - too many constraints on data alignments
@@ -662,18 +681,8 @@ if FILE_IMPLEMENTATION == "win32":
                 win32.SetEndOfFile(self._handle) # this might fail silently !!!   
     
             else:
-            
-                current_size = self.size()
-                if(current_size != size): # we didn't try the simple truncation, or we failed it... so we fill with zeros anyway
+                pass # we can't directly truncate with zero-filling on win32, so just upper levels handle it
 
-                    assert current_size < size
-                    self.seek(current_size)
-                    bytes_to_write = size - current_size
-                    (q, r) = divmod(bytes_to_write, io.DEFAULT_BUFFER_SIZE)
-
-                    for i in range(q):
-                        self.write('\0'*io.DEFAULT_BUFFER_SIZE)
-                    self.write('\0'*r)
                 
                 
         @_win32_error_converter         
@@ -927,59 +936,33 @@ if FILE_IMPLEMENTATION == "win32":
     
     
 
-elif FILE_IMPLEMENTATION == "posix":
+elif FILE_IMPLEMENTATION == "unix":
 
     import fcntl
+    import os as unix
     
     class posixFileIO(genericFileIO):      
 
         __POSITION_REFERENCES = {os.SEEK_SET:win32.FILE_BEGIN , os.SEEK_CUR:win32.FILE_CURRENT, os.SEEK_END:win32.FILE_END}
 
         """
-        PB, il faurait IOERROR partout !!!
-        static int
-        check_fd(int fd)
-        {
-        #if defined(HAVE_FSTAT)
-            struct stat buf;
-            if (fstat(fd, &buf) < 0 && errno == EBADF) {
-                PyObject *exc;
-                char *msg = strerror(EBADF);
-                exc = PyObject_CallFunction(PyExc_OSError, "(is)", ##WTF, it's an OSERROR HERE !!!
-                                EBADF, msg);
-                PyErr_SetObject(PyExc_OSError, exc);
-                Py_XDECREF(exc);
-                return -1;
-            }
-        #endif
-            return 0;
-        }
 
         O_EXCL
-        En conjonction avec O_CREAT, déclenchera une erreur si le fichier existe, et open échouera. O_EXCL ne fonctionne pas sur les systèmes de fichiers NFS. Les programmes qui ont besoin de cette fonctionnalité pour verrouiller des tâches risquent de rencontrer une concurrence critique (race condition). La solution consiste à créer un fichier unique sur le même système de fichiers (par exemple avec le pid et le nom de l'hôte), utiliser link(2) pour créer un lien sur un fichier de verrouillage et d'utiliser stat(2) sur ce fichier unique pour vérifier si le nombre de liens a augmenté jusqu'à 2. Ne pas utiliser la valeur de retour de link(). 
+        En conjonction avec O_CREAT, déclenchera une erreur si le fichier existe, 
+        et open échouera. O_EXCL ne fonctionne pas sur les systèmes de fichiers NFS. 
+        Les programmes qui ont besoin de cette fonctionnalité pour verrouiller des
+         tâches risquent de rencontrer une concurrence critique (race condition). 
+         La solution consiste à créer un fichier unique sur le même système de fichiers 
+         (par exemple avec le pid et le nom de l'hôte), utiliser link(2) pour créer un lien 
+         sur un fichier de verrouillage et d'utiliser stat(2) sur ce fichier unique pour 
+         vérifier si le nombre de liens a augmenté jusqu'à 2. Ne pas utiliser la valeur 
+         de retour de link(). 
         
-        os.O_RDONLY¶
-        os.O_WRONLY¶
-        os.O_RDWR¶
-        os.O_APPEND¶
-        os.O_CREAT¶
-        os.O_EXCL¶
-        os.O_TRUNC¶
-            These constants are available on Unix and Windows.
-
-         os.O_DSYNC¶
-        os.O_RSYNC¶
-        os.O_SYNC¶
-        os.O_NDELAY¶
-        os.O_NONBLOCK¶
-        os.O_NOCTTY¶
-        os.O_SHLOCK¶
-        os.O_EXLOCK¶
             """
 
         # # Private methods - no check is made on their argument or the file object state ! # #
         
-        def _inner_create_streams(self, path, read, write, append, must_exist, must_not_exist, synchronized, inheritable, delete_on_close, fileno, handle):
+        def _inner_create_streams(self, path, read, write, append, must_exist, must_not_exist, synchronized, inheritable, hidden, fileno, handle):
 
             
             # TODO - For delete on close ->  unlink immediately 
@@ -1001,26 +984,26 @@ elif FILE_IMPLEMENTATION == "posix":
                 flags = 0
                 
                 if synchronized :
-                    flags |= os.O_SYNC
+                    flags |= unix.O_SYNC
                     
                 if read and write: 
-                    flags |= os.O_RDWR
+                    flags |= unix.O_RDWR
                 elif write: 
-                    flags |= os.O_WRONLY
+                    flags |= unix.O_WRONLY
                 else:
-                    flags |= os.O_RDONLY
+                    flags |= unix.O_RDONLY
             
             
                 if must_exist:
                     pass # it's the default case for open() function
                 elif must_not_exist: 
-                    flags |= os.O_CREAT | os.O_EXCL
+                    flags |= unix.O_CREAT | unix.O_EXCL
                 else:
-                    flags |= os.O_CREAT # by default - we create the file iff it doesn't exists
+                    flags |= unix.O_CREAT # by default - we create the file iff it doesn't exists
             
                 # TODO - use linux O_CLOEXEC when available
-                
-                self._fileno = os.open(strname, flags)
+                # TODO - use F_FULLSYNC on MAC !!!
+                self._fileno = unix.open(strname, flags)
                 
                 if not inheritable:
                     old_flags = fcntl.fcntl(self._fileno, fcntl.F_GETFD, 0);
@@ -1028,102 +1011,71 @@ elif FILE_IMPLEMENTATION == "posix":
                         fcntl.fcntl(self._fileno, fcntl.F_SETFD, old_flags | fcntl.FD_CLOEXEC);
                 
                 # Here, if delete on close : unlink filepath !!!
-                
+                #### NO - TODO - PAKAL - use RSFS to delete it immediately !!!
                 
         def _inner_close_streams(self):  
-            self._unsupported("_inner_close_streams")  
+            """
+            Warning - unlink official stdlib modules, this function may raise IOError !
+            """
+            if self._closefd:
+                unix.close(self._fileno) 
+    
+    
     
         def _inner_reduce(self, size): 
-            self._unsupported("_inner_reduce")  
+            unix.ftruncate(self._fileno, size)
     
         def _inner_extend(self, size, zero_fill): 
-            self._unsupported("_inner_extend")
+            # posix truncation is ALWAYS "zerofill"
+            unix.ftruncate(self._fileno, size)
     
         def _inner_sync(self, metadata):
-            self._unsupported("sync")
-            
+            if metadata:
+                unix.fsync(self._fileno)
+            else:
+                try:
+                    unix.fdatasync(self._fileno) # not supported on Mac Os X
+                except NameError:
+                    unix.fsync(self._fileno)
+                
+                
         def _inner_fileno(self):
-            self._unsupported("fileno") # io.UnsupportedOperation subclasses IOError, so we're OK with the official specs
+            return self._fileno
     
         # Inherited :
         #def _inner_handle(self):
         #   self._unsupported("handle") # io.UnsupportedOperation subclasses IOError, so we're OK with the official specs
     
+    
         def _inner_uid(self):
-            self._unsupported("uid")
+            stats = unix.fstat(self._fileno)
+            return (stats.st_dev, st_ino)
      
         def _inner_times(self):
-            self._unsupported("times")
+            stats = unix.fstat(self._fileno)
+            return FileTimes(access_time=stats.st_atime, modification_time=stats.st_mtime)
             
         def _inner_size(self):  
-            self._unsupported("size")
+            return unix.fstat(self._fileno).st_size
     
         def _inner_tell(self):
-            self._unsupported("tell")
+            return unix.ltell(self._fileno)
     
         def _inner_seek(self, offset, whence):
-            self._unsupported("seek")
+            return unix.lseek(self._fileno, offset, whence)
     
         def _inner_readinto(self, buffer):
-            self._unsupported("readinto")
+            count = unix.readinto(self._fileno, buffer)
+            return count
     
-        def _inner_write(self, buffer):
-            self._unsupported("write")
-    
-        def _inner_file_lock(self,shared, timeout, length, offset, whence):
-            self._unsupported("lock_chunk")
-    
-        def _inner_file_unlock(self, length, offset, whence):
-            self._unsupported("unlock_chunk")
-    
-    
-
-
-
-        def _inner_close_streams(self):
-            """
-            This function may raise IOError !
-            """
-
-            if not isinstance(self._name, int) or self.closefd:
-                os.close(self._fileno)
-
+        def _inner_write(self, bytes):
+            return unix.write(self._fileno, bytes)
         
-
-        def _inner_reduce(self, size): # warning - no check is done !!! 
-            os.truncate(self._fileno, size)
-            
-
-        def _inner_extend(self, size, zero_fill): # warning - no check is done !!!  
-            # posix truncation is ALWAYS "zerofill"
-            os.truncate(self._fileno, size)
-        
-        def _inner_fileno(self):
-            return self._fileno
-            
-        def _inner_size(self): # non standard method    
-            return os.fstat(self._fileno).st_size
-
-        def _inner_tell(self):
-            return os.lseek(self._fileno, 0, os.SEEK_CUR) # well, ftell() is not provided by the OS module...
-    
-        def _inner_seek(self, offset, whence):
-            return os.lseek(self._fileno, offset, whence)
-    
-        
-        
-        def _inner_readinto(self, buffer):
-            string = os.read(self._fileno, len(buffer))
-            buffer[0:len(string)] = string
-            return len(string)
-    
-        def _inner_write(self, buffer):
-            return os.write(self._fileno, bytes(buffer))
         
         
         def _fcntl_convert_file_range_arguments(self, length, offset, whence): # some normalization of arguments
             if(length is None):
-                length = 0 # maximal range for lockf
+                length = 0 # maximal range for fcntl/lockf
             return (length, offset, whence)
 
 
@@ -1152,9 +1104,9 @@ elif FILE_IMPLEMENTATION == "posix":
 
                 try :
 
-                    fcntl.lockf(fd, operation, length, offset, whence)
+                    unix.lockf(fd, operation, length, offset, whence)
 
-                except IOError, e:
+                except unix.error, e:
 
                     if(timeout is not None): # else, we try again indefinitely
 
@@ -1187,7 +1139,7 @@ elif FILE_IMPLEMENTATION == "posix":
             fd = self.fileno()
             (length, offset, whence) = self._fcntl_convert_file_range_arguments(length, offset, whence)
             try:
-                fcntl.lockf(fd, fcntl.LOCK_UN, length, offset, whence)
+                unix.lockf(fd, fcntl.LOCK_UN, length, offset, whence)
             except IOError:
                 raise # are there special cases to handle ?
 
@@ -1247,7 +1199,7 @@ def parse_standard_args(name, mode, closefd): # warning - name can be a fileno h
                     must_not_exist=False,
                     synchronized=False,
                     inheritable=True, 
-                    delete_on_close=False,
+                    hidden=False,
                     fileno=fileno, handle=None, closefd=closefd)
     
     extended_kwargs = dict(truncate=truncate, 
@@ -1262,7 +1214,7 @@ def parse_advanced_args(path, mode, fileno, handle, closefd):
 
     
     modes = set(mode)
-    if modes - set("RAW+-SIDEBT") or len(mode) > len(modes):
+    if modes - set("RAW+-SIHEBT") or len(mode) > len(modes):
         raise ValueError("invalid mode: %r" % mode)    
     
     path = path # The file name  # PAKAL - MUST BE NONE OR A STRING IN ANYWAY - PYCONTRACT THIS PLZ !!!
@@ -1276,7 +1228,7 @@ def parse_advanced_args(path, mode, fileno, handle, closefd):
     
     synchronized = "S" in mode
     inheritable = "I" in mode
-    delete_on_close = "D" in mode
+    hidden = "H" in mode
     
     truncate = "E" in mode # for "Erase"  
     binary = "B" in modes
@@ -1289,7 +1241,7 @@ def parse_advanced_args(path, mode, fileno, handle, closefd):
                     must_not_exist=must_not_exist,
                     synchronized=synchronized,
                     inheritable=inheritable, 
-                    delete_on_close=delete_on_close,
+                    hidden=hidden,
                     fileno=fileno, handle=handle, closefd=closefd)
     
     extended_kwargs = dict(truncate=truncate, 

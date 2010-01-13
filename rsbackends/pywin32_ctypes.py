@@ -376,6 +376,7 @@ def FlushFileBuffers(handle):
     
                               
 def ReadFile(handle, buffer_or_int, overlapped=None):
+    # TODO - improve to work directly with ctypes array types !
     
     assert overlapped or isinstance(buffer_or_int, int) # buffers can only be provided in overlapped mode
     

@@ -338,7 +338,7 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
         
         with rsfile.rsOpen(TESTFN, "RB", buffering=0) as f:
             
-            with rsfile.rsOpen(TESTFN, "RBD", buffering=0) as g:
+            with rsfile.rsOpen(TESTFN, "RBH", buffering=0) as g: # hidden file -> deleted on opening
                 self.assertTrue(os.path.exists(TESTFN))
                 self.assertEqual(f.uid(), g.uid())
                 old_uid = f.uid()
@@ -347,7 +347,7 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
             self.assertFalse(os.path.exists(fullpath))
             self.assertRaises(IOError, rsfile.rsOpen, TESTFN, "R") # on win32, deleted file is in a weird state until all handles are closed !!
         
-        with rsfile.rsOpen(TESTFN, "RBD", buffering=0) as h:
+        with rsfile.rsOpen(TESTFN, "RBH", buffering=0) as h:
             self.assertTrue(os.path.exists(TESTFN))
             self.assertNotEqual(h.uid(), old_uid)
             os.remove(TESTFN)
@@ -380,7 +380,7 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
 
         self.assertRaises(IOError, rsfile.rsOpen, TESTFN, "RB-", buffering=0)
             
-        with rsfile.rsOpen(TESTFN, "RAEBD", buffering=0) as f:
+        with rsfile.rsOpen(TESTFN, "RAEBH", buffering=0) as f:
             pass # delete on close flag used !
         
         self.assertRaises(IOError, rsfile.rsOpen, TESTFN, "WB+", buffering=0)
