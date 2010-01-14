@@ -1,4 +1,4 @@
-
+#-*- coding: utf-8 -*-
 
 # Large files linux : http://www.suse.de/~aj/linux_lfs.html
 """
@@ -78,20 +78,29 @@ from os import (open,
                lseek,
                ftruncate, # not return value
                write, # arguments : (fd, string), returns number of bytes written
-               fsync, fdatasync,
-               read) # directly returns a string
+               fsync,
+               read
+               ) # directly returns a string
 
 # WARNING - On at least some systems, LOCK_EX can 
 # only be used if the file descriptor refers to a file opened for writing !!!!!
 # -> TO BE ENFORCED
 
 
-from fcntl import lockf # used both to lock and unlock !
+from fcntl import lockf, fcntl # used both to lock and unlock !
 """
 The default for start is 0, which means to start at the 
 beginning of the file. The default for length is 0 which 
 means to lock to the end of the file. The default for whence is also 0.
 """
+
+from posix_defines import * # constants
+
+
+
+if hasattr(_os, 'fdatasync'):
+    fdatasync = _os.fdatasync
+    # else, we just dont't define datasync in the module !
 
 
 def ltell(fd):

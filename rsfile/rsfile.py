@@ -939,11 +939,9 @@ if FILE_IMPLEMENTATION == "win32":
 elif FILE_IMPLEMENTATION == "unix":
 
     import fcntl
-    import os as unix
+    import rsbackends.posix_stdlib as unix
     
     class posixFileIO(genericFileIO):      
-
-        __POSITION_REFERENCES = {os.SEEK_SET:win32.FILE_BEGIN , os.SEEK_CUR:win32.FILE_CURRENT, os.SEEK_END:win32.FILE_END}
 
         """
 
@@ -1002,7 +1000,7 @@ elif FILE_IMPLEMENTATION == "unix":
                     flags |= unix.O_CREAT # by default - we create the file iff it doesn't exists
             
                 # TODO - use linux O_CLOEXEC when available
-                # TODO - use F_FULLSYNC on MAC !!!
+                # TODO - use F_FULLFSYNC on MAC OS X !!!   -> fcntl(fd, F_FULLFSYNC, 0);  51
                 self._fileno = unix.open(strname, flags)
                 
                 if not inheritable:
@@ -1030,14 +1028,19 @@ elif FILE_IMPLEMENTATION == "unix":
             unix.ftruncate(self._fileno, size)
     
         def _inner_sync(self, metadata):
-            if metadata:
-                unix.fsync(self._fileno)
-            else:
+            if not metadata:
                 try:
+                    # WARNING - file size will ALWAYS be updated if necessary to preserve data integrity, theoretically
                     unix.fdatasync(self._fileno) # not supported on Mac Os X
-                except NameError:
-                    unix.fsync(self._fileno)
-                
+                    return
+                except unix.error:
+                    pass
+            
+            try:
+                unix.fcntl(self._fileno, unix.F_FULLFSYNC, 0) 
+            except NameError:
+                unix.fsync(self._fileno)
+            
                 
         def _inner_fileno(self):
             return self._fileno
