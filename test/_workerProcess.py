@@ -13,6 +13,9 @@ def _init_streams(multiprocessing_lock):
     on the console together.
     """
     
+    if multiprocessing_lock is None:
+        return # we must be on a *bsd without semopen implementation....
+    
     class newstdout:
         @classmethod
         def write(cls, str):
@@ -20,7 +23,6 @@ def _init_streams(multiprocessing_lock):
             sys.__stdout__.write(str.upper())
             sys.__stdout__.flush()
             multiprocessing_lock.release()
-    
     sys.stdout = newstdout
 
     class newstderr:
@@ -30,7 +32,6 @@ def _init_streams(multiprocessing_lock):
             sys.__stderr__.write(str.upper())
             sys.__stderr__.flush()
             multiprocessing_lock.release()
-            
     sys.stdout = newstderr
     
 

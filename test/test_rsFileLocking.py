@@ -27,8 +27,11 @@ class TestSafeFile(unittest.TestCase):
         self.dummyFileName = tmpFile.name
         
         self.processList = []
-        self.multiprocessing_lock = multiprocessing.Lock()
-
+        
+        try:
+            self.multiprocessing_lock = multiprocessing.Lock()
+        except ImportError:
+            self.multiprocessing_lock = None # *bsd platforms without proper synchronization primitives
 
     def tearDown(self):
         

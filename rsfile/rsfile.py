@@ -328,6 +328,9 @@ class genericFileIO(RawIOBase):
 
     def seek(self, offset, whence=os.SEEK_SET):
         self._checkClosed()
+        
+        if not isinstance(offset, (int, long)):
+            raise TypeError("Expecting an integer as argument for seek")
         return self._inner_seek(offset, whence)
 
         
@@ -347,11 +350,15 @@ class genericFileIO(RawIOBase):
         """
         self._checkClosed()
         self._checkWritable()
+        
+        if not isinstance(buffer, (bytes, bytearray)):
+             raise TypeError("Only buffer-like objects can be written to raw files, not %s objects" % type(buffer))
+                
         return self._inner_write(buffer)
 
     def truncate(self, size=None, zero_fill=True):
         """
-        TODO PAKAL - what about file pointers ?
+        TODO PAKAL - what about file pointers ? -> we must change them to new bhevaiour !!!
         TODO - recheeck code coverage on this, and fallback extend-with-zeros
         """
         with self._multi_syscall_lock: # to be removed, with threadsafe interface ???
@@ -621,8 +628,9 @@ if FILE_IMPLEMENTATION == "win32":
                 flagsAndAttributes = win32.FILE_ATTRIBUTE_NORMAL   
                 
                 #### NO - TODO - PAKAL - use RSFS to delete it immediately !!!
+                """
                 if hidden:
-                    flagsAndAttributes |= win32.FILE_FLAG_DELETE_ON_CLOSE
+                    flagsAndAttributes |= win32.FILE_FLAG_DELETE_ON_CLOSE""" # TO BE REMOVED
                     
                 if synchronized:
                     flagsAndAttributes |= win32.FILE_FLAG_WRITE_THROUGH 
@@ -797,9 +805,6 @@ if FILE_IMPLEMENTATION == "win32":
             La doc se contredit, est-ce qu'il faut retourner num written ou lancer ioerror ?? PAKAL
             """
 
-            if not isinstance(buffer, (basestring, bytearray)):
-                raise TypeError("Only buffer-like objects can be written to files, not %s objects"%str(type(buffer)))
-
             if self._append: # yep, no atomicity around here, as in truncate()
                 self._inner_seek(0, os.SEEK_END)
 
@@ -957,9 +962,23 @@ elif FILE_IMPLEMENTATION == "unix":
          de retour de link(). 
         
             """
-
+            
+            
+        # Warning - this is to be used as a static method ! #
+        def _posix_error_converter(f): #@NoSelf
+            @functools.wraps(f)
+            def wrapper(self, *args, **kwds):
+                try:
+                    return f(self, *args, **kwds)
+                except unix.error, e: # WARNING - this is not a subclass of OSERROR !!!!!!!!!!!!!
+                    traceback = sys.exc_info()[2]
+                    #print repr(e)str(e[1])+" - "+str(e[2
+                    raise IOError(e[0], str(e[1]), str(self._name)), None, traceback
+            return wrapper
+            
+            
         # # Private methods - no check is made on their argument or the file object state ! # #
-        
+        @_posix_error_converter
         def _inner_create_streams(self, path, read, write, append, must_exist, must_not_exist, synchronized, inheritable, hidden, fileno, handle):
 
             
@@ -969,7 +988,7 @@ elif FILE_IMPLEMENTATION == "unix":
                 self._unsupported("Stream creation from a posix handle")
                 
             if fileno is not None:
-                self._file = fileno
+                self._fileno = fileno
             
             else: #we open the file with low level posix IO - the unix "open()"  function
             
@@ -991,6 +1010,8 @@ elif FILE_IMPLEMENTATION == "unix":
                 else:
                     flags |= unix.O_RDONLY
             
+                if append:
+                    flags |= unix.O_APPEND
             
                 if must_exist:
                     pass # it's the default case for open() function
@@ -1001,16 +1022,27 @@ elif FILE_IMPLEMENTATION == "unix":
             
                 # TODO - use linux O_CLOEXEC when available
                 # TODO - use F_FULLFSYNC on MAC OS X !!!   -> fcntl(fd, F_FULLFSYNC, 0);  51
-                self._fileno = unix.open(strname, flags)
+                """
+                if hidden:
+                    mode = 0000
+                else:
+                    mode = 0777 # umask will apply on it anyway
+                """
+                self._fileno = unix.open(strname, flags)  #TODO - we shall be able to speciffy the mode !!!
                 
                 if not inheritable:
                     old_flags = fcntl.fcntl(self._fileno, fcntl.F_GETFD, 0);
                     if not (old_flags & fcntl.FD_CLOEXEC):
                         fcntl.fcntl(self._fileno, fcntl.F_SETFD, old_flags | fcntl.FD_CLOEXEC);
-                
+                """
+                if hidden:
+                    unix.unlink()
+                """
                 # Here, if delete on close : unlink filepath !!!
                 #### NO - TODO - PAKAL - use RSFS to delete it immediately !!!
-                
+        
+        
+        @_posix_error_converter       
         def _inner_close_streams(self):  
             """
             Warning - unlink official stdlib modules, this function may raise IOError !
@@ -1019,15 +1051,21 @@ elif FILE_IMPLEMENTATION == "unix":
                 unix.close(self._fileno) 
     
     
-    
+        @_posix_error_converter
         def _inner_reduce(self, size): 
+            self._inner_seek(size, os.SEEK_SET) # TO BE REMOVED IN NEW VERSION !!!
             unix.ftruncate(self._fileno, size)
-    
+            
+            
+        @_posix_error_converter
         def _inner_extend(self, size, zero_fill): 
             # posix truncation is ALWAYS "zerofill"
+            self._inner_seek(size, os.SEEK_SET) # TO BE REMOVED IN NEW VERSION !!!
             unix.ftruncate(self._fileno, size)
     
-        def _inner_sync(self, metadata):
+        @_posix_error_converter
+        def _inner_sync(self, metadata): 
+            #TODO - refactor arguments with FULLSYNC or not !!!!!!
             if not metadata:
                 try:
                     # WARNING - file size will ALWAYS be updated if necessary to preserve data integrity, theoretically
@@ -1038,10 +1076,10 @@ elif FILE_IMPLEMENTATION == "unix":
             
             try:
                 unix.fcntl(self._fileno, unix.F_FULLFSYNC, 0) 
-            except NameError:
+            except unix.error:
                 unix.fsync(self._fileno)
             
-                
+               
         def _inner_fileno(self):
             return self._fileno
     
@@ -1049,31 +1087,37 @@ elif FILE_IMPLEMENTATION == "unix":
         #def _inner_handle(self):
         #   self._unsupported("handle") # io.UnsupportedOperation subclasses IOError, so we're OK with the official specs
     
-    
+        @_posix_error_converter
         def _inner_uid(self):
             stats = unix.fstat(self._fileno)
-            return (stats.st_dev, st_ino)
+            return (stats.st_dev, stats.st_ino)
      
+        @_posix_error_converter
         def _inner_times(self):
             stats = unix.fstat(self._fileno)
             return FileTimes(access_time=stats.st_atime, modification_time=stats.st_mtime)
-            
+        
+        @_posix_error_converter        
         def _inner_size(self):  
             return unix.fstat(self._fileno).st_size
     
+        @_posix_error_converter
         def _inner_tell(self):
             return unix.ltell(self._fileno)
     
+        @_posix_error_converter
         def _inner_seek(self, offset, whence):
             return unix.lseek(self._fileno, offset, whence)
-    
+      
+                
+        @_posix_error_converter
         def _inner_readinto(self, buffer):
-            count = unix.readinto(self._fileno, buffer)
+            count = unix.readinto(self._fileno, buffer, len(buffer))
             return count
     
+        @_posix_error_converter
         def _inner_write(self, bytes):
             return unix.write(self._fileno, bytes)
-        
         
         
         def _fcntl_convert_file_range_arguments(self, length, offset, whence): # some normalization of arguments
@@ -1081,8 +1125,9 @@ elif FILE_IMPLEMENTATION == "unix":
                 length = 0 # maximal range for fcntl/lockf
             return (length, offset, whence)
 
-
-        def _lock_file(self, shared, timeout, length, offset, whence):
+            
+        @_posix_error_converter
+        def _inner_file_lock(self, shared, timeout, length, offset, whence):
 
             """ MEGAWARNING : On at least some systems, 
             LOCK_EX can only be used if the file descriptor refers to a file opened for writing."""
@@ -1136,13 +1181,13 @@ elif FILE_IMPLEMENTATION == "unix":
 
             return True
 
+        @_posix_error_converter
+        def _inner_file_unlock(self, length, offset, whence):
 
-        def _unlock_file(self, length, offset, whence):
-
-            fd = self.fileno()
+            
             (length, offset, whence) = self._fcntl_convert_file_range_arguments(length, offset, whence)
             try:
-                unix.lockf(fd, fcntl.LOCK_UN, length, offset, whence)
+                unix.lockf(self._fileno, fcntl.LOCK_UN, length, offset, whence)
             except IOError:
                 raise # are there special cases to handle ?
 
@@ -1150,8 +1195,6 @@ elif FILE_IMPLEMENTATION == "unix":
 
     rsFileIO = posixFileIO 
 
-
-    
 
     
 def parse_standard_args(name, mode, closefd): # warning - name can be a fileno here ...
