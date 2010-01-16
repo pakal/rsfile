@@ -52,6 +52,9 @@ a process exits, and are not inherited by child processes created using fork (se
 # TODO : add upgrade/downgrade of shared/nonshared full file locks !!!! (fcntl does it atomically !)
 # TODO : grab the ctypes locking found in bazaar code - lockfile, overlapped etc !!!!
 
+# TODO - implement thread safe and win32-compatible "umask" system for file creation, with "hidden" and "permissions" arguments offered !!!!
+#Todo - think about way of having full-locked fcntl files work together !!!!
+
 
 # Todo : make errors explicit when closing streams, eg. if flush fails !!!! (buggy in current io)
 
