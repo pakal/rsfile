@@ -1,6 +1,6 @@
 #!/usr/local/bin/python
 
-print "we enter function"
+#print "we enter function"
 
 import sys, os, time, random, string
 import _workerProcess

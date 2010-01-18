@@ -57,7 +57,6 @@ a process exits, and are not inherited by child processes created using fork (se
 # Todo : check that current buffer class work well when seeking (pos, seek_cur) ! (buggy in 2.6.1)
 # -> Could you construct a test case? (it's even better if you fix the offending code as well of course)
 
-# Todo : use integer handles instead of win32.HANDLE(128)
 # GetFileInformationByHandleEx and GetFileInformationByHandle Functions - Retrieve file information for the specified file.
 # exception io.UnsupportedOperation - An exception inheriting IOError and ValueError that is raised when an unsupported operation is called on a stream.
 

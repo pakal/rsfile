@@ -453,7 +453,7 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
                     
                     myfile.seek(0, os.SEEK_END) # to fulfill the expectations of the worker process 
                     print "we spawn" #r"C:\Python26\python.exe"
-                    retcode = os.spawnvp(os.P_WAIT, executable, pre_args+args)  # 1st argument must be the program itself !
+                    retcode = os.spawnv(os.P_WAIT, executable, pre_args+args)  # 1st argument must be the program itself !
                     print >>sys.stderr, "spawn over"
                     self.assertEqual(retcode, EXPECTED_RETURN_CODE, "Spawned process returned %d instead of %d"%(retcode, EXPECTED_RETURN_CODE))                    
                     
