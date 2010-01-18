@@ -433,7 +433,7 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
                     
                     
                     executable = sys.executable
-                    pre_args = ("python", "_inheritance_tester.py")
+                    pre_args = ("python", os.path.join(os.path.dirname(__file__), "_inheritance_tester.py"))
                     args = (str(read), str(write), str(append), str(kwargs.get("fileno", "-")), str(kwargs.get("handle", "-")))
                     
                     

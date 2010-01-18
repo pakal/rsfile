@@ -24,6 +24,11 @@ def _init_streams(multiprocessing_lock):
             sys.__stdout__.write(str.upper())
             sys.__stdout__.flush()
             multiprocessing_lock.release()
+        
+        @classmethod
+        def flush():
+            pass
+            
     sys.stdout = newstdout
 
     class newstderr:
@@ -33,6 +38,10 @@ def _init_streams(multiprocessing_lock):
             sys.__stderr__.write(str.upper())
             sys.__stderr__.flush()
             multiprocessing_lock.release()
+        
+        @classmethod
+        def flush():
+            pass
     sys.stdout = newstderr
     
 
