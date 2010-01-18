@@ -26,7 +26,7 @@ def _init_streams(multiprocessing_lock):
             multiprocessing_lock.release()
         
         @classmethod
-        def flush():
+        def flush(cls):
             pass
             
     sys.stdout = newstdout
@@ -40,7 +40,7 @@ def _init_streams(multiprocessing_lock):
             multiprocessing_lock.release()
         
         @classmethod
-        def flush():
+        def flush(cls):
             pass
     sys.stdout = newstderr
     
