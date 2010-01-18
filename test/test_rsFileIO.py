@@ -5,7 +5,7 @@ import time
 import itertools
 import threading
 import random
-import multiprocessing
+import multiprocessing, subprocess
 import _workerProcess
 from array import array
 from weakref import proxy
@@ -406,13 +406,13 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
         target = _workerProcess.inheritance_tester
         
         bools =  [True, False]
-        permutations = ((a,b,c) for a in bools for b in bools for c in bools if (a or b or c))
+        permutations = [(a,b,c) for a in bools for b in bools for c in bools if (a or b or c)]
         
         for (inheritance, EXPECTED_RETURN_CODE) in [(True, 4), (False, 5)]: 
-            #print (inheritance, EXPECTED_RETURN_CODE)
+            print "STATUS : ", (inheritance, EXPECTED_RETURN_CODE)
             for perm in permutations:
                 (read, write, append) = perm
-                #print perm
+                print "->", perm
                 
                 kwargs = dict(read=read, write=write, append=append)
                 
@@ -424,30 +424,39 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
                     
                 
                 with rsfile.rsFileIO(TESTFN, inheritable=inheritance, **kwargs) as myfile:
-                    myfile.seek(0, os.SEEK_END) # to fulfill the expectations of the worker process                    
+                                       
                     
                     if rsfile.FILE_IMPLEMENTATION == "win32":
                         kwargs["handle"] = int(myfile.handle()) # we transform the PyHandle into an integer to ensure serialization
                     else:
                         kwargs["fileno"] = myfile.fileno() # already an integer
                     
+                    
+                    executable = sys.executable
+                    pre_args = ("python", "_inheritance_tester.py")
+                    args = (str(read), str(write), str(append), str(kwargs.get("fileno", "-")), str(kwargs.get("handle", "-")))
+                    
+                    
+                    myfile.seek(0, os.SEEK_END) # to fulfill the expectations of the worker process 
+                    child = subprocess.Popen(pre_args+args, executable=executable, close_fds=False)
+                    retcode = child.wait()
+                    self.assertEqual(retcode, EXPECTED_RETURN_CODE, "Spawned child returned %d instead of %d"%(retcode, EXPECTED_RETURN_CODE))                               
+                    """
                     # We test inheritance via subprocess module
                     process = multiprocessing.Process(name="%s"%(target.__name__), target=target, kwargs=kwargs)   
                     process.start()
                     #myfile.close() # we close our own handle immediately !
                     process.join() 
                     #print process.exitcode
-                    self.assertEqual(process.exitcode, EXPECTED_RETURN_CODE, "Subprocess '%s' returned %d instead of %d"%(process.name, process.exitcode, EXPECTED_RETURN_CODE))                    
                     
-                    # We test inheritance via spawn() functions
-                    """ BUGGY ON WINDOWS - TODO - TRY THIS ON UNIX !!!
-                    script = str(os.path.join(os.path.dirname(__file__),"inheritance_tester.py"))# '"'+ +'"'
-                    args = (str(read), str(write), str(append), str(kwargs.get("fileno", "-")), str(kwargs.get("handle", "-")))
-                    print "we spawn"
-                    retcode = os.spawnv(os.P_WAIT, r"C:\Python26\python.exe", ("inheritance_tester.py",))  #
-                    print >>sys.stderr, "spawn over"
-                    self.assertEqual(retcode, EXPECTED_RETURN_CODE, "Spawned process '%s' returned %d instead of %d"%("inheritance tester", retcode, EXPECTED_RETURN_CODE))                    
                     """
+                    
+                    myfile.seek(0, os.SEEK_END) # to fulfill the expectations of the worker process 
+                    print "we spawn" #r"C:\Python26\python.exe"
+                    retcode = os.spawnvp(os.P_WAIT, executable, pre_args+args)  # 1st argument must be the program itself !
+                    print >>sys.stderr, "spawn over"
+                    self.assertEqual(retcode, EXPECTED_RETURN_CODE, "Spawned process returned %d instead of %d"%(retcode, EXPECTED_RETURN_CODE))                    
+                    
                 
     def testSynchronization(self):
         

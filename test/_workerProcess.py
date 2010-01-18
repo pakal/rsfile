@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import with_statement
 
 
@@ -170,7 +171,7 @@ def lock_tester(resultQueue, targetFileName, multiprocessing_lock, ioOffset=0, w
             
 def inheritance_tester(read, write, append, fileno=None, handle=None):
         assert not (fileno and handle)
-        #print >>sys.stderr, "Launching Worker Process inheritance_tester with fileno=%s and handle=%s !" % (fileno, handle)
+        print >>sys.stderr, "Launching Worker Process inheritance_tester with fileno=%s and handle=%s !" % (fileno, handle)
         #sys.exit(99)        
         
         time.sleep(0.2)

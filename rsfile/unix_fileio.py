@@ -102,6 +102,7 @@ class unixFileIO(AbstractFileIO):
             if not inheritable:
                 old_flags = fcntl.fcntl(self._fileno, fcntl.F_GETFD, 0);
                 if not (old_flags & fcntl.FD_CLOEXEC):
+                    #print "PREVENTING INHERITANCE !!!"
                     fcntl.fcntl(self._fileno, fcntl.F_SETFD, old_flags | fcntl.FD_CLOEXEC);
             """
             if hidden:
