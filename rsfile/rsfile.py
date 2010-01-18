@@ -8,16 +8,19 @@ import io
 
 from rsfile_defines import * # constants and base types
 from abstract_fileio import AbstractFileIO, ThreadSafeWrapper
-try:
-    from win32_fileio import rsFileIO
-    FILE_IMPLEMENTATION = "win32"
-except ImportError:
+
+if sys.platform == 'win32':
+    try:
+        from win32_fileio import rsFileIO
+        FILE_IMPLEMENTATION = "win32"
+    except Exception, e:
+        raise ImportError("No win32 backend available : %s" % e)
+else:
     try:
         from unix_fileio import rsFileIO
         FILE_IMPLEMENTATION = "unix"
-    except ImportError:
-        raise ImportError("Neither win32 nor unix backend available for rsfile.") # we let propagate
-
+    except Exception, e:
+        raise ImportError("No unix backend available : %s" % e)
 
 
 
@@ -30,6 +33,8 @@ When any file descriptor for that file is closed by the process, all of the lock
 are released, even if the locks were made using other descriptors that remain open. Likewise, locks are released when 
 a process exits, and are not inherited by child processes created using fork (see Creating a Process). 
 """
+# TODO - allow permissions/umask settings
+# TODO - prevent bad locking when non writing mode !!! exclusive vs shared
 # TODO - test on python 2.5, with statements !!!!
 # warning - we must take care of file deletion on windows and linux !!! share_delete renaming etc.!! avoid broken file waiting deletion
 

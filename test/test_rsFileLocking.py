@@ -14,7 +14,7 @@ import rsfile
 
 rsfile.monkey_patch_original_io_module()
 
-
+RESULT_FILE = "@RESULTFILE"
 
 class TestSafeFile(unittest.TestCase):
 
@@ -37,11 +37,15 @@ class TestSafeFile(unittest.TestCase):
         
         for process in self.processList:
             process.terminate()
+        
+        if os.path.exists(RESULT_FILE):
+            os.remove(RESULT_FILE)
             
-        try:
+        #try:
+        if os.path.exists(self.dummyFileName):
             os.remove(self.dummyFileName)
-        except EnvironmentError:
-            pass # surely the OS still hasn't released the internal locks on the file
+        #except EnvironmentError:
+        #    pass # surely the OS still hasn't released the internal locks on the file
         
         
     def _start_and_check_subprocesses(self):
@@ -57,7 +61,7 @@ class TestSafeFile(unittest.TestCase):
         for process in self.processList:
             process.join()
 
-            self.assertEqual(process.exitcode, 0, "Process '%s' detected some synchronization inconsistency"%process.name)
+            self.assertEqual(process.exitcode, 0, "Process '%s' detected some synchronization inconsistency : retcode %d" % (process.name, process.exitcode))
             
             print "Process '%s' exited successfully"%process.name
     
@@ -74,9 +78,12 @@ class TestSafeFile(unittest.TestCase):
                 with rsfile.rsOpen(self.dummyFileName, "WB", buffering=0, timeout=0) as g:
                     pass
             except rsfile.LockingException:
-                pass 
+                if sys.platform != 'win32':
+                    self.fail("Exclusively locking the same disk file twice from different open file objects shouldn't fail on unix")
+    
             else:
-                self.fail("Exclusively locking the same disk file twice from different open file objects didn't fail")
+                if sys.platform == 'win32':
+                    self.fail("Exclusively locking the same disk file twice from different open file objects didn't fail on win32")
     
                 
         with rsfile.rsOpen(self.dummyFileName, "RB", buffering=0, timeout=0) as f:
@@ -151,6 +158,7 @@ class TestSafeFile(unittest.TestCase):
         
         with open(self.dummyFileName,"wb") as targetFile:
             targetFile.write(character*totalPayLoad)
+            print "====== ALL INITIALIZED TO %c =====" % character
         
         """ # TO REMOVE
         # we add a reader process first  
@@ -171,7 +179,7 @@ class TestSafeFile(unittest.TestCase):
             kwargs = {'targetFileName':self.dummyFileName, 'multiprocessing_lock':self.multiprocessing_lock, 'character':character, 'ioOffset':ioOffset, 
                       'payLoad':chunkSize, 'mustAlwaysSucceedLocking':True, 'lockingKwargs':lockingKwargs }
             
-            process = multiprocessing.Process(name="%s %d"%('ID', i), target=target, kwargs=kwargs) ##target.__name__
+            process = multiprocessing.Process(name="%s %d (%c)"%('ID', i, character), target=target, kwargs=kwargs) ##target.__name__
 
             self.processList.append(process)
  
@@ -180,21 +188,29 @@ class TestSafeFile(unittest.TestCase):
     
     def test_whence_and_timeout(self):
         """Checks that the different whence values, and the timeout argument, work OK.
-        Also ensures that locks are not inherite by subprocesses !
+        Also ensures that locks are not inherited by subprocesses !
         """        
         
         character = random.choice(string.ascii_lowercase)
         payLoad = 1000
-        lockedByteAbsoluteOffset = random.randint(1,payLoad-2) # we let room on eachj side to check for teh proper delimitation of the locking 
+        lockedByteAbsoluteOffset = random.randint(1,payLoad-2) # we let room on each side to check for the proper delimitation of the locking 
         
-        
-        results = multiprocessing.Queue() # will receive "(process_name, locking_is_successful, time_spent)" tuples from subprocesses
-            
+        try:
+            results = multiprocessing.Queue() # will receive "(process_name, locking_is_successful, time_spent)" tuples from subprocesses
+        except ImportError:
+            results = RESULT_FILE
+            with io.open(results, "wb", 0):
+                pass # we just create/truncate the file
+    
+    
+    
         with io.open(self.dummyFileName,"wb", 0) as targetFile:
             targetFile.write(character*payLoad)
-            
         
             with targetFile.lock_chunk(offset=lockedByteAbsoluteOffset, length=1, timeout=0) :          
+            
+
+            
             
                 target = _workerProcess.lock_tester
                 
@@ -245,37 +261,50 @@ class TestSafeFile(unittest.TestCase):
                     print "Process '%s' starting..."%process.name
                     process.daemon = True # we don't want them to wander around after the tests are over...
                     process.start()
-                
             
                 time.sleep(10) # we wait until all subprocess timeout except the last one
-            
                 
         # we release the bit lock and the file handle  
         for process in self.processList:
             process.join()
             self.assertEqual(process.exitcode, 0, "Process '%s' encountered some trouble during execution"%process.name)
         
-            while not results.empty():
-                (process_name, locking_is_successful, time_spent) = results.get()
-                
-                if process_name == process1.name :
-                    self.assertEqual(locking_is_successful, False)
-                    self.assertTrue(time_spent < 3)
-                elif process_name == process2.name :
-                    self.assertEqual(locking_is_successful, False)
-                    self.assertTrue(2 < time_spent < 8)
-                elif process_name == process3.name :
-                    self.assertEqual(locking_is_successful, True)
-                    self.assertTrue( 7 < time_spent < 13)   
-                elif process_name == process4.name :
-                    self.assertEqual(locking_is_successful, True)
-                    self.assertTrue(time_spent < 2)
-                elif process_name == process5.name :
-                    self.assertEqual(locking_is_successful, True)
-                    self.assertTrue(time_spent < 2)                       
-                else:
-                    self.fail("Unknown subprocess %s", process_name)
         
+        real_results = []
+        if isinstance(results, basestring):
+            for line in io.open(results, "rb"):
+                (process_name, locking_is_successful, time_spent) = line.split("|")
+                locking_is_successful = int(locking_is_successful)
+                time_spent = float(time_spent)
+                real_results.append((process_name, locking_is_successful, time_spent))
+        else:
+            while not results.empty(): 
+                real_results.append(results.get())
+            results.close()
+                
+                
+        for real_res in real_results:
+       
+            (process_name, locking_is_successful, time_spent) = real_res
+            
+            if process_name == process1.name :
+                self.assertEqual(locking_is_successful, False)
+                self.assertTrue(time_spent < 3)
+            elif process_name == process2.name :
+                self.assertEqual(locking_is_successful, False)
+                self.assertTrue(2 < time_spent < 8)
+            elif process_name == process3.name :
+                self.assertEqual(locking_is_successful, True)
+                self.assertTrue( 7 < time_spent < 13)   
+            elif process_name == process4.name :
+                self.assertEqual(locking_is_successful, True)
+                self.assertTrue(time_spent < 2)
+            elif process_name == process5.name :
+                self.assertEqual(locking_is_successful, True)
+                self.assertTrue(time_spent < 2)                       
+            else:
+                self.fail("Unknown subprocess %s", process_name)
+    
            
                     
 

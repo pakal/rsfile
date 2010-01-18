@@ -1,4 +1,4 @@
-
+#-*- coding: utf-8 -*-
 
 import sys, fcntl, functools, errno, time
 from abstract_fileio import AbstractFileIO
@@ -36,9 +36,12 @@ class unixFileIO(AbstractFileIO):
             try:
                 return f(self, *args, **kwds)
             except unix.error, e: # WARNING - this is not a subclass of OSERROR !!!!!!!!!!!!!
-                traceback = sys.exc_info()[2]
-                #print repr(e)str(e[1])+" - "+str(e[2
-                raise IOError(e[0], str(e[1]), str(self._name)), None, traceback
+                if isinstance(e, IOError):
+                    raise
+                else:
+                    traceback = sys.exc_info()[2]
+                    #print repr(e)str(e[1])+" - "+str(e[2
+                    raise IOError(e[0], str(e[1]), str(self._name)), None, traceback
         return wrapper
         
         
@@ -93,8 +96,9 @@ class unixFileIO(AbstractFileIO):
             else:
                 mode = 0777 # umask will apply on it anyway
             """
-            self._fileno = unix.open(strname, flags)  #TODO - we shall be able to speciffy the mode !!!
+            self._fileno = unix.open(strname, flags)  #TODO - we shall be able to specify the permissions !!!
             
+                
             if not inheritable:
                 old_flags = fcntl.fcntl(self._fileno, fcntl.F_GETFD, 0);
                 if not (old_flags & fcntl.FD_CLOEXEC):
@@ -196,9 +200,9 @@ class unixFileIO(AbstractFileIO):
 
         """ MEGAWARNING : On at least some systems, 
         LOCK_EX can only be used if the file descriptor refers to a file opened for writing."""
-
-        fd = self.fileno()
-
+        
+        fd = self._fileno
+        
         if(shared):
             operation = fcntl.LOCK_SH
         else:
@@ -207,6 +211,7 @@ class unixFileIO(AbstractFileIO):
         if(timeout is not None):
             operation |= fcntl.LOCK_NB
 
+        
         (length, offset, whence) = self._fcntl_convert_file_range_arguments(length, offset, whence)
 
 
@@ -216,9 +221,11 @@ class unixFileIO(AbstractFileIO):
         while(try_again):
 
             try :
-
+                import multiprocessing
+                
                 unix.lockf(fd, operation, length, offset, whence)
-
+                print "---------->", multiprocessing.current_process().name, " LOCKED ", (operation, length, offset, whence)
+                
             except unix.error, e:
 
                 if(timeout is not None): # else, we try again indefinitely
@@ -231,7 +238,7 @@ class unixFileIO(AbstractFileIO):
 
                         filename = "File"
                         try:
-                            filename = str(self.name)
+                            filename = str(self.name) # TODO - change this !!!
                         except AttributeError:
                             pass # surely a pseudo file object...
 
@@ -239,7 +246,11 @@ class unixFileIO(AbstractFileIO):
                             raise defs.LockingException(error_code, title, filename)
                         else:
                             raise
-
+                        
+                 
+                # Whatever the value of "timeout", we must sleep a little
+                time.sleep(0.9) # TODO - PAKAL - make this use global parameters !
+                  
             else: # success, we exit the loop
 
                 try_again = False
@@ -252,6 +263,8 @@ class unixFileIO(AbstractFileIO):
         
         (length, offset, whence) = self._fcntl_convert_file_range_arguments(length, offset, whence)
         try:
+            import multiprocessing
+            print "---------->", multiprocessing.current_process().name, " UNLOCKED ", (fcntl.LOCK_UN, length, offset, whence)
             unix.lockf(self._fileno, fcntl.LOCK_UN, length, offset, whence)
         except IOError:
             raise # are there special cases to handle ?

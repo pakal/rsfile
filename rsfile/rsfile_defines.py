@@ -1,4 +1,4 @@
-
+#-*- coding: utf-8 -*-
 
 from os import SEEK_SET, SEEK_CUR, SEEK_END
 

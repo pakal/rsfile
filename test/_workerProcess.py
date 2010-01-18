@@ -58,27 +58,26 @@ def chunk_writer_reader(targetFileName, multiprocessing_lock, character, ioOffse
                 
                 with targetFile.lock_chunk(**kwargs):
                     
-                    targetFile.seek(ioOffset)
                     
-                    if(os.getpid()%2 == 0):
+                    if(random.randint(0,1)):
+                        targetFile.seek(ioOffset)
                         targetFile.write(character*payLoad)
                     else:
                         for k in reversed(range(payLoad)):
-                            targetFile.seek(k)
+                            targetFile.seek(ioOffset+k)
                             targetFile.write(character)
                      
                     time.sleep(random.random()/5)
                     
                     targetFile.seek(ioOffset)
-                    
 
-                    print "*** %s reads %s bytes at offset %s ***"%(multiprocessing.current_process().name, payLoad, targetFile.tell())
-                                         
+                    print "Process %s reads %s bytes at offset %s ***"%(multiprocessing.current_process().name, payLoad, targetFile.tell())                   
                     
                     data = targetFile.read(payLoad)
                      
                     if(data != character*payLoad):
-                        sys.exit(3)
+                        print "PROBLEM IN %s: " % multiprocessing.current_process().name, data, "            ><            ", character*payLoad
+                        sys.exit(8)
                        
             except rsfile.LockingException:
                 if(mustAlwaysSucceedLocking):
@@ -86,7 +85,9 @@ def chunk_writer_reader(targetFileName, multiprocessing_lock, character, ioOffse
                 else:
                     #print "couldnt lock file, ok..."
                     pass
-
+    sys.exit(0)
+    
+        
                 
                 
 def chunk_reader(targetFileName, multiprocessing_lock, character=None, ioOffset=0, payLoad=10000, mustAlwaysSucceedLocking=False, lockingKwargs={}):
@@ -134,23 +135,33 @@ def lock_tester(resultQueue, targetFileName, multiprocessing_lock, ioOffset=0, w
         """
         _init_streams(multiprocessing_lock)
         
-        with io.open(targetFileName,"rb", buffering=0)  as targetFile:
+        with io.open(targetFileName,"r+b", buffering=0)  as targetFile:
             
             targetFile.seek(ioOffset, whence)
             
             start = time.time()
             
             success = None
+            
+            
+            
             try:
                 with targetFile.lock_chunk(**lockingKwargs):
                     success = True
             except rsfile.LockingException:  
                 success = False
-                    
+            except BaseException, e: 
+                print "=======> ABNORMAL PROPAGATION OF ERROR : ", repr(e), " of ", type(e)
+                raise
+                  
             total = time.time() - start  # we let in float
             
-            resultQueue.put((multiprocessing.current_process().name, success, total))
-            resultQueue.close()
+            if isinstance(resultQueue, basestring):
+                with io.open(resultQueue, "ab", 0) as f:
+                    f.write("%s|%d|%f\n" % (multiprocessing.current_process().name, 1 if success else 0, total))
+            else:
+                resultQueue.put((multiprocessing.current_process().name, success, total))
+                resultQueue.close()
             
             sys.exit(0)
         
