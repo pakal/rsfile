@@ -27,6 +27,8 @@ else:
 # # # TODO list # # #
 
 """
+# TODo - discuss threads in multiprocessing when forking - why not spawn like win32 ??
+
 TODO : check if this is true, or if only dup2() descriptors have this effect :
 Locks are associated with processes. A process can only have one kind of lock set for each byte of a given file. 
 When any file descriptor for that file is closed by the process, all of the locks that process holds on that file 
@@ -69,6 +71,8 @@ a process exits, and are not inherited by child processes created using fork (se
 
 # file handle duplication or inheritance: warn about the filepointer sensitivity, which may cause big troubles if you don't lock files !!!
 
+
+# TODO - make streams picklable !!! Along with their LOCKS !!
 """
 when truncating file which is not writable :
  # CPython actually raises "[Errno 13] Permission denied", but well... err 9 is fine too - PAKAL WTF ????
@@ -186,7 +190,8 @@ def parse_advanced_args(path, mode, fileno, handle, closefd):
 
 
     
-def rsOpen(name=None, mode="R", buffering=None, encoding=None, errors=None, newline=None, fileno=None, handle=None, closefd=True, locking=LOCK_ALWAYS, timeout=None, thread_safe=True):
+def rsOpen(name=None, mode="R", buffering=None, encoding=None, errors=None, newline=None, fileno=None, handle=None, closefd=True, 
+            locking=LOCK_ALWAYS, timeout=None, thread_safe=True, mutex=None):
     
     """
     Warning : setting lockingFalse allows you to benefit from new-style modes without dealing with any automated locking, but be aware that in this configuration, 
@@ -201,7 +206,7 @@ def rsOpen(name=None, mode="R", buffering=None, encoding=None, errors=None, newl
     thread_safe : if true, wraps the top-most stream object into a thread-safe interface
     """
     
-    # TODO - PYCONTRACT !!!
+    # TODO - PYCONTRACT !!! check that no mutex if not thread-safe
     
     # Quick type checking
     if name and not isinstance(name, (basestring, int)):
@@ -273,7 +278,7 @@ def rsOpen(name=None, mode="R", buffering=None, encoding=None, errors=None, newl
     if buffering == 0:
         if extended_kwargs["binary"]:
             if thread_safe:
-                return ThreadSafeWrapper(raw)
+                return ThreadSafeWrapper(raw, mutex=mutex)
             else:
                 return raw
         raise ValueError("can't have unbuffered text I/O")
@@ -289,7 +294,7 @@ def rsOpen(name=None, mode="R", buffering=None, encoding=None, errors=None, newl
     
     if extended_kwargs["binary"]:
         if thread_safe:
-            return ThreadSafeWrapper(buffer)
+            return ThreadSafeWrapper(buffer, mutex=mutex)
         else:
             return buffer
         
@@ -297,7 +302,7 @@ def rsOpen(name=None, mode="R", buffering=None, encoding=None, errors=None, newl
     text.mode = mode
     
     if thread_safe:
-        return ThreadSafeWrapper(text)    
+        return ThreadSafeWrapper(text, mutex=mutex)    
     else:
         return text
     
