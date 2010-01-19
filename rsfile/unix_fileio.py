@@ -1,6 +1,6 @@
 #-*- coding: utf-8 -*-
 
-import sys, os, functools, errno, time
+import sys, os, functools, errno, time, threading
 from abstract_fileio import AbstractFileIO
 import rsfile_defines as defs
 
@@ -15,8 +15,8 @@ class lock_registry(object):
     
     _original_pid = os.getpid()
     
-    # keys : file descriptors
-    # values : event + list of locked ranges (in slice notation) - we don't care if these are exclusive or shared !
+    # keys : file uid
+    # values : event + list of locked ranges [fd, exclusive, start, end] where end=None means 'infinity'
     _lock_registry = {} 
     
     mutex = threading.lock()
@@ -32,18 +32,32 @@ class lock_registry(object):
         cls._original_pid = os.getpid()
     
     @classmethod
-    def can_lock_range(cls, fd, offset, length, blocking):
+    def _can_lock_range(cls, uid, new_fd, new_exclusive, new_start, new_length, blocking):
+        # unprotected method - beware
+        if not cls._lock_registry.has_key(uid):
+            cls._lock_registry[uid] = (threading.Condition(cls.mutex), [])
         
+        new_end = (start+length) if length else None # None -> infinity
+        for (fd, exclusive, start, end) in cls._lock_registry[uid][1]:
+            
+            if
+            max_start = max(start, new_start)
+            
+            min_end = end
+            if min_end is None or (new_end is not None and new_end<min_end):
+                min_end = new_end
+            
+            if min_end is None or max_start < min_end: # areas are overlapping
         
     @classmethod
     def lock_file(cls, fd, operation, offset, length):
         with cls.mutex:
             if os.getpid() != cls._original_pid:
                 cls._reset_registry()
-        
-        if 
-    
-    
+            
+            stats = unix.fstat(fd)
+            uid = (stats.st_dev, stats.st_ino)
+            
     
 
 

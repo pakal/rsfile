@@ -209,8 +209,6 @@ class TestSafeFile(unittest.TestCase):
         
             with targetFile.lock_chunk(offset=lockedByteAbsoluteOffset, length=1, timeout=0) :          
             
-
-            
             
                 target = _workerProcess.lock_tester
                 
@@ -262,7 +260,8 @@ class TestSafeFile(unittest.TestCase):
                     process.daemon = True # we don't want them to wander around after the tests are over...
                     process.start()
             
-                time.sleep(10) # we wait until all subprocess timeout except the last one
+                
+                time.sleep(11) # we wait until all subprocess timeout except the last one
                 
         # we release the bit lock and the file handle  
         for process in self.processList:
@@ -289,19 +288,19 @@ class TestSafeFile(unittest.TestCase):
             
             if process_name == process1.name :
                 self.assertEqual(locking_is_successful, False)
-                self.assertTrue(time_spent < 3)
+                self.assertTrue(time_spent < 3, "Timespent is %f"%time_spent)
             elif process_name == process2.name :
                 self.assertEqual(locking_is_successful, False)
-                self.assertTrue(2 < time_spent < 8)
+                self.assertTrue(2 < time_spent < 8, "Timespent is %f"%time_spent)
             elif process_name == process3.name :
                 self.assertEqual(locking_is_successful, True)
-                self.assertTrue( 7 < time_spent < 13)   
+                self.assertTrue( 7 < time_spent < 13, "Timespent is %f"%time_spent)   
             elif process_name == process4.name :
                 self.assertEqual(locking_is_successful, True)
-                self.assertTrue(time_spent < 2)
+                self.assertTrue(time_spent < 2, "Timespent is %f"%time_spent)
             elif process_name == process5.name :
                 self.assertEqual(locking_is_successful, True)
-                self.assertTrue(time_spent < 2)                       
+                self.assertTrue(time_spent < 2, "Timespent is %f"%time_spent)                       
             else:
                 self.fail("Unknown subprocess %s", process_name)
     

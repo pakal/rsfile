@@ -28,6 +28,8 @@ else:
 
 """
 # TODo - discuss threads in multiprocessing when forking - why not spawn like win32 ??
+# Todod - reproduce simulatneous access tests with this time threading module !
+# -> check tha tthe order of lock takings is OK too, and that the same handle can do lock and unlock at the same time via multithreading
 
 TODO : check if this is true, or if only dup2() descriptors have this effect :
 Locks are associated with processes. A process can only have one kind of lock set for each byte of a given file. 

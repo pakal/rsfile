@@ -160,11 +160,8 @@ def lock_tester(resultQueue, targetFileName, multiprocessing_lock, ioOffset=0, w
                     success = True
             except rsfile.LockingException:  
                 success = False
-            except BaseException, e: 
-                print "=======> ABNORMAL PROPAGATION OF ERROR : ", repr(e), " of ", type(e)
-                raise
                   
-            total = time.time() - start  # we let in float
+            total = time.time() - start  # we let it in float format
             
             if isinstance(resultQueue, basestring):
                 with io.open(resultQueue, "ab", 0) as f:
@@ -180,7 +177,7 @@ def lock_tester(resultQueue, targetFileName, multiprocessing_lock, ioOffset=0, w
             
 def inheritance_tester(read, write, append, fileno=None, handle=None):
         assert not (fileno and handle)
-        print >>sys.stderr, "Launching Worker Process inheritance_tester with fileno=%s and handle=%s !" % (fileno, handle)
+        #print >>sys.stderr, "Launching Worker Process inheritance_tester with fileno=%s and handle=%s !" % (fileno, handle)
         #sys.exit(99)        
         
         time.sleep(0.2)
