@@ -1,6 +1,6 @@
 #-*- coding: utf-8 -*-
 
-import sys, os, threading, collections, functools
+import sys, os, threading, multiprocessing, collections, functools
 from contextlib import contextmanager
 import io
 from io import RawIOBase
@@ -10,11 +10,21 @@ from io import RawIOBase
 
     
 class ThreadSafeWrapper(object):
-    """A quick wrapper, to ensure thread safety !"""
-    def __init__(self, wrapped_obj):
+    """A quick wrapper, to ensure thread safety !
+    If a threading or multiprocessing mutex is provided, it will be used for locking,
+    else a default threading.RLock instance gets created."""
+    def __init__(self, wrapped_obj, interprocess=False, mutex=None):
         self.wrapped_obj = wrapped_obj
-        self.mutex = threading.RLock()
+        self.interprocess = interprocess
         
+        if mutex is not None:
+            self.mutex = mutex
+        else:
+            if interprocess:
+                self.mutex = multiprocessing.RLock()
+            else:
+                self.mutex = threading.RLock()
+                
     def _secure_call(self, name, *args, **kwargs):
         with self.mutex:
             #print "protected!"
@@ -47,7 +57,7 @@ class ThreadSafeWrapper(object):
         """Context management protocol.  Calls close()"""
         self.close()
     
-        
+    # TODO - MAKE THIS STUFF PICKLABLE !!
         
         
         

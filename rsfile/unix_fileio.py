@@ -1,6 +1,6 @@
 #-*- coding: utf-8 -*-
 
-import sys, fcntl, functools, errno, time
+import sys, os, functools, errno, time
 from abstract_fileio import AbstractFileIO
 import rsfile_defines as defs
 
@@ -10,6 +10,43 @@ try:
 except ImportError:
     import rsbackends.unix_ctypes as unix
         
+
+class lock_registry(object):
+    
+    _original_pid = os.getpid()
+    
+    # keys : file descriptors
+    # values : event + list of locked ranges (in slice notation) - we don't care if these are exclusive or shared !
+    _lock_registry = {} 
+    
+    mutex = threading.lock()
+    
+    @classmethod
+    def _reset_registry(cls):
+        # unprotected method - beware
+        # required only when the current thread has just forked !
+        # we've lost all locks in the process, so just close pending file descriptors
+        for fd in cls._lock_registry.keys():
+            os.close(fd)
+        cls._lock_registry = {}
+        cls._original_pid = os.getpid()
+    
+    @classmethod
+    def can_lock_range(cls, fd, offset, length, blocking):
+        
+        
+    @classmethod
+    def lock_file(cls, fd, operation, offset, length):
+        with cls.mutex:
+            if os.getpid() != cls._original_pid:
+                cls._reset_registry()
+        
+        if 
+    
+    
+    
+
+
 
 class unixFileIO(AbstractFileIO):      
 
@@ -100,10 +137,10 @@ class unixFileIO(AbstractFileIO):
             
                 
             if not inheritable:
-                old_flags = fcntl.fcntl(self._fileno, fcntl.F_GETFD, 0);
-                if not (old_flags & fcntl.FD_CLOEXEC):
+                old_flags = unix.fcntl(self._fileno, unix.F_GETFD, 0);
+                if not (old_flags & unix.FD_CLOEXEC):
                     #print "PREVENTING INHERITANCE !!!"
-                    fcntl.fcntl(self._fileno, fcntl.F_SETFD, old_flags | fcntl.FD_CLOEXEC);
+                    unix.fcntl(self._fileno, unix.F_SETFD, old_flags | unix.FD_CLOEXEC);
             """
             if hidden:
                 unix.unlink()
@@ -205,12 +242,12 @@ class unixFileIO(AbstractFileIO):
         fd = self._fileno
         
         if(shared):
-            operation = fcntl.LOCK_SH
+            operation = unix.LOCK_SH
         else:
-            operation = fcntl.LOCK_EX
+            operation = unix.LOCK_EX
 
         if(timeout is not None):
-            operation |= fcntl.LOCK_NB
+            operation |= unix.LOCK_NB
 
         
         (length, offset, whence) = self._fcntl_convert_file_range_arguments(length, offset, whence)
@@ -265,8 +302,8 @@ class unixFileIO(AbstractFileIO):
         (length, offset, whence) = self._fcntl_convert_file_range_arguments(length, offset, whence)
         try:
             import multiprocessing
-            print "---------->", multiprocessing.current_process().name, " UNLOCKED ", (fcntl.LOCK_UN, length, offset, whence)
-            unix.lockf(self._fileno, fcntl.LOCK_UN, length, offset, whence)
+            print "---------->", multiprocessing.current_process().name, " UNLOCKED ", (unix.LOCK_UN, length, offset, whence)
+            unix.lockf(self._fileno, unix.LOCK_UN, length, offset, whence)
         except IOError:
             raise # are there special cases to handle ?
 
