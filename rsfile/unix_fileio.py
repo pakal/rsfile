@@ -15,6 +15,10 @@ class lock_registry(object):
     
     _original_pid = os.getpid()
     
+class lock_registry(object):
+    
+    _original_pid = os.getpid()
+    
     # keys : file uid
     # values : event + list of locked ranges [fd, exclusive, start, end] where end=None means 'infinity'
     _lock_registry = {} 
