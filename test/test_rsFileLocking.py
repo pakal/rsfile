@@ -73,25 +73,49 @@ class TestSafeFile(unittest.TestCase):
         """
         
         # Warning - on linux this might succeed - how to prevent that ?????????????????
-        with rsfile.rsOpen(self.dummyFileName, "WB", buffering=0, timeout=0) as f:
-            try:
-                with rsfile.rsOpen(self.dummyFileName, "WB", buffering=0, timeout=0) as g:
-                    pass
-            except rsfile.LockingException:
-                if sys.platform != 'win32':
-                    self.fail("Exclusively locking the same disk file twice from different open file objects shouldn't fail on unix")
-    
-            else:
+                     
+                    
+        # Locking from different open files
+        with rsfile.rsOpen(self.dummyFileName, "RB", buffering=0, timeout=0) as f:
+            
+            with rsfile.rsOpen(self.dummyFileName, "RB", buffering=0, timeout=0) as g:
+                pass # OK - shared locking
+            
+            # Exclusively locking the same disk file twice from different open file objects should fail
+            self.assertRaises(rsfile.LockingException, rsfile.rsOpen, self.dummyFileName, "WB", buffering=0, timeout=0)
+
+
+
+
+        with rsfile.rsOpen(self.dummyFileName, "RB", buffering=0, locking=rsfile.LOCK_NEVER) as f:
+            
+            f.lock_chunk(shared=True, timeout=0, length=1, offset=0, whence=os.SEEK_CUR)
+            f.lock_chunk(shared=False, timeout=0, length=1, offset=1, whence=os.SEEK_CUR)
+            f.lock_chunk(shared=True, timeout=0, length=3, offset=2, whence=os.SEEK_CUR)
+ 
+            print >>sys.stderr, "BLOCKING.............................."
+            # No double locking !
+            
+            self.assertRaises(RuntimeError, f.lock_chunk, shared=True, timeout=None, length=1, offset=0, whence=os.SEEK_CUR) 
+            self.assertRaises(RuntimeError, f.lock_chunk, shared=False, timeout=None, length=1, offset=0, whence=os.SEEK_CUR) 
+            
+            self.assertRaises(RuntimeError, f.lock_chunk, shared=True, timeout=0, length=1, offset=1, whence=os.SEEK_CUR) 
+            self.assertRaises(RuntimeError, f.lock_chunk, shared=False, timeout=0, length=1, offset=1, whence=os.SEEK_CUR)
+                       
+            self.assertRaises(RuntimeError, f.unlock_chunk, length=2, offset=0, whence=os.SEEK_CUR) # no lock merging !
+            self.assertRaises(RuntimeError, f.unlock_chunk, length=1, offset=3, whence=os.SEEK_CUR) # no lock splitting !
+            
+
+                        
+            # Todo - test locking with duplicate handles     
+            """                     
                 if sys.platform == 'win32':
                     self.fail("Exclusively locking the same disk file twice from different open file objects didn't fail on win32")
-    
+               if sys.platform != 'win32':
+                    self.fail("Exclusively locking the same disk file twice from different open file objects shouldn't fail on unix")
+                """
                 
-        with rsfile.rsOpen(self.dummyFileName, "RB", buffering=0, timeout=0) as f:
-            with rsfile.rsOpen(self.dummyFileName, "RB", buffering=0, timeout=0) as g:
-                pass # since it's a shared locking, this shoudl succeed !
 
-                                
-                
                 
                 
             
@@ -308,10 +332,10 @@ class TestSafeFile(unittest.TestCase):
                     
 
 if __name__ == '__main__':
-    unittest.main()
+    #unittest.main()
     
-    #suite = unittest.defaultTestLoader.loadTestsFromName("__main__.TestSafeFile.test_whence_and_timeout")
-    #unittest.TextTestRunner(verbosity=2).run(suite)
+    suite = unittest.defaultTestLoader.loadTestsFromName("__main__.TestSafeFile.test_intra_process_locking")
+    unittest.TextTestRunner(verbosity=2).run(suite)
 
     
     

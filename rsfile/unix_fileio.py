@@ -20,10 +20,10 @@ class lock_registry(object):
     _original_pid = os.getpid()
     
     # keys : file uid
-    # values : event + list of locked ranges [fd, exclusive, start, end] where end=None means 'infinity'
+    # values : event + list of locked ranges [fd, shared, start, end] where end=None means 'infinity'
     _lock_registry = {} 
     
-    mutex = threading.lock()
+    mutex = threading.Lock() # NOT reentrant !
     
     @classmethod
     def _reset_registry(cls):
@@ -36,22 +36,32 @@ class lock_registry(object):
         cls._original_pid = os.getpid()
     
     @classmethod
-    def _can_lock_range(cls, uid, new_fd, new_exclusive, new_start, new_length, blocking):
+    def _can_lock_range(cls, uid, new_fd, new_shared, new_start, new_length):
         # unprotected method - beware
         if not cls._lock_registry.has_key(uid):
             cls._lock_registry[uid] = (threading.Condition(cls.mutex), [])
+            return True # we're certain to obtain the lock, since the registry is empty for this file uid
         
-        new_end = (start+length) if length else None # None -> infinity
-        for (fd, exclusive, start, end) in cls._lock_registry[uid][1]:
+        new_end = (new_start+new_length) if new_length else None # None -> infinity
+        for (fd, shared, start, end) in cls._lock_registry[uid][1]:
             
-            if
+            if fd != new_fd and shared == new_shared== True:
+                continue # there won't be problems with shared locks from different file handles 
+            
+            
             max_start = max(start, new_start)
             
             min_end = end
-            if min_end is None or (new_end is not None and new_end<min_end):
+            if min_end is None or (new_end is not None and new_end < min_end):
                 min_end = new_end
             
             if min_end is None or max_start < min_end: # areas are overlapping
+                if fd == new_fd:
+                    raise RuntimeError("Same portion of file locked twice by the same file descriptor")
+                else:
+                    return False
+            else:
+                return True
         
     @classmethod
     def lock_file(cls, fd, operation, offset, length):
@@ -61,8 +71,10 @@ class lock_registry(object):
             
             stats = unix.fstat(fd)
             uid = (stats.st_dev, stats.st_ino)
+            res = self._can_lock_range(uid, new_fd, new_shared, new_start=offset, new_length=length)
             
-    
+             #raise defs.LockingException("Area already locked by another fiel descriptor from current process")
+             # TODO TODO TODO
 
 
 
