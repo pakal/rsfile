@@ -1,7 +1,7 @@
 #-*- coding: utf-8 -*-
 
 import sys, os, functools, errno, time, threading
-from abstract_fileio import AbstractFileIO
+from abstract_fileio import AbstractFileIO, IntraProcessLockRegistry
 import rsfile_defines as defs
 
 
@@ -11,70 +11,7 @@ except ImportError:
     import rsbackends.unix_ctypes as unix
         
 
-class lock_registry(object):
-    
-    _original_pid = os.getpid()
-    
-class lock_registry(object):
-    
-    _original_pid = os.getpid()
-    
-    # keys : file uid
-    # values : event + list of locked ranges [fd, shared, start, end] where end=None means 'infinity'
-    _lock_registry = {} 
-    
-    mutex = threading.Lock() # NOT reentrant !
-    
-    @classmethod
-    def _reset_registry(cls):
-        # unprotected method - beware
-        # required only when the current thread has just forked !
-        # we've lost all locks in the process, so just close pending file descriptors
-        for fd in cls._lock_registry.keys():
-            os.close(fd)
-        cls._lock_registry = {}
-        cls._original_pid = os.getpid()
-    
-    @classmethod
-    def _can_lock_range(cls, uid, new_fd, new_shared, new_start, new_length):
-        # unprotected method - beware
-        if not cls._lock_registry.has_key(uid):
-            cls._lock_registry[uid] = (threading.Condition(cls.mutex), [])
-            return True # we're certain to obtain the lock, since the registry is empty for this file uid
-        
-        new_end = (new_start+new_length) if new_length else None # None -> infinity
-        for (fd, shared, start, end) in cls._lock_registry[uid][1]:
-            
-            if fd != new_fd and shared == new_shared== True:
-                continue # there won't be problems with shared locks from different file handles 
-            
-            
-            max_start = max(start, new_start)
-            
-            min_end = end
-            if min_end is None or (new_end is not None and new_end < min_end):
-                min_end = new_end
-            
-            if min_end is None or max_start < min_end: # areas are overlapping
-                if fd == new_fd:
-                    raise RuntimeError("Same portion of file locked twice by the same file descriptor")
-                else:
-                    return False
-            else:
-                return True
-        
-    @classmethod
-    def lock_file(cls, fd, operation, offset, length):
-        with cls.mutex:
-            if os.getpid() != cls._original_pid:
-                cls._reset_registry()
-            
-            stats = unix.fstat(fd)
-            uid = (stats.st_dev, stats.st_ino)
-            res = self._can_lock_range(uid, new_fd, new_shared, new_start=offset, new_length=length)
-            
-             #raise defs.LockingException("Area already locked by another fiel descriptor from current process")
-             # TODO TODO TODO
+
 
 
 
@@ -257,10 +194,11 @@ class unixFileIO(AbstractFileIO):
         return unix.write(self._fileno, bytes)
     
     
-    def _fcntl_convert_file_range_arguments(self, length, offset, whence): # some normalization of arguments
+    def _fcntl_convert_file_range_arguments(self, length, abs_offset): # some normalization of arguments
+        
         if(length is None):
             length = 0 # maximal range for fcntl/lockf
-        return (length, offset, whence)
+        return (length, abs_offset)
 
         
     @_unix_error_converter
@@ -270,17 +208,21 @@ class unixFileIO(AbstractFileIO):
         LOCK_EX can only be used if the file descriptor refers to a file opened for writing."""
         
         fd = self._fileno
+        blocking = timeout is None
         
+
         if(shared):
             operation = unix.LOCK_SH
         else:
             operation = unix.LOCK_EX
 
-        if(timeout is not None):
+        if not blocking:
             operation |= unix.LOCK_NB
 
+
+        abs_offset = self._convert_relative_offset_to_absolute(offset, whence)
         
-        (length, offset, whence) = self._fcntl_convert_file_range_arguments(length, offset, whence)
+        (length, abs_offset) = self._fcntl_convert_file_range_arguments(length, abs_offset)
 
 
         start_time = time.time()
@@ -289,14 +231,25 @@ class unixFileIO(AbstractFileIO):
         while(try_again):
 
             try :
-                import multiprocessing
-                
-                unix.lockf(fd, operation, length, offset, whence)
-                print "---------->", multiprocessing.current_process().name, " LOCKED ", (operation, length, offset, whence)
-                
+                res = IntraProcessLockRegistry.register_file_lock(fd, shared, abs_offset, length, blocking)
+                if not res:
+                    raise unix.error(errno.EACCES, "Bytes already locked by same process")
+            
+                try:
+                    
+                    import multiprocessing
+                    print "---------->", multiprocessing.current_process().name, " LOCKED ", (operation, length, abs_offset, os.SEEK_SET)
+                    
+                    unix.lockf(fd, operation, length, abs_offset, os.SEEK_SET)
+
+                finally:
+                    res = IntraProcessLockRegistry.unregister_file_lock(fd, abs_offset, length)
+                    assert res # there shall be no problem, since arguments MUST be valid there
+                    
+                    
             except unix.error, e:
 
-                if(timeout is not None): # else, we try again indefinitely
+                if(not blocking): # else, we try again indefinitely
 
                     current_time = time.time()
 
@@ -314,7 +267,6 @@ class unixFileIO(AbstractFileIO):
                             raise defs.LockingException(error_code, title, filename)
                         else:
                             raise
-                        
                  
                 # Whatever the value of "timeout", we must sleep a little
                 time.sleep(0.9) # TODO - PAKAL - make this use global parameters !
@@ -323,20 +275,25 @@ class unixFileIO(AbstractFileIO):
 
                 try_again = False
 
-        return True
 
     @_unix_error_converter
     def _inner_file_unlock(self, length, offset, whence):
 
+        abs_offset = self._convert_relative_offset_to_absolute(offset, whence)
         
-        (length, offset, whence) = self._fcntl_convert_file_range_arguments(length, offset, whence)
+        (length, abs_offset) = self._fcntl_convert_file_range_arguments(length, abs_offset)
+        
         try:
+            res = IntraProcessLockRegistry.unregister_file_lock(fd, abs_offset, length)
+            if not res:
+                raise RuntimeError()
+            
             import multiprocessing
-            print "---------->", multiprocessing.current_process().name, " UNLOCKED ", (unix.LOCK_UN, length, offset, whence)
-            unix.lockf(self._fileno, unix.LOCK_UN, length, offset, whence)
+            print "---------->", multiprocessing.current_process().name, " UNLOCKED ", (unix.LOCK_UN, length, abs_offset, os.SEEK_SET)
+            
+            unix.lockf(self._fileno, unix.LOCK_UN, length, abs_offset, os.SEEK_SET)
         except IOError:
             raise # are there special cases to handle ?
 
-        return True
 
 rsFileIO = unixFileIO 

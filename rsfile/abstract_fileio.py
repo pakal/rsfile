@@ -59,7 +59,114 @@ class ThreadSafeWrapper(object):
     
     # TODO - MAKE THIS STUFF PICKLABLE !!
         
+
+
+
+
+
+
+class IntraProcessLockRegistry(object):
+    
+    _original_pid = os.getpid()
+    
+    # keys : file uid
+    # values : event + list of locked ranges [fd, shared, start, end] where end=None means 'infinity'
+    _lock_registry = {} 
+    
+    mutex = threading.Lock() # NOT reentrant !
+    
+    @classmethod
+    def _check_registry(cls):
+        # unprotected method - beware
         
+        # reset is required only when the current thread has just forked !
+        # we've then lost all locks in the forking, so just close pending file descriptors
+        
+        if os.getpid() != cls._original_pid:
+            for fd in cls._lock_registry.keys():
+                os.close(fd)
+            cls._lock_registry = {}
+            cls._original_pid = os.getpid()
+    
+    
+    @classmethod
+    def _try_locking_range(cls, uid, new_fd, new_shared, new_start, new_length):
+        # unprotected method - beware
+        if not cls._lock_registry.has_key(uid):
+            cls._lock_registry[uid] = (threading.Condition(cls.mutex), [])
+            return True # we're certain to obtain the lock, since the registry is empty for this file uid
+        
+        new_end = (new_start+new_length) if new_length else None # None -> infinity
+        for (fd, shared, start, end) in cls._lock_registry[uid][1]:
+            
+            if fd != new_fd and shared == new_shared== True:
+                continue # there won't be problems with shared locks from different file handles 
+            
+            max_start = max(start, new_start)
+            
+            min_end = end
+            if min_end is None or (new_end is not None and new_end < min_end):
+                min_end = new_end
+            
+            if min_end is None or max_start < min_end: # areas are overlapping
+                if fd == new_fd:
+                    raise RuntimeError("Same portion of file locked twice by the same file descriptor")
+                else:
+                    return False
+            else:
+                continue
+        
+        cls._lock_registry[uid][1].append((new_fd, new_shared, new_start, new_end)) # we register as owner of this lock inside this process
+        return True # no badly overlapping range was found
+    
+    
+    @classmethod
+    def _try_unlocking_range(cls, uid, new_fd, new_start, new_length):    
+        # unprotected method - beware
+        if not cls._lock_registry.has_key(uid):
+            return False
+        
+        new_end = (new_start+new_length) if new_length else None # None -> infinity
+        locks = cls._lock_registry[uid][1]
+        for index, (fd, shared, start, end) in enumerate(locks):
+            if (fd == new_fd and start == new_start and end == new_end):
+                del locks[index]
+                if not locks:
+                    del cls._lock_registry[uid] # we free the locking structure for that inode  # TODO - TO BE OPTIMIZED IF NEEDED #
+                else:
+                    cls._lock_registry[uid][0].notify() # we awake potential waiters
+                return True
+        
+        return False
+            
+         
+    
+    @classmethod
+    def register_file_lock(cls, uid, fd, shared, offset, length, blocking):
+        with cls.mutex:
+            
+            cls._check_registry()
+            
+            # we handle both blocking and non-blocking locks there
+            res = False
+            while not res:
+                res = cls._try_unlocking_range(uid, fd, shared, offset, length)
+                if res or not blocking:
+                    break
+                else:
+                    cls._lock_registry[uid][0].wait() # we wait on the condition until locks get removed
+ 
+            return res
+              
+    @classmethod
+    def unregister_file_lock(cls, uid, fd, offset, length):  
+        with cls.mutex:  
+            
+            cls._check_registry()
+            
+            res = cls._try_unlocking_range(uid, fd, offset, length)
+            return res
+
         
         
 class AbstractFileIO(RawIOBase):  
@@ -425,6 +532,18 @@ class AbstractFileIO(RawIOBase):
         """  
         
         self._inner_file_unlock(length=length, offset=offset, whence=whence)
+ 
+    
+    def _convert_relative_offset_to_absolute(self, offset, whence):
+        
+        if whence == os.SEEK_SET:
+            abs_offset = offset
+        elif whence == os.SEEK_CUR:
+            abs_offset = self._inner_tell() + offset
+        else:
+            abs_offset = self._inner_size() + offset
+        
+        return abs_offset
  
  
         

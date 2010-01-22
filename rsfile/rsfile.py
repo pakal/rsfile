@@ -51,7 +51,7 @@ a process exits, and are not inherited by child processes created using fork (se
 # TODO - implement thread safe and win32-compatible "umask" system for file creation, with "hidden" and "permissions" arguments offered !!!!
 #Todo - think about way of having full-locked fcntl files work together !!!!
 
-
+# TODO - warn about the fact that writing on read-locked portion by current process fails on win32, NOT unix
 # Todo : make errors explicit when closing streams, eg. if flush fails !!!! (buggy in current io)
 
 
