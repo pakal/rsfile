@@ -59,14 +59,14 @@ def chunk_writer_reader(targetFileName, multiprocessing_lock, character, ioOffse
             
             try:
                 
-                # doesn't work with partial functions - kwargs = dict(((key, value) for (key, value) in lockingKwargs.items() if key in targetFile.lock_chunk.func_code.co_varnames[1:]))
+                # doesn't work with partial functions - kwargs = dict(((key, value) for (key, value) in lockingKwargs.items() if key in targetFile.lock_file.func_code.co_varnames[1:]))
                 kwargs = lockingKwargs
                 kwargs['shared'] = False
                 
                 print "Process %s wanna lock file with args "%(multiprocessing.current_process().name), kwargs
                 
                 
-                with targetFile.lock_chunk(**kwargs):
+                with targetFile.lock_file(**kwargs):
                     
                     
                     if(random.randint(0,1)):
@@ -111,11 +111,11 @@ def chunk_reader(targetFileName, multiprocessing_lock, character=None, ioOffset=
             
             try:
             
-                    # doesn't work with new partial objects : kwargs = dict(((key, value) for (key, value) in lockingKwargs.items() if key in targetFile.lock_chunk.func_code.co_varnames[1:]))
+                    # doesn't work with new partial objects : kwargs = dict(((key, value) for (key, value) in lockingKwargs.items() if key in targetFile.lock_file.func_code.co_varnames[1:]))
                     kwargs = lockingKwargs
                     kwargs['shared'] = True      
                 
-                    with targetFile.lock_chunk(**kwargs):
+                    with targetFile.lock_file(**kwargs):
     
                         time.sleep(random.random()/10)
                         
@@ -156,7 +156,7 @@ def lock_tester(resultQueue, targetFileName, multiprocessing_lock, ioOffset=0, w
             
             
             try:
-                with targetFile.lock_chunk(**lockingKwargs):
+                with targetFile.lock_file(**lockingKwargs):
                     success = True
             except rsfile.LockingException:  
                 success = False

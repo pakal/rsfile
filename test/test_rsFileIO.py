@@ -369,13 +369,11 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
         # for ease of use, we just test binary unbuffered files...
         
         with rsfile.rsOpen(TESTFN, "RAEB", buffering=0, locking=rsfile.LOCK_NEVER) as f:
-            #self.assertEqual(f._full_file_locking_activated, True)
             self.assertEqual(f.readable(), True)
             self.assertEqual(f.writable(), True)
             self.assertEqual(f._append, True)
             self.assertEqual(f.size(), 0)
-            f.write("abcde")
-        self.assertEqual(f._full_file_locking_activated, False) # full file locking should automatically be removed on close            
+            f.write("abcde")          
 
         with rsfile.rsOpen(TESTFN, "RAEB", buffering=0) as f:
             #PAKAL TO REPUT self.assertEqual(f.size(), 0)
@@ -409,10 +407,10 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
         permutations = [(a,b,c) for a in bools for b in bools for c in bools if (a or b or c)]
         
         for (inheritance, EXPECTED_RETURN_CODE) in [(True, 4), (False, 5)]: 
-            print "STATUS : ", (inheritance, EXPECTED_RETURN_CODE)
+            #print "STATUS : ", (inheritance, EXPECTED_RETURN_CODE)
             for perm in permutations:
                 (read, write, append) = perm
-                print "->", perm
+                #print "->", perm
                 
                 kwargs = dict(read=read, write=write, append=append)
                 
@@ -452,9 +450,9 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
                     """
                     
                     myfile.seek(0, os.SEEK_END) # to fulfill the expectations of the worker process 
-                    print "we spawn" #r"C:\Python26\python.exe"
+                    #print >>sys.stderr, "we spawn" #r"C:\Python26\python.exe"
                     retcode = os.spawnv(os.P_WAIT, executable, pre_args+args)  # 1st argument must be the program itself !
-                    print >>sys.stderr, "spawn over"
+                    #print >>sys.stderr, "spawn over"
                     self.assertEqual(retcode, EXPECTED_RETURN_CODE, "Spawned process returned %d instead of %d"%(retcode, EXPECTED_RETURN_CODE))                    
                     
                 
@@ -526,12 +524,12 @@ class TestMiscStreams(unittest.TestCase):
             
             self.assertEqual(myfile.read(1), char)
             self.assertTrue(raw.tell() > 1) # read ahead buffer full
-            myfile.lock_chunk()
+            myfile.lock_file()
             self.assertEqual(raw.tell(), 1) # read ahead buffer reset
             self.assertEqual(myfile.read(1), char)
             # READ AHEAD BUFFER - print "----->{%s}" % myfile._read_buf
             self.assertTrue(raw.tell() > 2) # read ahead buffer full
-            myfile.unlock_chunk()
+            myfile.unlock_file()
             self.assertEqual(raw.tell(), 2) # read ahead buffer reset
             
             myfile.seek(0)

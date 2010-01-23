@@ -47,6 +47,26 @@ class unixFileIO(AbstractFileIO):
                     #print repr(e)str(e[1])+" - "+str(e[2
                     raise IOError(e[0], str(e[1]), str(self._name)), None, traceback
         return wrapper
+    
+    
+    @_unix_error_converter
+    def _purge_pending_related_file_descriptors(self):
+        """
+        Returns True iff this uid has no more locks left and data left, i/e really closing descriptors is OK.
+        """
+        
+        with IntraProcessLockRegistry.mutex:
+            
+            res = IntraProcessLockRegistry.uid_has_locks(self._uid)
+            if not res: # no more locks left for that uid
+                data_list = IntraProcessLockRegistry.remove_uid_data(self._uid)
+                for fd in data_list: # we close all pending file descriptors (which were left opened to prevent fcntl() lock autoremoving)
+                    try:
+                        unix.close(fd) 
+                    except EnvironmentError:
+                        pass
+            return not res
+    
         
         
     # # Private methods - no check is made on their argument or the file object state ! # #
@@ -108,6 +128,10 @@ class unixFileIO(AbstractFileIO):
                 if not (old_flags & unix.FD_CLOEXEC):
                     #print "PREVENTING INHERITANCE !!!"
                     unix.fcntl(self._fileno, unix.F_SETFD, old_flags | unix.FD_CLOEXEC);
+                    
+            self._lock_registry_inode = self._inner_uid()
+            self._lock_registry_descriptor = self._fileno
+            
             """
             if hidden:
                 unix.unlink()
@@ -122,8 +146,15 @@ class unixFileIO(AbstractFileIO):
         Warning - unlink official stdlib modules, this function may raise IOError !
         """
         if self._closefd:
-            unix.close(self._fileno) 
+            
+            with IntraProcessLockRegistry.mutex:
+                IntraProcessLockRegistry.add_uid_data(self._uid, self._fileno) 
+                res = self._purge_pending_related_file_descriptors()
+                if res:
+                    # we assume that there are chances for this to be the only handle pointing this precise file
+                    IntraProcessLockRegistry.delete_uid_entry(self._uid) 
 
+                         
 
     @_unix_error_converter
     def _inner_reduce(self, size): 
@@ -136,6 +167,7 @@ class unixFileIO(AbstractFileIO):
         # posix truncation is ALWAYS "zerofill"
         self._inner_seek(size, defs.SEEK_SET) # TODO BE REMOVED IN NEW VERSION !!!
         unix.ftruncate(self._fileno, size)
+
 
     @_unix_error_converter
     def _inner_sync(self, metadata): 
@@ -164,7 +196,8 @@ class unixFileIO(AbstractFileIO):
     @_unix_error_converter
     def _inner_uid(self):
         stats = unix.fstat(self._fileno)
-        return (stats.st_dev, stats.st_ino)
+        self._uid = (stats.st_dev, stats.st_ino)
+        return self._uid
  
     @_unix_error_converter
     def _inner_times(self):
@@ -193,107 +226,61 @@ class unixFileIO(AbstractFileIO):
     def _inner_write(self, bytes):
         return unix.write(self._fileno, bytes)
     
-    
-    def _fcntl_convert_file_range_arguments(self, length, abs_offset): # some normalization of arguments
-        
-        if(length is None):
-            length = 0 # maximal range for fcntl/lockf
-        return (length, abs_offset)
-
-        
+            
     @_unix_error_converter
-    def _inner_file_lock(self, shared, timeout, length, offset, whence):
+    def _inner_file_lock(self, length, abs_offset, blocking, shared):
 
         """ MEGAWARNING : On at least some systems, 
         LOCK_EX can only be used if the file descriptor refers to a file opened for writing."""
         
         fd = self._fileno
-        blocking = timeout is None
         
-
         if(shared):
             operation = unix.LOCK_SH
         else:
             operation = unix.LOCK_EX
-
+            
         if not blocking:
             operation |= unix.LOCK_NB
+        if length is None:
+            length = 0 # that's the "infinity" value for fcntl
 
-
-        abs_offset = self._convert_relative_offset_to_absolute(offset, whence)
+        unix.lockf(fd, operation, length, abs_offset, os.SEEK_SET) #  might raise errno.EACCES, errno.EAGAIN and ... ? TODO
         
-        (length, abs_offset) = self._fcntl_convert_file_range_arguments(length, abs_offset)
-
-
-        start_time = time.time()
-        try_again = True
-
-        while(try_again):
-
-            try :
-                res = IntraProcessLockRegistry.register_file_lock(fd, shared, abs_offset, length, blocking)
-                if not res:
-                    raise unix.error(errno.EACCES, "Bytes already locked by same process")
-            
-                try:
-                    
-                    import multiprocessing
-                    print "---------->", multiprocessing.current_process().name, " LOCKED ", (operation, length, abs_offset, os.SEEK_SET)
-                    
-                    unix.lockf(fd, operation, length, abs_offset, os.SEEK_SET)
-
-                finally:
-                    res = IntraProcessLockRegistry.unregister_file_lock(fd, abs_offset, length)
-                    assert res # there shall be no problem, since arguments MUST be valid there
-                    
-                    
-            except unix.error, e:
-
-                if(not blocking): # else, we try again indefinitely
-
-                    current_time = time.time()
-
-                    if(timeout <= current_time - start_time): # else, we try again until success or timeout
-
-                        (error_code, title) = e.args
-
-                        filename = "File"
-                        try:
-                            filename = str(self.name) # TODO - change this !!!
-                        except AttributeError:
-                            pass # surely a pseudo file object...
-
-                        if(error_code in (errno.EACCES, errno.EAGAIN)):
-                            raise defs.LockingException(error_code, title, filename)
-                        else:
-                            raise
-                 
-                # Whatever the value of "timeout", we must sleep a little
-                time.sleep(0.9) # TODO - PAKAL - make this use global parameters !
-                  
-            else: # success, we exit the loop
-
-                try_again = False
-
-
+        
     @_unix_error_converter
-    def _inner_file_unlock(self, length, offset, whence):
+    def _inner_file_unlock(self, length, abs_offset):
 
-        abs_offset = self._convert_relative_offset_to_absolute(offset, whence)
-        
-        (length, abs_offset) = self._fcntl_convert_file_range_arguments(length, abs_offset)
-        
+        if length is None:
+            length = 0 # that's the "infinity" value for fcntl
+    
         try:
-            res = IntraProcessLockRegistry.unregister_file_lock(fd, abs_offset, length)
-            if not res:
-                raise RuntimeError()
-            
-            import multiprocessing
-            print "---------->", multiprocessing.current_process().name, " UNLOCKED ", (unix.LOCK_UN, length, abs_offset, os.SEEK_SET)
-            
             unix.lockf(self._fileno, unix.LOCK_UN, length, abs_offset, os.SEEK_SET)
-        except IOError:
-            raise # are there special cases to handle ?
-
+        finally:
+            self._purge_pending_related_file_descriptors() # todo - optimize this out during unlock-on-close loop
+            
 
 rsFileIO = unixFileIO 
+
+
+
+
+
+
+
+"""
+    @_unix_error_converter
+    def _inner_register_file_lock(self, length, abs_offset, blocking, shared):
+        return IntraProcessLockRegistry.register_file_lock(self._uid, self._fileno, length, abs_offset, blocking, shared)
+
+    @_unix_error_converter
+    def _inner_unregister_file_lock(self, length, abs_offset):
+        with IntraProcessLockRegistry.mutex:
+            IntraProcessLockRegistry.unregister_file_lock(self._uid, self._fileno, length, abs_offset)
+            self._purge_pending_related_file_descriptors()
+    
+    @_unix_error_converter
+    def _inner_clean_lock_registy(self, length, abs_offset):
+        IntraProcessLockRegistry.unregister_file_lock(self._uid, self._fileno, length, abs_offset)
+            self._purge_pending_related_file_descriptors()
+       """

@@ -44,6 +44,7 @@ class BY_HANDLE_FILE_INFORMATION(object):
     pass
 from ctypes.wintypes import FILETIME
 
+
 def GetFileInformationByHandle(handle):
     """ pywin32 FILETIME structure is buggy !"""
     

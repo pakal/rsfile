@@ -73,6 +73,22 @@ a process exits, and are not inherited by child processes created using fork (se
 
 # file handle duplication or inheritance: warn about the filepointer sensitivity, which may cause big troubles if you don't lock files !!!
 
+"""
+TODO ADD :
+       O_CLOEXEC (Since Linux 2.6.23)
+              Enable the close-on-exec flag for the new file descriptor.  Specifying
+              this flag permits a program to avoid additional fcntl(2) F_SETFD
+              operations to set the FD_CLOEXEC flag.  Additionally, use of this flag
+              is essential in some multithreaded programs since using a separate
+              fcntl(2) F_SETFD operation to set the FD_CLOEXEC flag does not suffice
+              to avoid race conditions where one thread opens a file descriptor at
+              the same time as another thread does a fork(2) plus execve(2).
+
+    IMPORTANT
+    The pthread_atfork() function shall declare fork handlers to be called before and after fork(), in the context of the thread that called fork(). The prepare fork handler shall be called before fork() processing commences. The parent fork handle shall be called after fork() processing completes in the parent process. The child fork handler shall be called after fork() processing completes in the child process. If no handling is desired at one or more of these three points, the corresponding fork handler address(es) may be set to NULL.
+    The order of calls to pthread_atfork() is significant. The parent and child fork handlers shall be called in the order in which they were established by calls to pthread_atfork(). The prepare fork handlers shall be called in the opposite order.
+
+"""
 
 # TODO - make streams picklable !!! Along with their LOCKS !!
 """
@@ -250,7 +266,7 @@ def rsOpen(name=None, mode="R", buffering=None, encoding=None, errors=None, newl
         else:
             shared = True
         
-        print "we enforce file locking with %s - %s" %(shared, timeout)            
+        #print "we enforce file locking with %s - %s" %(shared, timeout)            
         raw.lock_file(shared=shared, timeout=timeout) # since it's a whole-file locking, auto-unlocking-on-close will be activated ! Cool !
     
     if extended_kwargs["truncate"]:    
@@ -344,7 +360,7 @@ def monkey_patch_original_io_module():
             return getattr(getattr(self, underlying_object), attribute_name)(*args, **kwargs) # we call the method of the underlying object
         return method_forwarder
     
-    new_methods = ("uid", "times", "size", "sync", "lock_file", "unlock_file", "lock_chunk", "unlock_chunk")
+    new_methods = ("uid", "times", "size", "sync", "lock_file", "unlock_file")
     reset_methods = new_methods[2:] # size, sync and locks need a flushing of buffers !
     for attr in new_methods:
         forwarder = generate_method_forwarder("raw", attr, must_reset=(attr in reset_methods))

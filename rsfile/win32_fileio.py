@@ -107,6 +107,9 @@ class win32FileIO(AbstractFileIO):
             if hasattr(handle, "Detach"): # pywin32
                 handle.Detach()
             
+            self._lock_registry_inode = self._handle # we don't care about real inode uid, since win32 already distinguishes which handle owns a lock
+            self._lock_registry_descriptor = self._handle
+            
 
     @_win32_error_converter
     def _inner_close_streams(self):
@@ -158,13 +161,14 @@ class win32FileIO(AbstractFileIO):
          nFileSizeLow, nNumberOfLinks, nFileIndexHigh, nFileIndexLow) """
         
         handle_info = win32.GetFileInformationByHandle(self._handle)
-        
+        device = handle_info.dwVolumeSerialNumber
         inode = utilities.double_dwords_to_pyint(handle_info.nFileIndexLow, handle_info.nFileIndexHigh)
         
-        if not handle_info.dwVolumeSerialNumber or not inode:
-            raise IOError(77, "Impossible to retrieve win32 device/file-id information") # Pakal - to be unified
+        if device <= 0 or inode <= 0: # File info  might be incomplete, according to MSDN
+            raise win32.error(win32.ERROR_NOT_SUPPORTED, "Impossible to retrieve win32 device/file-id information") # Pakal - to be unified
         
-        return (handle_info.dwVolumeSerialNumber, inode)
+        self._uid = (device, inode)
+        return self._uid
         
     
     @_win32_error_converter    
@@ -270,23 +274,19 @@ class win32FileIO(AbstractFileIO):
 
 
     # no need for @_win32_error_converter    
-    def _win32_convert_file_range_arguments(self, length, offset, whence):
+    def _win32_convert_file_range_arguments(self, length, abs_offset):
 
-        if offset is None:
-            offset = 0
+        if abs_offset is None:
+            abs_offset = 0
         
         if(not length): # 0 or None
             (nNumberOfBytesToLockLow, nNumberOfBytesToLockHigh) = (utilities.MAX_DWORD, utilities.MAX_DWORD)
         else:
             (nNumberOfBytesToLockLow, nNumberOfBytesToLockHigh) = utilities.pyint_to_double_dwords(length)
 
-        if(whence == defs.SEEK_CUR):
-            offset = offset + self._inner_tell()
-        elif(whence == defs.SEEK_END):
-            offset = offset + self._inner_size()
 
         overlapped = win32.OVERLAPPED() # contains ['Internal', 'InternalHigh', 'Offset', 'OffsetHigh', 'dword', 'hEvent', 'object']
-        (overlapped.Offset, overlapped.OffsetHigh) = utilities.pyint_to_double_dwords(offset)
+        (overlapped.Offset, overlapped.OffsetHigh) = utilities.pyint_to_double_dwords(abs_offset)
         overlapped.hEvent = 0
 
         return (nNumberOfBytesToLockLow, nNumberOfBytesToLockHigh, overlapped)
@@ -294,7 +294,7 @@ class win32FileIO(AbstractFileIO):
 
     
     @_win32_error_converter
-    def _inner_file_lock(self, shared, timeout, length, offset, whence):
+    def _inner_file_lock(self, length, abs_offset, blocking, shared):
 
         """
         # PAKAL - to remove - 
@@ -305,86 +305,31 @@ class win32FileIO(AbstractFileIO):
         hfile = self._handle
 
         flags = 0 if shared else win32.LOCKFILE_EXCLUSIVE_LOCK
-        if(timeout is not None):
+        if not blocking:
             flags |= win32.LOCKFILE_FAIL_IMMEDIATELY
 
-        (nNumberOfBytesToLockLow, nNumberOfBytesToLockHigh, overlapped) = self._win32_convert_file_range_arguments(length, offset, whence)
+        (nNumberOfBytesToLockLow, nNumberOfBytesToLockHigh, overlapped) = self._win32_convert_file_range_arguments(length, abs_offset)
 
-        start_time = time.time()
-        try_again = True
+        win32.LockFileEx(hfile, flags, nNumberOfBytesToLockLow, nNumberOfBytesToLockHigh, overlapped)
+        # error: 32 - ERROR_SHARING_VIOLATION - The process cannot access the file because it is being used by another process.
+        # error: 33 - ERROR_LOCK_VIOLATION - The process cannot access the file because another process has locked a portion of the file.
+        # error: 167 - ERROR_LOCK_FAILED - Unable to lock a region of a file.
+        # error: 307 - ERROR_INVALID_LOCK_RANGE - A requested file lock operation cannot be processed due to an invalid byte range. -> shouldn't happen due to previous value checks        
 
-        while(try_again):
 
-            try:
 
-                #print "lock calling win32 with args (%s, %s ,%s ,%s ,%s :(%s, %s))"%(hfile, flags, nNumberOfBytesToLockLow, 
-                #        nNumberOfBytesToLockHigh, overlapped, overlapped.Offset, overlapped.OffsetHigh)
-                print ">>>>>>> process tries locking file %s on range %u/%u (unsigned integers)"%(self._path, overlapped.Offset, overlapped.Offset+nNumberOfBytesToLockLow-1) 
-
-                win32.LockFileEx(hfile, flags, nNumberOfBytesToLockLow, nNumberOfBytesToLockHigh, overlapped)
-
-            except win32.error, exc_value:
-                #print repr(exc_value)
-                
-                if(timeout is not None): # else, we try again indefinitely
-
-                    current_time = time.time()
-
-                    if(timeout <= current_time - start_time): # here failure - else, we try again until success or timeout
-
-                        error_code, title = exc_value[0:2]
-                        filename = "File"
-                        try:
-                            filename = self.name #PAKAL - to change
-                        except AttributeError:
-                            pass # surely a pseudo file object...
-
-                        if error_code in (32, 33, 167, 307):
-                                # ### NAAAn mieux !!!!!!! winerror 
-                            # error: 32 - ERROR_SHARING_VIOLATION - The process cannot access the file because it is being used by another process.
-                            # error: 33 - ERROR_LOCK_VIOLATION - The process cannot access the file because another process has locked a portion of the file.
-                            # error: 167 - ERROR_LOCK_FAILED - Unable to lock a region of a file.
-                            # error: 307 - ERROR_INVALID_LOCK_RANGE - A requested file lock operation cannot be processed due to an invalid byte range. -> shouldn't happen due to previous value checks
-                            raise defs.LockingException(error_code, title, filename)
-                        else:
-                            # Q:  Are there other exceptions/codes we should be dealing with here?
-                            raise
-                
-                # Whatever the value of "timeout", we must sleep a little
-                time.sleep(0.1) # TODO - PAKAL - make this use global parameters !
-
-            else: # success, we exit the loop
-
-                try_again = False
-
-        return True
 
         
     @_win32_error_converter  
-    def _inner_file_unlock(self, length, offset, whence):
+    def _inner_file_unlock(self, length, abs_offset):
 
         hfile = self._handle
         
-        (nNumberOfBytesToLockLow, nNumberOfBytesToLockHigh, overlapped) = self._win32_convert_file_range_arguments(length, offset, whence)
+        (nNumberOfBytesToLockLow, nNumberOfBytesToLockHigh, overlapped) = self._win32_convert_file_range_arguments(length, abs_offset)
 
-        print >>sys.stderr, "-------------->", locals()    
-        #traceback.print_stack()
-        try:
-
-            #print "unlock calling win32 with args (%s ,%s ,%s ,%s :(%s, %s))"%(hfile, nNumberOfBytesToLockLow, nNumberOfBytesToLockHigh, overlapped, overlapped.Offset, overlapped.OffsetHigh)
-            print "Process unlocking file %s on range %u/%u<<<<<<<<<"%(self._path, overlapped.Offset+overlapped.OffsetHigh, overlapped.Offset+overlapped.OffsetHigh++nNumberOfBytesToLockLow+nNumberOfBytesToLockHigh-1) 
-            win32.UnlockFileEx(hfile, nNumberOfBytesToLockLow, nNumberOfBytesToLockHigh, overlapped)
-            
-        except win32.error, exc_value:
-            if exc_value[0] == 158:
-                # error: 158 - ERROR_NOT_LOCKED - The segment is already unlocked.
-                # To match the 'posix' implementation, silently ignore this error ???
-                raise # PAKAL - TODO - what should we raise here !!!
-            else:
-                # Q:  Are there other exceptions/codes we should be dealing with here?
-                raise
-
-        return True
+        win32.UnlockFileEx(hfile, nNumberOfBytesToLockLow, nNumberOfBytesToLockHigh, overlapped)
+        # error: 158 - ERROR_NOT_LOCKED - The segment is already unlocked.
+      
 
 
 rsFileIO = win32FileIO

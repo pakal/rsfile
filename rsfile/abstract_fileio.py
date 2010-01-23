@@ -1,10 +1,10 @@
 #-*- coding: utf-8 -*-
 
-import sys, os, threading, multiprocessing, collections, functools
+import sys, os, time, threading, multiprocessing, collections, functools
 from contextlib import contextmanager
 import io
 from io import RawIOBase
-
+import rsfile_defines as defs
 
 
 
@@ -58,8 +58,6 @@ class ThreadSafeWrapper(object):
         self.close()
     
     # TODO - MAKE THIS STUFF PICKLABLE !!
-        
-
 
 
 
@@ -70,87 +68,100 @@ class IntraProcessLockRegistry(object):
     _original_pid = os.getpid()
     
     # keys : file uid
-    # values : event + list of locked ranges [fd, shared, start, end] where end=None means 'infinity'
+    # values : event + (list of locked ranges [handle, shared, start, end] where end=None means 'infinity') + attached data
     _lock_registry = {} 
     
-    mutex = threading.Lock() # NOT reentrant !
+    mutex = threading.RLock()
     
     @classmethod
-    def _check_registry(cls):
+    def _check_forking(cls):
         # unprotected method - beware
         
         # reset is required only when the current thread has just forked !
-        # we've then lost all locks in the forking, so just close pending file descriptors
+        # we've then lost all locks in the forking, so just flush the registry
         
         if os.getpid() != cls._original_pid:
-            for fd in cls._lock_registry.keys():
-                os.close(fd)
             cls._lock_registry = {}
             cls._original_pid = os.getpid()
     
     
     @classmethod
-    def _try_locking_range(cls, uid, new_fd, new_shared, new_start, new_length):
+    def _ensure_entry_exists(cls, uid, create=False):
+        """
+        Returns True iff the entry existed before the call.
+        """
+        if cls._lock_registry.has_key(uid):
+            return True
+        else:
+            if create:
+                cls._lock_registry[uid] = [threading.Condition(cls.mutex), [], []]  # [condition, locks, data]       
+            return False
+            
+            
+    @classmethod
+    def _try_locking_range(cls, uid, new_handle, new_length, new_start, new_shared):
         # unprotected method - beware
-        if not cls._lock_registry.has_key(uid):
-            cls._lock_registry[uid] = (threading.Condition(cls.mutex), [])
-            return True # we're certain to obtain the lock, since the registry is empty for this file uid
         
         new_end = (new_start+new_length) if new_length else None # None -> infinity
-        for (fd, shared, start, end) in cls._lock_registry[uid][1]:
-            
-            if fd != new_fd and shared == new_shared== True:
-                continue # there won't be problems with shared locks from different file handles 
-            
-            max_start = max(start, new_start)
-            
-            min_end = end
-            if min_end is None or (new_end is not None and new_end < min_end):
-                min_end = new_end
-            
-            if min_end is None or max_start < min_end: # areas are overlapping
-                if fd == new_fd:
-                    raise RuntimeError("Same portion of file locked twice by the same file descriptor")
-                else:
-                    return False
-            else:
-                continue
         
-        cls._lock_registry[uid][1].append((new_fd, new_shared, new_start, new_end)) # we register as owner of this lock inside this process
+        if cls._ensure_entry_exists(uid, create=True):
+            
+            for (handle, shared, start, end) in cls._lock_registry[uid][1]:
+                
+                if handle != new_handle and shared == new_shared== True:
+                    continue # there won't be problems with shared locks from different file handles 
+                
+                max_start = max(start, new_start)
+                
+                min_end = end
+                if min_end is None or (new_end is not None and new_end < min_end):
+                    min_end = new_end
+                
+                if min_end is None or max_start < min_end: # areas are overlapping
+                    if handle == new_handle:
+                        raise RuntimeError("Same area of file locked twice by the same file descriptor")
+                    else:
+                        return False
+
+        cls._lock_registry[uid][1].append((new_handle, new_shared, new_start, new_end)) # we register as owner of this lock inside this process
         return True # no badly overlapping range was found
     
-    
+ 
     @classmethod
-    def _try_unlocking_range(cls, uid, new_fd, new_start, new_length):    
+    def _try_unlocking_range(cls, uid, new_handle, new_length, new_start):    
+        """
+        Retursn True if there are not locks left for that uid
+        """
+        
         # unprotected method - beware
-        if not cls._lock_registry.has_key(uid):
-            return False
+        if not cls._ensure_entry_exists(uid, create=False):
+            return True
         
         new_end = (new_start+new_length) if new_length else None # None -> infinity
         locks = cls._lock_registry[uid][1]
-        for index, (fd, shared, start, end) in enumerate(locks):
-            if (fd == new_fd and start == new_start and end == new_end):
+        for index, (handle, shared, start, end) in enumerate(locks):
+            if (handle == new_handle and start == new_start and end == new_end):
                 del locks[index]
                 if not locks:
-                    del cls._lock_registry[uid] # we free the locking structure for that inode  # TODO - TO BE OPTIMIZED IF NEEDED #
+                    return True
                 else:
                     cls._lock_registry[uid][0].notify() # we awake potential waiters
-                return True
-        
-        return False
+                    return False
+      
+        # no matching lock was found
+        raise RuntimeError("Trying to unlock a file area not owned by this handle")
             
-         
     
     @classmethod
-    def register_file_lock(cls, uid, fd, shared, offset, length, blocking):
+    def register_file_lock(cls, uid, handle, length, offset, blocking, shared):
         with cls.mutex:
             
-            cls._check_registry()
+            cls._check_forking()
             
             # we handle both blocking and non-blocking locks there
             res = False
             while not res:
-                res = cls._try_unlocking_range(uid, fd, shared, offset, length)
+                res = cls._try_locking_range(uid, handle, length, offset, shared)
                 if res or not blocking:
                     break
                 else:
@@ -158,15 +169,91 @@ class IntraProcessLockRegistry(object):
  
             return res
               
+              
     @classmethod
-    def unregister_file_lock(cls, uid, fd, offset, length):  
+    def unregister_file_lock(cls, uid, handle, length, offset):  
         with cls.mutex:  
             
-            cls._check_registry()
+            cls._check_forking()
             
-            res = cls._try_unlocking_range(uid, fd, offset, length)
-            return res
+            return cls._try_unlocking_range(uid, handle, length, offset)
 
+
+    @classmethod
+    def remove_file_locks(cls, uid, new_handle):
+        with cls.mutex:  
+            
+            cls._check_forking()
+            
+            if not cls._ensure_entry_exists(uid, create=False):
+                return []
+            
+            removed_locks = []
+            remaining_locks = []
+            for record in cls._lock_registry[uid][1]:
+                if record[0] == new_handle:
+                    removed_locks.append(record)
+                else:
+                    remaining_locks.append(record)
+                    
+            cls._lock_registry[uid][1] = remaining_locks
+            
+            return removed_locks
+
+
+    @classmethod
+    def delete_uid_entry(cls, uid):
+        """
+        Returns True iff there was well a structure to delete.
+        Raise RuntimeError if locks or data were remaining for this uid.
+        """
+        with cls.mutex:  
+            
+            cls._check_forking()
+            
+            if not cls._ensure_entry_exists(uid, create=False):
+                return False
+            else:
+                if cls._lock_registry[uid][1] or cls._lock_registry[uid][2]:
+                    raise RuntimeError("Trying to delete a lock registry structure with locks/data remaining.")
+                del cls._lock_registry[uid]
+                return True
+        
+    @classmethod
+    def add_uid_data(cls, uid, data):
+        with cls.mutex:  
+            
+            cls._check_forking()
+            
+            cls._ensure_entry_exists(uid, create=True)
+            cls._lock_registry[uid][2].append(data)
+                
+    @classmethod
+    def remove_uid_data(cls, uid):
+        with cls.mutex:  
+            
+            cls._check_forking()
+            
+            if cls._ensure_entry_exists(uid, create=False):
+                data = cls._lock_registry[uid][2]
+                cls._lock_registry[uid][2] = []
+                return data
+            else:
+                return []
+                
+    @classmethod
+    def uid_has_locks(cls, uid):
+        with cls.mutex:  
+            
+            cls._check_forking()        
+            
+            if cls._lock_registry.has_key(uid) and cls._lock_registry[1]:
+                return True
+            else:
+                return False
+        
+        
+        
         
         
 class AbstractFileIO(RawIOBase):  
@@ -232,7 +319,6 @@ class AbstractFileIO(RawIOBase):
         # about multithreading and other concurrency issues ?????
         self._multi_syscall_lock = threading.Lock() # Pakal - shouldn't it be removed after full locking enforcement ????
         
-        self._full_file_locking_activated = False # if set to True, we must unlock() the whole file on close
         
         # variables to determine future write/read operations 
         self._seekable = True
@@ -242,7 +328,7 @@ class AbstractFileIO(RawIOBase):
         
         self._synchronized = synchronized
         self._inheritable = inheritable
-        self._hidden = hidden
+        self._hidden = hidden # TO BE REMOVED - DEPRECATED
     
 
         self._name = None # 'name' : descriptor exposed just for retrocompatibility !!!
@@ -259,9 +345,15 @@ class AbstractFileIO(RawIOBase):
             except EnvironmentError: # weirdo path, just make it absolue...
                 self._path = os.path.abspath(path)
         
+        
+        self._uid = None # unique identifier of the file, eg. (device, inode) pair
         self._fileno = None # C style file descriptor, might be created only on request
         self._handle = None # native platform handle other than fileno - if existing
         self._closefd = closefd        
+        
+        # These two keys are used to identify the file and handle near the intra process lock registry
+        self._lock_registry_inode = None
+        self._lock_registry_descriptor = None
         
         self._inner_create_streams(**kwargs)
 
@@ -275,11 +367,16 @@ class AbstractFileIO(RawIOBase):
             if not self.closed:
                 
                 RawIOBase.close(self) # we first mark the stream as closed... it flushes, also.
-                
-                if self._full_file_locking_activated:
-                    self.unlock_file() # we must use the public function, not to bypass whole_locking logic !              
-            
-                self._inner_close_streams()
+
+                # Unlock-On-Close and fcntl() safety mechanisms
+                with IntraProcessLockRegistry.mutex:
+                    
+                    for (handle, shared, start, end) in IntraProcessLockRegistry.remove_file_locks(self._lock_registry_inode, self._lock_registry_descriptor):
+                        #print ">>>>>>>> ", (handle, shared, start, end)
+                        length = None if end is None else (end-start)
+                        self._inner_file_unlock(length, start)
+                    
+                    self._inner_close_streams()
 
 
     def seekable(self):
@@ -340,7 +437,10 @@ class AbstractFileIO(RawIOBase):
         a filesystem entry and make it point to different nodes, while streams born from that path are in use.  
         """
         self._checkClosed()
-        return self._inner_uid()
+        if self._uid is not None:
+            return self._uid
+        else:
+            return self._inner_uid()
     
     def times(self):
         """Returns a FileTimes instance with portable file time attributes, as integers or floats. 
@@ -386,7 +486,7 @@ class AbstractFileIO(RawIOBase):
         self._checkWritable()
         
         if not isinstance(buffer, (bytes, bytearray)):
-             raise TypeError("Only buffer-like objects can be written to raw files, not %s objects" % type(buffer))
+            raise TypeError("Only buffer-like objects can be written to raw files, not %s objects" % type(buffer))
                 
         return self._inner_write(buffer)
 
@@ -439,30 +539,18 @@ class AbstractFileIO(RawIOBase):
         self._inner_sync(metadata)        
 
 
+
+
+
+    
     @contextmanager
-    def _fullLockRemover(self):
+    def _lock_remover(self, length, offset, whence):
         # we do nothing on __enter__()
         yield
         # we unlock on __exit__()
-        self.unlock_file() 
-      
+        self.unlock_file(length=length, offset=offset, whence=whence) 
     
-    def lock_file(self, shared=False, timeout=None):
-        
-        self._inner_file_lock(shared, timeout, None, 0, os.SEEK_SET) # we lock the whole data 
-        # no exception was raised ? Cool...
-        self._full_file_locking_activated = True
-        return self._fullLockRemover()  
-       
-    
-    @contextmanager
-    def _chunkLockRemover(self, length, offset, whence):
-        # we do nothing on __enter__()
-        yield
-        # we unlock on __exit__()
-        self.unlock_chunk(length=length, offset=offset, whence=whence) 
-            
-    def lock_chunk(self, shared=False, timeout=None, length=None, offset=0, whence=os.SEEK_SET):
+    def lock_file(self, timeout=None, length=None, offset=0, whence=os.SEEK_SET, shared=None):
         """Locks the whole file or a portion of it, depending on the arguments provided.
         
         If shared is True, the lock is a "reader", non-exclusive lock, which can be shared by several 
@@ -508,20 +596,74 @@ class AbstractFileIO(RawIOBase):
         
         """
         
-        self._inner_file_lock(shared=shared, timeout=timeout, length=length, offset=offset, whence=whence) 
+        if shared is None:
+            if self._writable:
+                shared = False
+            else:
+                shared = True
+        
+        if not shared and not self._writable:
+            raise IOError("Can't obtain exclusive lock on non-writable stream") # TODO - improve this exception
+        
+        # TODO - PYCONTRACT THIS !!!
+
+        
+        abs_offset = self._convert_relative_offset_to_absolute(offset, whence)      
+        blocking = timeout is None
+        
+        start_time = time.time()
+        def check_timeout(env_error):
+            """
+            If the timeout has expired, raises the exception given as parameter.
+            Else, sleeps for a short period.
+            """
+        
+            if not blocking: # else, we try again indefinitely
+                delay = time.time() - start_time
+                if(delay >= timeout): # else, we try again until success or timeout
+                    (error_code, title) = e.args
+                    filename = getattr(self, 'name', 'Unkown File') # to be improved
+                    raise defs.LockingException(error_code, title, filename)
+            
+            time.sleep(1) # TODO - PAKAL - make this use global parameters !
             
 
-        return self._chunkLockRemover(length, offset, whence)
-    
-    
-    
-    def unlock_file(self):
-        self._inner_file_unlock(None, 0, os.SEEK_SET) # we unlock the whole data 
-        # no exception was raised ? Cool...
-        self._full_file_locking_activated = False   
+        success = False
+
+        while(not success):     
+        
+        
+                # STEP ONE : acquiring ownership on the lock inside current process
+                res = IntraProcessLockRegistry.register_file_lock(self._lock_registry_inode, self._lock_registry_descriptor, length, abs_offset, blocking, shared)
+                if not res:
+                    check_timeout(IOError(100, "Current process has already locked this byte range")) # TODO CHANGE errno.EPERM
+                try:
+                    
+                    while(not success): 
+                        
+                        # STEP TWO : acquiring the lock for real, at kernel level
+                        try:
+                            
+                            #import multiprocessing
+                            #print "---------->", multiprocessing.current_process().name, " LOCKED ", (operation, length, abs_offset, os.SEEK_SET)
+                            
+                            self._inner_file_lock(length=length, abs_offset=abs_offset, blocking=blocking, shared=shared) 
+                            
+                            success = True # we leave the two loops
+                            
+                        except EnvironmentError, e:
+                            check_timeout(e)
+
+                finally:
+                    if not success:
+                        res = IntraProcessLockRegistry.unregister_file_lock(self._lock_registry_inode, self._lock_registry_descriptor, length, abs_offset)
+                        assert res # there shall be no problem, since arguments MUST be valid there                        
+
+        return self._lock_remover(length, abs_offset, os.SEEK_SET)     
+        
 
     
-    def unlock_chunk(self, length=None, offset=0, whence=os.SEEK_SET):
+    def unlock_file(self, length=None, offset=0, whence=os.SEEK_SET):
         """Unlocks a file portion previously locked by the same process. 
         
         The specifications of the locked area (absolute offset and length) must be the same as those used when calling locking methods,
@@ -531,9 +673,18 @@ class AbstractFileIO(RawIOBase):
         ??? PAKAL - TELL ABOUT EXCEPTIONS THERE
         """  
         
-        self._inner_file_unlock(length=length, offset=offset, whence=whence)
- 
+        #import multiprocessing
+        #print "---------->", multiprocessing.current_process().name, " UNLOCKED ", (unix.LOCK_UN, length, abs_offset, os.SEEK_SET)
+        abs_offset = self._convert_relative_offset_to_absolute(offset, whence) 
+        
+        with IntraProcessLockRegistry.mutex: # IMPORTANT - keep the registry lock during the whole operation
+            IntraProcessLockRegistry.unregister_file_lock(self._lock_registry_inode, self._lock_registry_descriptor, length, abs_offset)
+            self._inner_file_unlock(length, abs_offset)
+        
     
+    
+        
+
     def _convert_relative_offset_to_absolute(self, offset, whence):
         
         if whence == os.SEEK_SET:
@@ -544,6 +695,9 @@ class AbstractFileIO(RawIOBase):
             abs_offset = self._inner_size() + offset
         
         return abs_offset
+    
+    
+ 
  
  
         
@@ -591,11 +745,19 @@ class AbstractFileIO(RawIOBase):
     def _inner_write(self, buffer):
         self._unsupported("write")
 
-    def _inner_file_lock(self, shared, timeout, length, offset, whence):
-        self._unsupported("lock_chunk")
+    """
+    def _inner_register_file_lock(self, length, abs_offset, blocking, shared):
+        self._unsupported("register_file_lock")
 
-    def _inner_file_unlock(self, length, offset, whence):
-        self._unsupported("unlock_chunk")
+    def _inner_unregister_file_lock(self, length, abs_offset):
+        self._unsupported("unregister_file_lock")
+    """
+    
+    def _inner_file_lock(self, length, abs_offset, blocking, shared):
+        self._unsupported("file_lock")
+
+    def _inner_file_unlock(self, length, abs_offset):
+        self._unsupported("file_unlock")
 
         
         

@@ -87,23 +87,23 @@ class TestSafeFile(unittest.TestCase):
 
 
 
-        with rsfile.rsOpen(self.dummyFileName, "RB", buffering=0, locking=rsfile.LOCK_NEVER) as f:
+        with rsfile.rsOpen(self.dummyFileName, "WB", buffering=0, locking=rsfile.LOCK_NEVER) as f:
             
-            f.lock_chunk(shared=True, timeout=0, length=1, offset=0, whence=os.SEEK_CUR)
-            f.lock_chunk(shared=False, timeout=0, length=1, offset=1, whence=os.SEEK_CUR)
-            f.lock_chunk(shared=True, timeout=0, length=3, offset=2, whence=os.SEEK_CUR)
+            f.lock_file(shared=True, timeout=0, length=1, offset=0, whence=os.SEEK_CUR)
+            f.lock_file(shared=False, timeout=0, length=1, offset=1, whence=os.SEEK_CUR)
+            f.lock_file(shared=True, timeout=0, length=3, offset=2, whence=os.SEEK_CUR)
  
             print >>sys.stderr, "BLOCKING.............................."
             # No double locking !
             
-            self.assertRaises(RuntimeError, f.lock_chunk, shared=True, timeout=None, length=1, offset=0, whence=os.SEEK_CUR) 
-            self.assertRaises(RuntimeError, f.lock_chunk, shared=False, timeout=None, length=1, offset=0, whence=os.SEEK_CUR) 
+            self.assertRaises(RuntimeError, f.lock_file, shared=True, timeout=None, length=1, offset=0, whence=os.SEEK_CUR) 
+            self.assertRaises(RuntimeError, f.lock_file, shared=False, timeout=None, length=1, offset=0, whence=os.SEEK_CUR) 
             
-            self.assertRaises(RuntimeError, f.lock_chunk, shared=True, timeout=0, length=1, offset=1, whence=os.SEEK_CUR) 
-            self.assertRaises(RuntimeError, f.lock_chunk, shared=False, timeout=0, length=1, offset=1, whence=os.SEEK_CUR)
+            self.assertRaises(RuntimeError, f.lock_file, shared=True, timeout=0, length=1, offset=1, whence=os.SEEK_CUR) 
+            self.assertRaises(RuntimeError, f.lock_file, shared=False, timeout=0, length=1, offset=1, whence=os.SEEK_CUR)
                        
-            self.assertRaises(RuntimeError, f.unlock_chunk, length=2, offset=0, whence=os.SEEK_CUR) # no lock merging !
-            self.assertRaises(RuntimeError, f.unlock_chunk, length=1, offset=3, whence=os.SEEK_CUR) # no lock splitting !
+            self.assertRaises(RuntimeError, f.lock_file, length=2, offset=0, whence=os.SEEK_CUR) # no lock merging !
+            self.assertRaises(RuntimeError, f.lock_file, length=1, offset=3, whence=os.SEEK_CUR) # no lock splitting !
             
 
                         
@@ -231,7 +231,7 @@ class TestSafeFile(unittest.TestCase):
         with io.open(self.dummyFileName,"wb", 0) as targetFile:
             targetFile.write(character*payLoad)
         
-            with targetFile.lock_chunk(offset=lockedByteAbsoluteOffset, length=1, timeout=0) :          
+            with targetFile.lock_file(offset=lockedByteAbsoluteOffset, length=1, timeout=0) :          
             
             
                 target = _workerProcess.lock_tester
@@ -332,10 +332,10 @@ class TestSafeFile(unittest.TestCase):
                     
 
 if __name__ == '__main__':
-    #unittest.main()
+    unittest.main()
     
-    suite = unittest.defaultTestLoader.loadTestsFromName("__main__.TestSafeFile.test_intra_process_locking")
-    unittest.TextTestRunner(verbosity=2).run(suite)
+    #suite = unittest.defaultTestLoader.loadTestsFromName("__main__.TestSafeFile.test_intra_process_locking")
+    #unittest.TextTestRunner(verbosity=2).run(suite)
 
     
     
