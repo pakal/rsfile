@@ -77,10 +77,10 @@ class unixFileIO(AbstractFileIO):
         # TODO - For delete on close ->  unlink immediately 
         
         if handle is not None:
-            self._unsupported("Stream creation from a posix handle")
+            self._fileno = self._handle = handle
             
         if fileno is not None:
-            self._fileno = fileno
+            self._fileno = self._handle = fileno
         
         else: #we open the file with low level posix IO - the unix "open()"  function
         
@@ -189,9 +189,9 @@ class unixFileIO(AbstractFileIO):
     def _inner_fileno(self):
         return self._fileno
 
-    # Inherited :
-    #def _inner_handle(self):
-    #   self._unsupported("handle") # io.UnsupportedOperation subclasses IOError, so we're OK with the official specs
+    def _inner_handle(self):
+        return self._handle
+    
 
     @_unix_error_converter
     def _inner_uid(self):

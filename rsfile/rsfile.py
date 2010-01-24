@@ -74,6 +74,8 @@ a process exits, and are not inherited by child processes created using fork (se
 # file handle duplication or inheritance: warn about the filepointer sensitivity, which may cause big troubles if you don't lock files !!!
 
 """
+EN FAIT, DANS WINDOWS AUSSI LES HANDLES SONT DANS TABLE "per process"
+
 TODO ADD :
        O_CLOEXEC (Since Linux 2.6.23)
               Enable the close-on-exec flag for the new file descriptor.  Specifying
@@ -275,6 +277,8 @@ def rsOpen(name=None, mode="R", buffering=None, encoding=None, errors=None, newl
                 raw.truncate(0)
         else: # if already locked, or if we don't care about locks...
             raw.truncate(0)            
+        
+    
     
     if buffering is None:
         buffering = -1
@@ -296,7 +300,7 @@ def rsOpen(name=None, mode="R", buffering=None, encoding=None, errors=None, newl
     if buffering == 0:
         if extended_kwargs["binary"]:
             if thread_safe:
-                return ThreadSafeWrapper(raw, mutex=mutex)
+                return ThreadSafeWrapper(raw, mutex=mutex, interprocess=raw_kwargs["inheritable"])
             else:
                 return raw
         raise ValueError("can't have unbuffered text I/O")
@@ -312,7 +316,7 @@ def rsOpen(name=None, mode="R", buffering=None, encoding=None, errors=None, newl
     
     if extended_kwargs["binary"]:
         if thread_safe:
-            return ThreadSafeWrapper(buffer, mutex=mutex)
+            return ThreadSafeWrapper(buffer, mutex=mutex, interprocess=raw_kwargs["inheritable"])
         else:
             return buffer
         
@@ -320,7 +324,7 @@ def rsOpen(name=None, mode="R", buffering=None, encoding=None, errors=None, newl
     text.mode = mode
     
     if thread_safe:
-        return ThreadSafeWrapper(text, mutex=mutex)    
+        return ThreadSafeWrapper(text, mutex=mutex, interprocess=raw_kwargs["inheritable"])    
     else:
         return text
     

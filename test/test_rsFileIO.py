@@ -337,7 +337,7 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
 
 
 
-    def _testDeletions(self): # PAKAL - TODO - WARNING # tests both normal share-delete semantic, and delete-on-close flag
+    def ____testDeletions(self): # PAKAL - TODO - WARNING # tests both normal share-delete semantic, and delete-on-close flag
         
         # BIG PROBLEMS - share_delete doesnt work properly on win32, 
         # TODO - EST-ce que les locks vont affecter le share-delete ici ??????

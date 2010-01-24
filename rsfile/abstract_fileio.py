@@ -12,8 +12,8 @@ import rsfile_defines as defs
 class ThreadSafeWrapper(object):
     """A quick wrapper, to ensure thread safety !
     If a threading or multiprocessing mutex is provided, it will be used for locking,
-    else a default threading.RLock instance gets created."""
-    def __init__(self, wrapped_obj, interprocess=False, mutex=None):
+    else a multiprocessing or multithreading (depending on *interprocess* boolean value) will be created."""
+    def __init__(self, wrapped_obj, mutex=None, interprocess=False):
         self.wrapped_obj = wrapped_obj
         self.interprocess = interprocess
         
@@ -72,6 +72,9 @@ class IntraProcessLockRegistry(object):
     _lock_registry = {} 
     
     mutex = threading.RLock()
+    
+    datacount = 0 # TODO REMOVE
+    
     
     @classmethod
     def _check_forking(cls):
@@ -227,7 +230,10 @@ class IntraProcessLockRegistry(object):
             
             cls._ensure_entry_exists(uid, create=True)
             cls._lock_registry[uid][2].append(data)
-                
+            
+            cls.datacount += 1 # TO REMOVE
+            print ">>>>>>>>>>>>>>>>>>>>> ", cls.datacount
+            
     @classmethod
     def remove_uid_data(cls, uid):
         with cls.mutex:  
@@ -237,6 +243,7 @@ class IntraProcessLockRegistry(object):
             if cls._ensure_entry_exists(uid, create=False):
                 data = cls._lock_registry[uid][2]
                 cls._lock_registry[uid][2] = []
+                cls.datacount -= len(data) # TO REMOVE
                 return data
             else:
                 return []
@@ -759,5 +766,5 @@ class AbstractFileIO(RawIOBase):
     def _inner_file_unlock(self, length, abs_offset):
         self._unsupported("file_unlock")
 
-        
+
         

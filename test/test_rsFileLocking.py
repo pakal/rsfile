@@ -2,7 +2,7 @@
 from __future__ import with_statement
 
 
-import sys, os, unittest, tempfile, multiprocessing, random, string, time
+import sys, os, unittest, tempfile, threading, multiprocessing, Queue , random, string, time
 
 import _workerProcess
 
@@ -15,6 +15,26 @@ import rsfile
 rsfile.monkey_patch_original_io_module()
 
 RESULT_FILE = "@RESULTFILE"
+
+
+
+
+
+
+class ThreadWithExitCode(threading.Thread):
+    def run(self):
+        try:
+                threading.Thread.run(self)
+        except Exception:
+            self.exitcode = 1
+        except SystemExit as e:
+            self.exitcode = e.code
+        else:
+            self.exitcode = 0
+
+
+
+
 
 class TestSafeFile(unittest.TestCase):
 
@@ -29,15 +49,20 @@ class TestSafeFile(unittest.TestCase):
         self.processList = []
         
         try:
-            self.multiprocessing_lock = multiprocessing.Lock()
+            self.multiprocessing_lock = multiprocessing.RLock()
         except ImportError:
             self.multiprocessing_lock = None # *bsd platforms without proper synchronization primitives
-
+        
+        self.multithreading_lock = threading.RLock()
+        
     def tearDown(self):
         
         for process in self.processList:
-            process.terminate()
-        
+            try:
+                process.terminate()
+            except AttributeError:
+                pass # rocess might actually be a thread...
+            
         if os.path.exists(RESULT_FILE):
             os.remove(RESULT_FILE)
             
@@ -54,7 +79,7 @@ class TestSafeFile(unittest.TestCase):
         
         for process in self.processList:
             print "Process '%s' starting..."%process.name
-            process.daemon = True # we don't want them to wander aroudn after the tests are over...
+            process.daemon = True # we don't want them to wander around after the tests are over...
             process.start()
 
             
@@ -85,17 +110,15 @@ class TestSafeFile(unittest.TestCase):
             self.assertRaises(rsfile.LockingException, rsfile.rsOpen, self.dummyFileName, "WB", buffering=0, timeout=0)
 
 
-
-
         with rsfile.rsOpen(self.dummyFileName, "WB", buffering=0, locking=rsfile.LOCK_NEVER) as f:
             
             f.lock_file(shared=True, timeout=0, length=1, offset=0, whence=os.SEEK_CUR)
             f.lock_file(shared=False, timeout=0, length=1, offset=1, whence=os.SEEK_CUR)
             f.lock_file(shared=True, timeout=0, length=3, offset=2, whence=os.SEEK_CUR)
  
-            print >>sys.stderr, "BLOCKING.............................."
+           
             # No double locking !
-            
+        
             self.assertRaises(RuntimeError, f.lock_file, shared=True, timeout=None, length=1, offset=0, whence=os.SEEK_CUR) 
             self.assertRaises(RuntimeError, f.lock_file, shared=False, timeout=None, length=1, offset=0, whence=os.SEEK_CUR) 
             
@@ -119,9 +142,8 @@ class TestSafeFile(unittest.TestCase):
                 
                 
             
-    def test_whole_file_mixed_locking(self):
+    def _test_whole_file_mixed_locking(self, Executor, lock):
         """Mixed writer-readers and readers try to work on the whole file.
-        
         """
         
         for i in range(self.SUBPROCESS_COUNT):
@@ -134,17 +156,25 @@ class TestSafeFile(unittest.TestCase):
                 character = None
             
             lockingKwargs = {'timeout': None} # blocking lock attempts on the whole file
-            kwargs = {'targetFileName':self.dummyFileName, 'multiprocessing_lock':self.multiprocessing_lock, 'character':character, 'mustAlwaysSucceedLocking':True }
+            kwargs = {'targetFileName':self.dummyFileName, 'multiprocessing_lock':lock, 'character':character, 'mustAlwaysSucceedLocking':True }
         
-            process = multiprocessing.Process(name="%s %d"%(target.__name__, i), target=target, kwargs=kwargs)
+            process = Executor(name="%s %d"%(target.__name__, i), target=target, kwargs=kwargs)
             
             self.processList.append(process)
         
         self._start_and_check_subprocesses()
+    
+    
+    def test_whole_file_mixed_locking_multiprocessing(self):
+        self._test_whole_file_mixed_locking(multiprocessing.Process, self.multiprocessing_lock)
+        
+    def test_whole_file_mixed_locking_multithreading(self):
+        self._test_whole_file_mixed_locking(ThreadWithExitCode, self.multithreading_lock)        
         
         
         
-    def test_whole_file_readonly_locking(self):
+        
+    def _test_whole_file_readonly_locking(self, Executor, lock):
         """Checks that lots of reader processes can lock the whole file concurrently, without problem.
         """        
         
@@ -159,19 +189,27 @@ class TestSafeFile(unittest.TestCase):
             target = _workerProcess.chunk_reader
             
             lockingKwargs = {'timeout': 0}            
-            kwargs = {'targetFileName':self.dummyFileName, 'multiprocessing_lock':self.multiprocessing_lock, 'character':character, 'payLoad':payLoad, 
+            kwargs = {'targetFileName':self.dummyFileName, 'multiprocessing_lock':lock, 'character':character, 'payLoad':payLoad, 
                       'mustAlwaysSucceedLocking':True, 'lockingKwargs':lockingKwargs}
             
-            process = multiprocessing.Process(name="%s %d"%(target.__name__, i), target=target, kwargs=kwargs)
+            process = Executor(name="%s %d"%(target.__name__, i), target=target, kwargs=kwargs)
 
             self.processList.append(process)
         
         self._start_and_check_subprocesses()  
 
+
+    def test_whole_file_readonly_locking_multiprocessing(self):
+        self._test_whole_file_readonly_locking(multiprocessing.Process, self.multiprocessing_lock)
+        
+    def test_whole_file_readonly_locking_multithreading(self):
+        self._test_whole_file_readonly_locking(ThreadWithExitCode, self.multithreading_lock)         
         
         
         
-    def test_file_chunks_locking(self):
+        
+        
+    def _test_file_chunks_locking(self, Executor, lock):
         """Several process lock and write/read different chunks"""
         
         character = random.choice(string.ascii_lowercase)
@@ -187,7 +225,7 @@ class TestSafeFile(unittest.TestCase):
         """ # TO REMOVE
         # we add a reader process first  
         lockingKwargs = {'offset':0, 'length':0, 'timeout':None}
-        kwargs = {'targetFileName':self.dummyFileName, 'multiprocessing_lock':self.multiprocessing_lock, 'character':None, 'ioOffset':0, 'payLoad':totalPayLoad, 
+        kwargs = {'targetFileName':self.dummyFileName, 'multiprocessing_lock':lock, 'character':None, 'ioOffset':0, 'payLoad':totalPayLoad, 
                     'mustAlwaysSucceedLocking':True, 'lockingKwargs':lockingKwargs }
         process = multiprocessing.Process(name="READER", target=_workerProcess.chunk_reader, kwargs=kwargs) 
         self.processList.append(process)"""
@@ -200,17 +238,26 @@ class TestSafeFile(unittest.TestCase):
         
             lockingKwargs = {'offset':ioOffset, 'length':chunkSize, 'timeout':None}
         
-            kwargs = {'targetFileName':self.dummyFileName, 'multiprocessing_lock':self.multiprocessing_lock, 'character':character, 'ioOffset':ioOffset, 
+            kwargs = {'targetFileName':self.dummyFileName, 'multiprocessing_lock':lock, 'character':character, 'ioOffset':ioOffset, 
                       'payLoad':chunkSize, 'mustAlwaysSucceedLocking':True, 'lockingKwargs':lockingKwargs }
             
-            process = multiprocessing.Process(name="%s %d (%c)"%('ID', i, character), target=target, kwargs=kwargs) ##target.__name__
+            process = Executor(name="%s %d (%c)"%('ID', i, character), target=target, kwargs=kwargs) ##target.__name__
 
             self.processList.append(process)
  
-        self._start_and_check_subprocesses()          
+        self._start_and_check_subprocesses()   
+               
+               
+    def test_file_chunks_locking_multiprocessing(self):
+        self._test_file_chunks_locking(multiprocessing.Process, self.multiprocessing_lock)
+        
+    def test_file_chunks_locking_multithreading(self):
+        self._test_file_chunks_locking(ThreadWithExitCode, self.multithreading_lock) 
+        
+        
+              
     
-    
-    def test_whence_and_timeout(self):
+    def _test_whence_and_timeout(self, Executor, lock, QueueClass, multiprocess):
         """Checks that the different whence values, and the timeout argument, work OK.
         Also ensures that locks are not inherited by subprocesses !
         """        
@@ -220,7 +267,7 @@ class TestSafeFile(unittest.TestCase):
         lockedByteAbsoluteOffset = random.randint(1,payLoad-2) # we let room on each side to check for the proper delimitation of the locking 
         
         try:
-            results = multiprocessing.Queue() # will receive "(process_name, locking_is_successful, time_spent)" tuples from subprocesses
+            results = QueueClass() # will receive "(process_name, locking_is_successful, time_spent)" tuples from subprocesses
         except ImportError:
             results = RESULT_FILE
             with io.open(results, "wb", 0):
@@ -239,25 +286,25 @@ class TestSafeFile(unittest.TestCase):
                 fileOffset = 0 
                 gap = lockedByteAbsoluteOffset - fileOffset
                 lockingKwargs = {'shared': False, 'timeout': 0, 'length':1, 'offset':gap, 'whence':os.SEEK_SET}            
-                kwargs = {'resultQueue':results, 'targetFileName':self.dummyFileName, 'multiprocessing_lock':self.multiprocessing_lock, 'ioOffset':fileOffset, 
-                          'lockingKwargs':lockingKwargs}
-                process1 = multiprocessing.Process(name="%s %s"%(target.__name__, "SEEK_SET"), target=target, kwargs=kwargs)                    
+                kwargs = {'resultQueue':results, 'targetFileName':self.dummyFileName, 'multiprocessing_lock':lock, 'ioOffset':fileOffset, 
+                          'lockingKwargs':lockingKwargs, 'multiprocess':multiprocess}
+                process1 = Executor(name="%s %s"%(target.__name__, "SEEK_SET"), target=target, kwargs=kwargs)                    
                 self.processList.append(process1)               
                 
                 fileOffset = random.randint(0,payLoad-1)
                 gap = lockedByteAbsoluteOffset - fileOffset
                 lockingKwargs = {'shared': False, 'timeout': 5, 'length':1, 'offset':gap, 'whence':os.SEEK_CUR}            
-                kwargs = {'resultQueue':results, 'targetFileName':self.dummyFileName, 'multiprocessing_lock':self.multiprocessing_lock, 'ioOffset':fileOffset, 
-                          'lockingKwargs':lockingKwargs}
-                process2 = multiprocessing.Process(name="%s %s"%(target.__name__, "SEEK_CUR"), target=target, kwargs=kwargs)
+                kwargs = {'resultQueue':results, 'targetFileName':self.dummyFileName, 'multiprocessing_lock':lock, 'ioOffset':fileOffset, 
+                          'lockingKwargs':lockingKwargs, 'multiprocess':multiprocess}
+                process2 = Executor(name="%s %s"%(target.__name__, "SEEK_CUR"), target=target, kwargs=kwargs)
                 self.processList.append(process2)
                 
                 fileOffset = payLoad # that's the position of file ending
                 gap = lockedByteAbsoluteOffset - fileOffset # should be negative
                 lockingKwargs = {'shared': False, 'timeout': 15, 'length':1, 'offset':gap, 'whence':os.SEEK_END} # This one should succeed after waiting sufficiently !!           
-                kwargs = {'resultQueue':results, 'targetFileName':self.dummyFileName, 'multiprocessing_lock':self.multiprocessing_lock, 'ioOffset':fileOffset, 
-                          'lockingKwargs':lockingKwargs}
-                process3 = multiprocessing.Process(name="%s %s"%(target.__name__, "SEEK_END"), target=target, kwargs=kwargs)                    
+                kwargs = {'resultQueue':results, 'targetFileName':self.dummyFileName, 'multiprocessing_lock':lock, 'ioOffset':fileOffset, 
+                          'lockingKwargs':lockingKwargs, 'multiprocess':multiprocess}
+                process3 = Executor(name="%s %s"%(target.__name__, "SEEK_END"), target=target, kwargs=kwargs)                    
                 self.processList.append(process3)
     
                 
@@ -265,17 +312,17 @@ class TestSafeFile(unittest.TestCase):
                 fileOffset = 0 
                 gap = lockedByteAbsoluteOffset - fileOffset - 1
                 lockingKwargs = {'shared': False, 'timeout': 0, 'length':1, 'offset':gap, 'whence':os.SEEK_SET}            
-                kwargs = {'resultQueue':results, 'targetFileName':self.dummyFileName, 'multiprocessing_lock':self.multiprocessing_lock, 'ioOffset':fileOffset, 
-                          'lockingKwargs':lockingKwargs}
-                process4 = multiprocessing.Process(name="%s %s"%(target.__name__, "CHECK_BIT_BEFORE"), target=target, kwargs=kwargs)                    
+                kwargs = {'resultQueue':results, 'targetFileName':self.dummyFileName, 'multiprocessing_lock':lock, 'ioOffset':fileOffset, 
+                          'lockingKwargs':lockingKwargs, 'multiprocess':multiprocess}
+                process4 = Executor(name="%s %s"%(target.__name__, "CHECK_BIT_BEFORE"), target=target, kwargs=kwargs)                    
                 self.processList.append(process4)                   
                 fileOffset = 0 
                 # ---
                 gap = lockedByteAbsoluteOffset - fileOffset + 1
                 lockingKwargs = {'shared': False, 'timeout': 0, 'length':1, 'offset':gap, 'whence':os.SEEK_SET}            
-                kwargs = {'resultQueue':results, 'targetFileName':self.dummyFileName, 'multiprocessing_lock':self.multiprocessing_lock, 'ioOffset':fileOffset, 
-                          'lockingKwargs':lockingKwargs}
-                process5 = multiprocessing.Process(name="%s %s"%(target.__name__, "CHECK_BIT_AFTER"), target=target, kwargs=kwargs)                    
+                kwargs = {'resultQueue':results, 'targetFileName':self.dummyFileName, 'multiprocessing_lock':lock, 'ioOffset':fileOffset, 
+                          'lockingKwargs':lockingKwargs, 'multiprocess':multiprocess}
+                process5 = Executor(name="%s %s"%(target.__name__, "CHECK_BIT_AFTER"), target=target, kwargs=kwargs)                    
                 self.processList.append(process5)          
                 
                 
@@ -303,7 +350,8 @@ class TestSafeFile(unittest.TestCase):
         else:
             while not results.empty(): 
                 real_results.append(results.get())
-            results.close()
+            if hasattr(results, "close"):
+                results.close()
                 
                 
         for real_res in real_results:
@@ -326,9 +374,13 @@ class TestSafeFile(unittest.TestCase):
                 self.assertEqual(locking_is_successful, True)
                 self.assertTrue(time_spent < 2, "Timespent is %f"%time_spent)                       
             else:
-                self.fail("Unknown subprocess %s", process_name)
+                self.fail("Unknown subprocess %s" % process_name)
     
-           
+    def test_whence_and_timeout_multiprocessing(self):
+        self._test_whence_and_timeout(multiprocessing.Process, self.multiprocessing_lock, multiprocessing.Queue, multiprocess=True)
+        
+    def test_whence_and_timeout_multithreading(self):
+        self._test_whence_and_timeout(ThreadWithExitCode, self.multithreading_lock, Queue.Queue, multiprocess=False)       
                     
 
 if __name__ == '__main__':
