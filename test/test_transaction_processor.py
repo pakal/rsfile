@@ -9,7 +9,7 @@ Created on 22 déc. 2009
 import sys, os, shutil, stat, random, time
 import unittest, collections
 
-import transaction_processor as TP
+import rstransaction.transaction_processor as TP
 
 
 

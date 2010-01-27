@@ -535,7 +535,7 @@ class AbstractFileIO(RawIOBase):
     def flush(self):
         pass # that raw stream should have no buffering except the kernel's one, which gets flush by sync calls
     
-    def sync(self, metadata=True):
+    def sync(self, metadata=True, full_flush=True):
         """
         Synchronizes file data between kernel cache and physical disk. 
             If metadata is False, and if the platform supports it (win32 and Mac OS X don't), this sync is only a "datasync", i.e file metadata (file size, file times...) 
@@ -543,7 +543,7 @@ class AbstractFileIO(RawIOBase):
             since the file size increasement won't have become persistent.
             For a constant synchronization between the kernel cache and the disk oxyde, CF the "synchronized" argument of the stream opening.
         """
-        self._inner_sync(metadata)        
+        self._inner_sync(metadata, full_flush)        
 
 
 
@@ -722,7 +722,7 @@ class AbstractFileIO(RawIOBase):
     def _inner_extend(self, size, zero_fill): 
         self._unsupported("_inner_extend")
 
-    def _inner_sync(self, metadata):
+    def _inner_sync(self, metadata, full_flush):
         self._unsupported("sync")
         
     def _inner_fileno(self):

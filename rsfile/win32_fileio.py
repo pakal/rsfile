@@ -149,7 +149,8 @@ class win32FileIO(AbstractFileIO):
             
             
     @_win32_error_converter         
-    def _inner_sync(self, metadata):
+    def _inner_sync(self, metadata, full_flush):
+        # only one type of synchronization : full_flush + metadata
         win32.FlushFileBuffers(self._handle) 
     
     

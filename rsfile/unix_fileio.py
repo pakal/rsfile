@@ -170,20 +170,24 @@ class unixFileIO(AbstractFileIO):
 
 
     @_unix_error_converter
-    def _inner_sync(self, metadata): 
-        #TODO - refactor arguments with FULLSYNC or not !!!!!!
+    def _inner_sync(self, metadata, full_flush): 
+        
+        if full_flush: # full_flush is more important than metadata
+            try:
+                unix.fcntl(self._fileno, unix.F_FULLFSYNC, 0) # Mac OS X only
+                return
+            except unix.error:
+                pass
+            
         if not metadata:
             try:
-                # WARNING - file size will ALWAYS be updated if necessary to preserve data integrity, theoretically
+                # theoretically, file size will properly be updated, if it is necessary to preserve data integrity
                 unix.fdatasync(self._fileno) # not supported on Mac Os X
                 return
             except unix.error:
                 pass
         
-        try:
-            unix.fcntl(self._fileno, unix.F_FULLFSYNC, 0) 
-        except unix.error:
-            unix.fsync(self._fileno)
+        unix.fsync(self._fileno) # last attempt : metadata flush without full_sync guarantees
         
            
     def _inner_fileno(self):

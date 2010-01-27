@@ -71,8 +71,9 @@ a process exits, and are not inherited by child processes created using fork (se
 # Todo - advocate thread-safe interface, globalized check_closed() checking, and public interface only win32 error converter !!! @_win32_error_converter not on private methods !!
 # # exception BlockingIOError - to implement
 
-# file handle duplication or inheritance: warn about the filepointer sensitivity, which may cause big troubles if you don't lock files !!!
+# file handle duplication or inheritance: warn about the file pointer sensitivity, which may cause big troubles if you don't lock files !!! -> use interprocess mutex ! patch atfork()
 
+# ouvrir bug - multiprocessing module ne met pas en garde contre multithreading et thread-safety des synchronization primitives !
 """
 EN FAIT, DANS WINDOWS AUSSI LES HANDLES SONT DANS TABLE "per process"
 
