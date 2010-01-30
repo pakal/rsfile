@@ -6,21 +6,11 @@ import sys, os
 import functools
 import io
 
-from rsfile_defines import * # constants and base types
-from rsfileio_abstract import AbstractFileIO, ThreadSafeWrapper
-
-if sys.platform == 'win32':
-    try:
-        from rsfileio_win32 import RSFileIO
-        FILE_IMPLEMENTATION = "win32"
-    except Exception, e:
-        raise ImportError("No win32 backend available : %s" % e)
-else:
-    try:
-        from rsfileio_unix import RSFileIO
-        FILE_IMPLEMENTATION = "unix"
-    except Exception, e:
-        raise ImportError("No unix backend available : %s" % e)
+from rsfile_definitions import * # constants, base types and exceptions
+from rsfile_stream_layers import *
+from rsfile_factories import *
+from rsfile_utilities import *
+from rsfile_registries import get_default_safety_options, set_default_safety_options
 
 
 
@@ -129,7 +119,8 @@ def monkey_patch_original_io_module():
     
     # We implant proxies for new rawFileIo methods, in buffer and text base classes
     def generate_method_forwarder(underlying_object, attribute_name, must_reset):
-        @functools.wraps(getattr(AbstractFileIO, attribute_name))
+        import rsfileio_abstract
+        @functools.wraps(getattr(rsfileio_abstract.AbstractRSFileIO, attribute_name))
         def method_forwarder(self, *args, **kwargs):
             if must_reset:
                 self.seek(self.tell()) # Pakal - to change when io module fixed !!!

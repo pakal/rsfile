@@ -1,8 +1,8 @@
 #-*- coding: utf-8 -*-
 
 import sys, os, functools, errno, time, threading
-from rsfileio_abstract import AbstractFileIO, IntraProcessLockRegistry
-import rsfile_defines as defs
+from rsfileio_abstract import AbstractRSFileIO, IntraProcessLockRegistry
+import rsfile_definitions as defs
 
 
 try:
@@ -15,7 +15,7 @@ except ImportError:
 
 
 
-class unixFileIO(AbstractFileIO):      
+class unixFileIO(AbstractRSFileIO):      
 
     """
 

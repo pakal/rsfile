@@ -1,10 +1,11 @@
 
-
-
+import os
+import rsfile_definitions as defs
+from rsfile_stream_layers import *
 
     
 def rsOpen(name=None, mode="R", buffering=None, encoding=None, errors=None, newline=None, fileno=None, handle=None, closefd=True, 
-            locking=LOCK_ALWAYS, timeout=None, thread_safe=True, mutex=None):
+            locking=defs.LOCK_ALWAYS, timeout=None, thread_safe=True, mutex=None):
     
     """
     Warning : setting lockingFalse allows you to benefit from new-style modes without dealing with any automated locking, but be aware that in this configuration, 
@@ -54,7 +55,7 @@ def rsOpen(name=None, mode="R", buffering=None, encoding=None, errors=None, newl
     if extended_kwargs["truncate"] and not raw.writable(): 
         raise ValueError("Can't truncate file opened in read-only mode")
     
-    if locking == LOCK_ALWAYS:   
+    if locking == defs.LOCK_ALWAYS:   
         # we enforce file locking immediately
         if raw.writable():
             shared = False
@@ -65,7 +66,7 @@ def rsOpen(name=None, mode="R", buffering=None, encoding=None, errors=None, newl
         raw.lock_file(shared=shared, timeout=timeout) # since it's a whole-file locking, auto-unlocking-on-close will be activated ! Cool !
     
     if extended_kwargs["truncate"]:    
-        if locking == LOCK_AUTO:
+        if locking == defs.LOCK_AUTO:
             with raw.lock_file():
                 raw.truncate(0)
         else: # if already locked, or if we don't care about locks...
@@ -80,7 +81,7 @@ def rsOpen(name=None, mode="R", buffering=None, encoding=None, errors=None, newl
         buffering = -1
         line_buffering = True
     if buffering < 0:
-        buffering = DEFAULT_BUFFER_SIZE
+        buffering = defs.DEFAULT_BUFFER_SIZE
         try:
             bs = os.fstat(raw.fileno()).st_blksize # PAKAL - TO BE IMPROVED
         except (os.error, AttributeError):
@@ -93,31 +94,31 @@ def rsOpen(name=None, mode="R", buffering=None, encoding=None, errors=None, newl
     if buffering == 0:
         if extended_kwargs["binary"]:
             if thread_safe:
-                return ThreadSafeWrapper(raw, mutex=mutex, interprocess=raw_kwargs["inheritable"])
+                return RSThreadSafeWrapper(raw, mutex=mutex, interprocess=raw_kwargs["inheritable"])
             else:
                 return raw
         raise ValueError("can't have unbuffered text I/O")
     
     if raw.readable() and raw.writable():
-        buffer = io.BufferedRandom(raw, buffering)
+        buffer = RSBufferedRandom(raw, buffering)
     elif raw.writable():
-        buffer = io.BufferedWriter(raw, buffering)
+        buffer = RSBufferedWriter(raw, buffering)
     elif raw.readable():
-        buffer = io.BufferedReader(raw, buffering)
+        buffer = RSBufferedReader(raw, buffering)
     else:
         raise ValueError("unknown mode: %r" % mode)
     
     if extended_kwargs["binary"]:
         if thread_safe:
-            return ThreadSafeWrapper(buffer, mutex=mutex, interprocess=raw_kwargs["inheritable"])
+            return RSThreadSafeWrapper(buffer, mutex=mutex, interprocess=raw_kwargs["inheritable"])
         else:
             return buffer
         
-    text = io.TextIOWrapper(buffer, encoding, errors, newline, line_buffering)
+    text = RSTextIOWrapper(buffer, encoding, errors, newline, line_buffering)
     text.mode = mode
     
     if thread_safe:
-        return ThreadSafeWrapper(text, mutex=mutex, interprocess=raw_kwargs["inheritable"])    
+        return RSThreadSafeWrapper(text, mutex=mutex, interprocess=raw_kwargs["inheritable"])    
     else:
         return text
     

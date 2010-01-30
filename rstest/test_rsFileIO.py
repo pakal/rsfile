@@ -586,21 +586,21 @@ class TestMiscStreams(unittest.TestCase):
     def testReturnedStreamTypes(self):
     
         with rsfile.rsOpen(TESTFN, "RWB", buffering=0, thread_safe=True) as f:
-            self.assertTrue(isinstance(f, rsfile.ThreadSafeWrapper))
+            self.assertTrue(isinstance(f, rsfile.RSThreadSafeWrapper))
             f.write("abc")
         with rsfile.rsOpen(TESTFN, "RWB", buffering=0, thread_safe=False) as f:
             self.assertTrue(isinstance(f, io.RawIOBase))        
             f.write("abc")
             
         with rsfile.rsOpen(TESTFN, "RWB") as f:
-            self.assertTrue(isinstance(f, rsfile.ThreadSafeWrapper))
+            self.assertTrue(isinstance(f, rsfile.RSThreadSafeWrapper))
             f.write("abc")
         with rsfile.rsOpen(TESTFN, "RWB", thread_safe=False) as f:
             self.assertTrue(isinstance(f, io.BufferedIOBase))   
             f.write("abc")
             
         with rsfile.rsOpen(TESTFN, "RWT",) as f:
-            self.assertTrue(isinstance(f, rsfile.ThreadSafeWrapper))
+            self.assertTrue(isinstance(f, rsfile.RSThreadSafeWrapper))
             f.write(u"abc")
         with rsfile.rsOpen(TESTFN, "RWT", thread_safe=False) as f:
             self.assertTrue(isinstance(f, io.TextIOBase))     
@@ -610,7 +610,7 @@ class TestMiscStreams(unittest.TestCase):
     def testStreamUtilities(self):
         
         self.assertRaises(AssertionError, rsfile.write_to_file, TESTFN, "abc", mode="W")
-        self.assertRaises(ValueError, rsfile.write_to_file, TESTFN, "abc", must_exist=True, must_not_exist=True)
+        self.assertRaises(AssertionError, rsfile.write_to_file, TESTFN, "abc", must_exist=True, must_not_exist=True)
         self.assertRaises(IOError, rsfile.append_to_file, TESTFN, "abc", must_exist=True)        
         
         rsfile.write_to_file(TESTFN, "abcdef", sync=True, must_not_exist=True)

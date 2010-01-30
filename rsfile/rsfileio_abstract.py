@@ -4,19 +4,15 @@ import sys, os, time, threading, multiprocessing, collections, functools
 from contextlib import contextmanager
 import io
 from io import RawIOBase
-import rsfile_defines as defs
-
-
+import rsfile_definitions as defs
+from rsfile_registries import IntraProcessLockRegistry
 
 
 
 
 
         
-        
-        
-        
-class AbstractFileIO(RawIOBase):  
+class AbstractRSFileIO(RawIOBase):  
     """    GRANDE QUESTION : peut-on obtenir atomic appends on all platforms, en perdant la truncation ?????    """   
     
     def __init__(self,
