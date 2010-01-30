@@ -126,18 +126,18 @@ class TestRawFileViaWrapper(unittest.TestCase):
             # we reduce the file
             f.truncate(nbytes)
             self.assertEquals(f.size(), nbytes) 
-            self.assertEquals(f.tell(), f.size())    
+            self.assertEquals(f.tell(), pos)    
     
             # we extend the file, by default it should fill the space with zeros !
             f.truncate(10*nbytes)
             self.assertEquals(f.size(), 10*nbytes) 
-            self.assertEquals(f.tell(), f.size()) #TODO - CHANGE THIS BEHAVIOUR !!!!
+            self.assertEquals(f.tell(), pos) 
             
             #print "WE AVE CHOSEN ", x_written+nbytes+y_written
             # we try illegal, negative truncation
             self.assertRaises(IOError, f.truncate, -random.randint(1, 10))
             self.assertEquals(f.size(), 10*nbytes) 
-            self.assertEquals(f.tell(), f.size()) 
+            self.assertEquals(f.tell(), pos) 
 
             
         with io.open(TESTFN, "rb", buffering=0) as a:
@@ -317,23 +317,23 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
             f.write("-----")
 
 
-        f = rsfile.rsFileIO(**kargs)
+        f = rsfile.RSFileIO(**kargs)
         f.close()
         
         
         kargs["must_exist"] = False
         kargs["must_not_exist"] = True
-        self.assertRaises(IOError, rsfile.rsFileIO, **kargs)
+        self.assertRaises(IOError, rsfile.RSFileIO, **kargs)
 
 
         os.remove(TESTFN) # important
-        f = rsfile.rsFileIO(**kargs)
+        f = rsfile.RSFileIO(**kargs)
         f.close()
 
         os.remove(TESTFN) # important
         kargs["must_exist"] = True
         kargs["must_not_exist"] = False
-        self.assertRaises(IOError, rsfile.rsFileIO, **kargs)
+        self.assertRaises(IOError, rsfile.RSFileIO, **kargs)
 
 
 
@@ -421,7 +421,7 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
                     temp.write("ABCDEFG")
                     
                 
-                with rsfile.rsFileIO(TESTFN, inheritable=inheritance, **kwargs) as myfile:
+                with rsfile.RSFileIO(TESTFN, inheritable=inheritance, **kwargs) as myfile:
                                        
                     
                     if rsfile.FILE_IMPLEMENTATION == "win32":
@@ -465,7 +465,7 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
                      synchronized=True)
          
         string = "abcdefghijklmnopqrstuvwxyz"*1014*1024
-        f = rsfile.rsFileIO(**kargs)  
+        f = rsfile.RSFileIO(**kargs)  
         self.assertEqual(f._synchronized, True)
         res = f.write(string)   
         self.assertEqual(res, len(string))
@@ -508,18 +508,19 @@ class TestMiscStreams(unittest.TestCase):
             myfile.unlock_file()
             self.assertEqual(raw.size(), 2) # has been flushed
             
-            myfile.truncate(0)
-            
+            myfile.truncate(0) 
+            self.assertEqual(myfile.tell(), 2) # file pointer is unmoved
             myfile.write(char)
             self.assertEqual(raw.size(), 0) # not yet flushed
             myfile.lock_file()
-            self.assertEqual(raw.size(), 1) # has been flushed
+            self.assertEqual(raw.size(), 3) # has been flushed, extending file as well
             myfile.write(char)
-            self.assertEqual(raw.size(), 1) # not yet flushed
+            self.assertEqual(raw.size(), 3) # not yet flushed
             myfile.unlock_file()
-            self.assertEqual(raw.size(), 2) # has been flushed
-            myfile.write(char)
+            self.assertEqual(raw.size(), 4) # has been flushed
             
+            myfile.seek(0)
+            myfile.write(char*10)
             myfile.seek(0)
             
             self.assertEqual(myfile.read(1), char)
@@ -543,9 +544,11 @@ class TestMiscStreams(unittest.TestCase):
             myfile.unlock_file()
             self.assertEqual(raw.tell(), 2) # read ahead buffer reset
             
+            
         with rsfile.rsOpen(TESTFN, "RWEB", buffering=100, locking=rsfile.LOCK_NEVER) as myfile: # buffered binary stream
             test_new_methods(myfile, myfile.raw, "x")
-        with rsfile.rsOpen(TESTFN, "RWET", buffering=100, locking=rsfile.LOCK_NEVER) as myfile: # test stream
+            
+        with rsfile.rsOpen(TESTFN, "RWET", buffering=100, locking=rsfile.LOCK_NEVER) as myfile: # text stream
             test_new_methods(myfile, myfile.buffer.raw, u"x")     
             
         

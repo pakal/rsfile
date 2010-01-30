@@ -1,7 +1,7 @@
 #-*- coding: utf-8 -*-
 
 import sys, os, functools, errno, time, threading
-from abstract_fileio import AbstractFileIO, IntraProcessLockRegistry
+from rsfileio_abstract import AbstractFileIO, IntraProcessLockRegistry
 import rsfile_defines as defs
 
 
@@ -158,14 +158,12 @@ class unixFileIO(AbstractFileIO):
 
     @_unix_error_converter
     def _inner_reduce(self, size): 
-        self._inner_seek(size, defs.SEEK_SET) # TODO BE REMOVED IN NEW VERSION !!!
         unix.ftruncate(self._fileno, size)
         
         
     @_unix_error_converter
     def _inner_extend(self, size, zero_fill): 
         # posix truncation is ALWAYS "zerofill"
-        self._inner_seek(size, defs.SEEK_SET) # TODO BE REMOVED IN NEW VERSION !!!
         unix.ftruncate(self._fileno, size)
 
 
@@ -264,7 +262,7 @@ class unixFileIO(AbstractFileIO):
             self._purge_pending_related_file_descriptors() # todo - optimize this out during unlock-on-close loop
             
 
-rsFileIO = unixFileIO 
+RSFileIO = unixFileIO 
 
 
 

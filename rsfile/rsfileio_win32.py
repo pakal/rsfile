@@ -2,7 +2,7 @@
 
 import sys, os, functools, time
 
-from abstract_fileio import AbstractFileIO
+from rsfileio_abstract import AbstractFileIO
 import rsfile_defines as defs
 from rsbackends import _utilities as utilities
         
@@ -130,19 +130,20 @@ class win32FileIO(AbstractFileIO):
 
     @_win32_error_converter    
     def _inner_reduce(self, size): # warning - no check is done !!! 
-        
+        old_pos = self._inner_tell()
         self.seek(size) 
         #print "---> inner reduce to ", self.tell()
         win32.SetEndOfFile(self._handle) #WAAARNING - doesn't raise exceptions !!!!  
-
+        self._inner_seek(old_pos)
     
     @_win32_error_converter    
     def _inner_extend(self, size, zero_fill): # warning - no check is done !!!  
         
         if(not zero_fill):
+            old_pos = self._inner_tell()
             self.seek(size)
             win32.SetEndOfFile(self._handle) # this might fail silently !!!   
-
+            self._inner_seek(old_pos)
         else:
             pass # we can't directly truncate with zero-filling on win32, so just upper levels handle it
 
@@ -333,4 +334,4 @@ class win32FileIO(AbstractFileIO):
       
 
 
-rsFileIO = win32FileIO
+RSFileIO = win32FileIO

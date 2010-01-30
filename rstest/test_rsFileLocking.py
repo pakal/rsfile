@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+
+
 from __future__ import with_statement
 
 
@@ -101,9 +103,9 @@ class TestSafeFile(unittest.TestCase):
                      
                     
         # Locking from different open files
-        with rsfile.rsOpen(self.dummyFileName, "RB", buffering=0, timeout=0) as f:
+        with rsfile.rsOpen(self.dummyFileName, "RB", buffering=0, timeout=0) as _:
             
-            with rsfile.rsOpen(self.dummyFileName, "RB", buffering=0, timeout=0) as g:
+            with rsfile.rsOpen(self.dummyFileName, "RB", buffering=0, timeout=0) as _:
                 pass # OK - shared locking
             
             # Exclusively locking the same disk file twice from different open file objects should fail
@@ -155,7 +157,7 @@ class TestSafeFile(unittest.TestCase):
                 target = _workerProcess.chunk_reader
                 character = None
             
-            lockingKwargs = {'timeout': None} # blocking lock attempts on the whole file
+            #lockingKwargs = {'timeout': None} # blocking lock attempts on the whole file
             kwargs = {'targetFileName':self.dummyFileName, 'multiprocessing_lock':lock, 'character':character, 'mustAlwaysSucceedLocking':True }
         
             process = Executor(name="%s %d"%(target.__name__, i), target=target, kwargs=kwargs)
@@ -388,19 +390,4 @@ if __name__ == '__main__':
     
     #suite = unittest.defaultTestLoader.loadTestsFromName("__main__.TestSafeFile.test_intra_process_locking")
     #unittest.TextTestRunner(verbosity=2).run(suite)
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     

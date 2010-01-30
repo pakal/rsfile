@@ -190,7 +190,7 @@ def inheritance_tester(read, write, append, fileno=None, handle=None):
         time.sleep(0.2)
         
         try:
-            with rsfile.rsFileIO(read=read, write=write, append=append, fileno=fileno, handle=handle) as f:
+            with rsfile.RSFileIO(read=read, write=write, append=append, fileno=fileno, handle=handle) as f:
                 
                 #print >>sys.stderr, "Just opening and closing the file descriptor !!"
                 #sys.exit(88)                

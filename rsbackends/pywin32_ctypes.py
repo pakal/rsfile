@@ -260,17 +260,19 @@ def GetFileInformationByHandle(handle):
     if not res:
         raise ctypes.WinError()     
     
-    return (info.dwFileAttributes,
-            info.ftCreationTime,
-            info.ftLastAccessTime,
-            info.ftLastWriteTime,
-            info.dwVolumeSerialNumber,
-            info.nFileSizeHigh,
-            info.nFileSizeLow,
-            info.nNumberOfLinks,
-            info.nFileIndexHigh,
-            info.nFileIndexLow)
-
+    return info
+    """
+    (info.dwFileAttributes,
+    info.ftCreationTime,
+    info.ftLastAccessTime,
+    info.ftLastWriteTime,
+    info.dwVolumeSerialNumber,
+    info.nFileSizeHigh,
+    info.nFileSizeLow,
+    info.nNumberOfLinks,
+    info.nFileIndexHigh,
+    info.nFileIndexLow)
+    """
 
 
 
