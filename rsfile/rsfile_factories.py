@@ -5,7 +5,7 @@ from rsfile_stream_layers import *
 
     
 def rsOpen(name=None, mode="R", buffering=None, encoding=None, errors=None, newline=None, fileno=None, handle=None, closefd=True, 
-            locking=defs.LOCK_ALWAYS, timeout=None, thread_safe=True, mutex=None):
+            locking=True, timeout=None, thread_safe=True, mutex=None, permissions=0777):
     
     """
     Warning : setting lockingFalse allows you to benefit from new-style modes without dealing with any automated locking, but be aware that in this configuration, 
@@ -50,29 +50,18 @@ def rsOpen(name=None, mode="R", buffering=None, encoding=None, errors=None, newl
     if extended_kwargs["binary"] and newline is not None:
         raise ValueError("binary mode doesn't take a newline argument")     
     
+    raw_kwargs['permissions'] = permissions 
     raw = RSFileIO(**raw_kwargs)
     
     if extended_kwargs["truncate"] and not raw.writable(): 
         raise ValueError("Can't truncate file opened in read-only mode")
     
-    if locking == defs.LOCK_ALWAYS:   
-        # we enforce file locking immediately
-        if raw.writable():
-            shared = False
-        else:
-            shared = True
-        
+    if locking:   
         #print "we enforce file locking with %s - %s" %(shared, timeout)            
-        raw.lock_file(shared=shared, timeout=timeout) # since it's a whole-file locking, auto-unlocking-on-close will be activated ! Cool !
+        raw.lock_file(timeout=timeout) 
     
     if extended_kwargs["truncate"]:    
-        if locking == defs.LOCK_AUTO:
-            with raw.lock_file():
-                raw.truncate(0)
-        else: # if already locked, or if we don't care about locks...
             raw.truncate(0)            
-        
-    
     
     if buffering is None:
         buffering = -1

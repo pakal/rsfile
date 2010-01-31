@@ -50,18 +50,21 @@ def test_original_io():
 
 
 
+def _cleanup():
+    if os.path.exists(TESTFN):
+        os.chmod(TESTFN, 0777)
+        os.remove(TESTFN)
+
 
 
 class TestRawFileViaWrapper(unittest.TestCase):
 
     def setUp(self):
-        if os.path.exists(TESTFN):
-            os.remove(TESTFN)
+        _cleanup()
 
     
     def tearDown(self):
-        if os.path.exists(TESTFN):
-            os.remove(TESTFN)
+        _cleanup()
 
         
     def testProperties(self):
@@ -172,11 +175,10 @@ class TestRawFileViaWrapper(unittest.TestCase):
 class TestRawFileSpecialFeatures(unittest.TestCase): 
 
     def setUp(self):
-        pass
+        _cleanup()
 
     def tearDown(self):
-        if os.path.exists(TESTFN):
-            os.remove(TESTFN)
+        _cleanup()
 
             
     def testNewAccessors(self):
@@ -296,12 +298,7 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
         except IOError:
             pass
                 
-            
-            
-            
-            
-            
-            
+    
             
 
         
@@ -337,12 +334,22 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
 
 
 
-    def ____testDeletions(self): # PAKAL - TODO - WARNING # tests both normal share-delete semantic, and delete-on-close flag
+    def testDeletions(self): # PAKAL - TODO - WARNING # tests both normal share-delete semantic, and delete-on-close flag
         
-        # BIG PROBLEMS - share_delete doesnt work properly on win32, 
-        # TODO - EST-ce que les locks vont affecter le share-delete ici ??????
-
+        TESTFNBIS = TESTFN+"X"
+        if os.path.exists(TESTFNBIS):
+            os.remove(TESTFNBIS)
         
+        with rsfile.rsOpen(TESTFN, "RB", buffering=0) as h:
+            self.assertTrue(os.path.exists(TESTFN))
+            os.rename(TESTFN, TESTFNBIS)
+            os.remove(TESTFNBIS)
+            self.assertRaises(IOError, rsfile.rsOpen, TESTFN, "R+", buffering=0)
+            self.assertRaises(IOError, rsfile.rsOpen, TESTFNBIS, "R+", buffering=0) # on win32 the file remains but in a weird state, awaiting deletion...
+            
+        """
+        
+        # NO NEED FOR BUILTIN DELETE ON CLOSE SEMANTIC
         with rsfile.rsOpen(TESTFN, "RB", buffering=0) as f:
             
             with rsfile.rsOpen(TESTFN, "RBH", buffering=0) as g: # hidden file -> deleted on opening
@@ -353,22 +360,16 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
             fullpath = os.path.join(os.getcwd(), TESTFN)
             self.assertFalse(os.path.exists(fullpath))
             self.assertRaises(IOError, rsfile.rsOpen, TESTFN, "R") # on win32, deleted file is in a weird state until all handles are closed !!
+        """
         
-        with rsfile.rsOpen(TESTFN, "RBH", buffering=0) as h:
-            self.assertTrue(os.path.exists(TESTFN))
-            self.assertNotEqual(h.uid(), old_uid)
-            os.remove(TESTFN)
-            self.assertFalse(os.path.exists(TESTFN))
-            self.assertRaises(IOError, rsfile.rsOpen, TESTFN, "R", buffering=0)
-            
-            
+                    
     
     
     def testRsOpenBehaviour(self):
 
         # for ease of use, we just test binary unbuffered files...
         
-        with rsfile.rsOpen(TESTFN, "RAEB", buffering=0, locking=rsfile.LOCK_NEVER) as f:
+        with rsfile.rsOpen(TESTFN, "RAEB", buffering=0, locking=False) as f:
             self.assertEqual(f.readable(), True)
             self.assertEqual(f.writable(), True)
             self.assertEqual(f._append, True)
@@ -478,11 +479,10 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
 class TestMiscStreams(unittest.TestCase): 
     
     def setUp(self):
-        pass
+        _cleanup()
 
     def tearDown(self):
-        if os.path.exists(TESTFN):
-            os.remove(TESTFN)
+        _cleanup()
     
     
     def testMethodForwarding(self): # PAKAL - TODO - buffer reset doesn't work with seek_cur !!!
@@ -545,10 +545,10 @@ class TestMiscStreams(unittest.TestCase):
             self.assertEqual(raw.tell(), 2) # read ahead buffer reset
             
             
-        with rsfile.rsOpen(TESTFN, "RWEB", buffering=100, locking=rsfile.LOCK_NEVER) as myfile: # buffered binary stream
+        with rsfile.rsOpen(TESTFN, "RWEB", buffering=100, locking=False) as myfile: # buffered binary stream
             test_new_methods(myfile, myfile.raw, "x")
             
-        with rsfile.rsOpen(TESTFN, "RWET", buffering=100, locking=rsfile.LOCK_NEVER) as myfile: # text stream
+        with rsfile.rsOpen(TESTFN, "RWET", buffering=100, locking=False) as myfile: # text stream
             test_new_methods(myfile, myfile.buffer.raw, u"x")     
             
         
@@ -625,6 +625,17 @@ class TestMiscStreams(unittest.TestCase):
         self.assertEqual(mytext, unicode(mystr))
         self.assertEqual(mytext, u"abcdefghijklmnopqr")
         
+
+    def testCreationPermissions(self):
+        
+        with rsfile.rsOpen(TESTFN, "RWB-", buffering=0, locking=False, permissions=0555) as f: # creating read-only file
+            
+            with rsfile.rsOpen(TESTFN, "RB+", buffering=0, locking=False) as g:
+                pass # no problem
+            
+            self.assertRaises(IOError, rsfile.rsOpen, TESTFN, "WB+", buffering=0, locking=False) # can't open for writing
+        
+        # no need to test further, as other permissions are non-portable and simply forwarded to underlying system calls...
         
         
 def test_main():
@@ -646,7 +657,8 @@ if __name__ == '__main__':
     #test_original_io()
     #### run_unittest(TestMiscStreams) 
     
-    #TestRawFileSpecialFeatures("testInheritance").testInheritance()
+    #_cleanup()
+    #TestMiscStreams("testCreationPermissions").testCreationPermissions()
     #print "===OVER==="
     
     test_main()

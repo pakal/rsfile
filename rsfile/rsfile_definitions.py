@@ -5,10 +5,6 @@ from os import SEEK_SET, SEEK_CUR, SEEK_END
 DEFAULT_BUFFER_SIZE = 8 * 1024  # bytes
 
 
-LOCK_ALWAYS = 2
-LOCK_AUTO = 1
-LOCK_NEVER = 0
-
 
 class OverFlowException(IOError):
     pass 

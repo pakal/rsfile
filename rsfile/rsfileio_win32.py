@@ -5,7 +5,8 @@ import sys, os, functools, time
 from rsfileio_abstract import AbstractRSFileIO
 import rsfile_definitions as defs
 from rsbackends import _utilities as utilities
-        
+import stat 
+
 try:
     import rsbackends.pywin32_extensions as win32
 except ImportError:
@@ -34,7 +35,7 @@ class win32FileIO(AbstractRSFileIO):
     
     
     @_win32_error_converter        
-    def _inner_create_streams(self, path, read, write, append, must_exist, must_not_exist, synchronized, inheritable, hidden, fileno, handle):
+    def _inner_create_streams(self, path, read, write, append, must_exist, must_not_exist, synchronized, inheritable, hidden, fileno, handle, permissions):
 
         #print("Creating file with : ",locals()) #PAKAL
         self._close_via_fileno = False
@@ -77,7 +78,12 @@ class win32FileIO(AbstractRSFileIO):
             else:
                 securityAttributes = None
             
-            flagsAndAttributes = win32.FILE_ATTRIBUTE_NORMAL   
+            
+            if not permissions & stat.S_IWUSR:
+                flagsAndAttributes = win32.FILE_ATTRIBUTE_READONLY
+            else:
+                flagsAndAttributes = win32.FILE_ATTRIBUTE_NORMAL   
+            
             
             #### NO - TODO - PAKAL - use RSFS to delete it immediately !!!
             """

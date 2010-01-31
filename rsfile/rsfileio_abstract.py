@@ -27,7 +27,8 @@ class AbstractRSFileIO(RawIOBase):
                  
                  fileno=None, 
                  handle=None, 
-                 closefd=True
+                 closefd=True,
+                 permissions=0777
                  ):
 
         """
@@ -310,6 +311,8 @@ class AbstractRSFileIO(RawIOBase):
     def lock_file(self, timeout=None, length=None, offset=0, whence=os.SEEK_SET, shared=None):
         """Locks the whole file or a portion of it, depending on the arguments provided.
         
+        WARNING -> shared = NONE !
+        
         If shared is True, the lock is a "reader", non-exclusive lock, which can be shared by several 
         processes, but prevents "writer" locks from being taken on the locked portion. 
         Else, the lock is a "writer" lock which is fully exclusive, preventing both writer 
@@ -402,7 +405,7 @@ class AbstractRSFileIO(RawIOBase):
                         try:
                             
                             #import multiprocessing
-                            #print "---------->", multiprocessing.current_process().name, " LOCKED ", (operation, length, abs_offset, os.SEEK_SET)
+                            #print "---------->", multiprocessing.current_process().name, " LOCKED ", (length, abs_offset)
                             
                             self._inner_file_lock(length=length, abs_offset=abs_offset, blocking=blocking, shared=shared) 
                             
@@ -460,7 +463,7 @@ class AbstractRSFileIO(RawIOBase):
         
     # # Private methods - no check is made on their argument or the file object state ! # #
         
-    def _inner_create_streams(self, path, read, write, append, must_exist, must_not_exist, synchronized, inheritable, hidden, fileno, handle, closefd):
+    def _inner_create_streams(self, path, read, write, append, must_exist, must_not_exist, synchronized, inheritable, hidden, fileno, handle, closefd, permissions):
         self._unsupported("_inner_create_streams")
 
     def _inner_close_streams(self):  

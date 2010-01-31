@@ -71,7 +71,7 @@ class unixFileIO(AbstractRSFileIO):
         
     # # Private methods - no check is made on their argument or the file object state ! # #
     @_unix_error_converter
-    def _inner_create_streams(self, path, read, write, append, must_exist, must_not_exist, synchronized, inheritable, hidden, fileno, handle):
+    def _inner_create_streams(self, path, read, write, append, must_exist, must_not_exist, synchronized, inheritable, hidden, fileno, handle, permissions):
 
         
         # TODO - For delete on close ->  unlink immediately 
@@ -120,7 +120,7 @@ class unixFileIO(AbstractRSFileIO):
             else:
                 mode = 0777 # umask will apply on it anyway
             """
-            self._fileno = unix.open(strname, flags)  #TODO - we shall be able to specify the permissions !!!
+            self._fileno = unix.open(strname, flags, permissions)
             
                 
             if not inheritable:

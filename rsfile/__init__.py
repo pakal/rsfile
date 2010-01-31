@@ -114,7 +114,7 @@ def monkey_patch_original_io_module():
     
     # Important Patching ! #
     io.FileIO = RSFileIORawWrapper  
-    io.open = functools.partial(rsOpen, locking=LOCK_NEVER, timeout=0) # PAKAL - todo - remove - just for testing !!!
+    io.open = functools.partial(rsOpen, locking=False, timeout=0) # PAKAL - todo - remove - just for testing !!!
     
     
     # We implant proxies for new rawFileIo methods, in buffer and text base classes
