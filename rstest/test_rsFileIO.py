@@ -83,7 +83,20 @@ class TestRawFileViaWrapper(unittest.TestCase):
             self.assertRaises(IOError, f.read, 10)
             self.assertRaises(IOError, f.readinto, sys.stdout)
 
+    
+    def testDirectoryOpening(self):
         
+        DIRNAME = "DUMMYDIR"
+        try:
+            os.rmdir(DIRNAME)
+        except EnvironmentError:
+            pass
+        
+        os.mkdir(DIRNAME)
+        
+        # we must NOT be able to open directories via rsfile !
+        self.assertRaises(IOError, io.open, DIRNAME, 'rb', buffering=0)
+        self.assertRaises(IOError, io.open, DIRNAME, 'wb', buffering=0)   
 
         
     def testSizeAndPos(self):
@@ -332,6 +345,18 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
         kargs["must_not_exist"] = False
         self.assertRaises(IOError, rsfile.RSFileIO, **kargs)
 
+
+
+    def testCreationPermissions(self):
+        
+        with rsfile.rsOpen(TESTFN, "RWB-", buffering=0, locking=False, permissions=0555) as f: # creating read-only file
+            
+            with rsfile.rsOpen(TESTFN, "RB+", buffering=0, locking=False) as g:
+                pass # no problem
+            
+            self.assertRaises(IOError, rsfile.rsOpen, TESTFN, "WB+", buffering=0, locking=False) # can't open for writing
+        
+        # no need to test further, as other permissions are non-portable and simply forwarded to underlying system calls...
 
 
     def testDeletions(self): # PAKAL - TODO - WARNING # tests both normal share-delete semantic, and delete-on-close flag
@@ -626,16 +651,7 @@ class TestMiscStreams(unittest.TestCase):
         self.assertEqual(mytext, u"abcdefghijklmnopqr")
         
 
-    def testCreationPermissions(self):
-        
-        with rsfile.rsOpen(TESTFN, "RWB-", buffering=0, locking=False, permissions=0555) as f: # creating read-only file
-            
-            with rsfile.rsOpen(TESTFN, "RB+", buffering=0, locking=False) as g:
-                pass # no problem
-            
-            self.assertRaises(IOError, rsfile.rsOpen, TESTFN, "WB+", buffering=0, locking=False) # can't open for writing
-        
-        # no need to test further, as other permissions are non-portable and simply forwarded to underlying system calls...
+ 
         
         
 def test_main():

@@ -3,7 +3,7 @@ import os, threading
 
 
 # ######### DEFAULT PARAMETERS ######## #
-
+"""
 _default_safety_options = {
     "unified_locking_behaviour": True, # TODO ???
     "default_locking_timeout": None, # all locking attempts which have no timeout set will actually fail after this time (prevents denial of service)
@@ -24,7 +24,7 @@ def set_default_safety_options(**options):
     if not new_options <= all_options:
         raise ValueError("Unknown safety option : "+", ".join(list(new_options - all_options)))
     _default_safety_options.update(options)
-
+"""
 ############################################
 
 
@@ -195,6 +195,7 @@ class IntraProcessLockRegistry(object):
                 del cls._lock_registry[uid]
                 return True
         
+        
     @classmethod
     def add_uid_data(cls, uid, data):
         with cls.mutex:  
@@ -205,7 +206,7 @@ class IntraProcessLockRegistry(object):
             cls._lock_registry[uid][2].append(data)
             
             cls.datacount += 1 # TO REMOVE
-            print ">>>>>>>>>>>>>>>>>>>>> ", cls.datacount
+            
             
     @classmethod
     def remove_uid_data(cls, uid):
@@ -221,6 +222,7 @@ class IntraProcessLockRegistry(object):
             else:
                 return []
                 
+                
     @classmethod
     def uid_has_locks(cls, uid):
         with cls.mutex:  
@@ -231,4 +233,5 @@ class IntraProcessLockRegistry(object):
                 return True
             else:
                 return False
+            
         

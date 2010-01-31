@@ -61,7 +61,7 @@ class AbstractRSFileIO(RawIOBase):
             #print "##################", locals()
             raise AssertionError("File must provide at least path, fileno or handle value")
         
-        if not read and not write and not append:
+        if not read and not write:
             raise AssertionError("File must be opened at least in 'read', 'write' or 'append' mode")
 
         if must_exist and must_not_exist:
