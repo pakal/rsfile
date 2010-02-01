@@ -20,6 +20,7 @@ from UserList import UserList
 import io, test.test_io
 import rsfile
 
+# IMPORTANT - we monkey-patch the original io module !!!
 rsfile.monkey_patch_original_io_module()
 
 # here we can force the tests on large files too
@@ -635,7 +636,7 @@ class TestMiscStreams(unittest.TestCase):
     def testStreamUtilities(self):
         
         self.assertRaises(AssertionError, rsfile.write_to_file, TESTFN, "abc", mode="W")
-        self.assertRaises(AssertionError, rsfile.write_to_file, TESTFN, "abc", must_exist=True, must_not_exist=True)
+        self.assertRaises(ValueError, rsfile.write_to_file, TESTFN, "abc", must_exist=True, must_not_exist=True)
         self.assertRaises(IOError, rsfile.append_to_file, TESTFN, "abc", must_exist=True)        
         
         rsfile.write_to_file(TESTFN, "abcdef", sync=True, must_not_exist=True)

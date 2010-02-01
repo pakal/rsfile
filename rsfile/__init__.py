@@ -7,7 +7,7 @@ import functools
 import io
 
 from rsfile_definitions import * # constants, base types and exceptions
-from rsfile_stream_layers import *
+from rsfile_streams import *
 from rsfile_factories import *
 from rsfile_utilities import *
 
@@ -93,8 +93,15 @@ def monkey_patch_original_io_module():
     
     # Important Patching ! #
     io.FileIO = RSFileIORawWrapper  
-    io.open = functools.partial(rsOpen, locking=False, timeout=0) # PAKAL - todo - remove - just for testing !!!
+    io.BufferedReader = RSBufferedReader
+    io.BufferedWriter = RSBufferedWriter
+    io.BufferedRandom = RSBufferedRandom
+    io.TextIOWrapper = RSTextIOWrapper
+    io.open = functools.partial(rsOpen, locking=False, timeout=0) 
     
+    
+    """ # OLD, very magical monkey patching of buffer/text classes
+        # New, use inherited classes of rsfile_streams instead
     
     # We implant proxies for new rawFileIo methods, in buffer and text base classes
     def generate_method_forwarder(underlying_object, attribute_name, must_reset):
@@ -132,7 +139,7 @@ def monkey_patch_original_io_module():
         return getattr(buffer, name)
     setattr(io.TextIOBase, "__getattr__", get_buffer_attr)
     
-
+    """
     
     
 if __name__ == '__main__':

@@ -1,7 +1,7 @@
 
 import os
 import rsfile_definitions as defs
-from rsfile_stream_layers import *
+from rsfile_streams import *
 
     
 def rsOpen(name=None, mode="R", buffering=None, encoding=None, errors=None, newline=None, fileno=None, handle=None, closefd=True, 

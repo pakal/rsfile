@@ -59,16 +59,16 @@ class AbstractRSFileIO(RawIOBase):
         
         if not path and not fileno and not handle: 
             #print "##################", locals()
-            raise AssertionError("File must provide at least path, fileno or handle value")
+            raise ValueError("File must provide at least path, fileno or handle value")
         
         if not read and not write:
-            raise AssertionError("File must be opened at least in 'read', 'write' or 'append' mode")
+            raise ValueError("File must be opened at least in 'read', 'write' or 'append' mode")
 
         if must_exist and must_not_exist:
-            raise AssertionError("File can't be wanted both existing and unexisting")
+            raise ValueError("File can't be wanted both existing and unexisting")
 
         if not closefd and not (fileno or handle):
-            raise AssertionError("Cannot use closefd=False without providing a descriptor to wrap")
+            raise ValueError("Cannot use closefd=False without providing a descriptor to wrap")
                 
 
         # Inner lock used when several field operations are involved, eg. when truncating with zero-fill
