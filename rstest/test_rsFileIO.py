@@ -17,37 +17,29 @@ from UserList import UserList
 
 """ WARNING - HEAVY monkey-patching """
 
-import io, test.test_io
+import io
 import rsfile
+
+TESTFN = "@TESTING" # we used our own one, since the test_support version is broken
 
 # IMPORTANT - we monkey-patch the original io module !!!
 rsfile.monkey_patch_original_io_module()
 
-# here we can force the tests on large files too
-import test.test_support as test_support
-# test_support.use_resources = ["largefile"]   # -> decomment this to try 2Gb file operations !
-"""
-ATTENTION - penser a activer ressources for huge files ! Sinon tests zappes !
-"""
-
-TESTFN = "@TESTING" # we used our own one, since the test_support version is broken
-
-
 def test_original_io():
-    #del test.test_io.MiscIOTest.test_attributes # buggy tests, bufferredrandom has no MODE properly set !
+    import test.test_support
+    test_support.use_resources = ["largefile"]  # -> decomment this to try 2Gb file operations !
+    import test.test_io, test.test_memoryio, test.test_file, test.test_bufio, test.test_fileio, test.test_largefile
     test.test_io.test_main()
+    test.test_memoryio.test_main()
+    test.test_file.test_main()
+    test.test_bufio.test_main()
+    test.test_fileio.test_main()
+    test.test_largefile.test_main()
     
-    #mytest = test.test_io.StatefulIncrementalDecoderTest('testDecoder')
-    #mytest.run()  
+    # Custom launching :
     #mytest = test.test_io.TextIOWrapperTest('testBasicIO')
     #mytest.run()
-    
-    #test_support.run_unittest(test.test_io.IOTest)
-    """BytesIOTest, StringIOTest,
-      BufferedReaderTest, BufferedWriterTest,
-      BufferedRWPairTest, BufferedRandomTest,
-      StatefulIncrementalDecoderTest,
-      TextIOWrapperTest, MiscIOTest)"""
+
 
 
 
