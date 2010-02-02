@@ -22,8 +22,7 @@ class AbstractRSFileIO(RawIOBase):
                  
                  must_exist=False, must_not_exist=False, # only used on file opening
                  synchronized=False,
-                 inheritable=False, 
-                 hidden=False,
+                 inheritable=False,
                  
                  fileno=None, 
                  handle=None, 
@@ -57,8 +56,8 @@ class AbstractRSFileIO(RawIOBase):
 
         # HERE WE CHECK EVERYTHING !!! PAKAL
         
-        if not path and not fileno and not handle: 
-            #print "##################", locals()
+        if not path and fileno is None and handle is None: 
+            print "##################", locals()
             raise ValueError("File must provide at least path, fileno or handle value")
         
         if not read and not write:
@@ -85,7 +84,6 @@ class AbstractRSFileIO(RawIOBase):
         
         self._synchronized = synchronized
         self._inheritable = inheritable
-        self._hidden = hidden # TO BE REMOVED - DEPRECATED
     
 
         self._name = None # 'name' : descriptor exposed just for retrocompatibility !!!
@@ -362,8 +360,8 @@ class AbstractRSFileIO(RawIOBase):
             else:
                 shared = True
         
-        if not shared and not self._writable:
-            raise IOError("Can't obtain exclusive lock on non-writable stream") # TODO - improve this exception
+        if (shared and not self._readable) or (not shared and not self._writable):
+            raise IOError("Can't obtain exclusive lock on non-writable stream, or share lock on non-writable stream.") # TODO - improve this exception
         
         # TODO - PYCONTRACT THIS !!!
 
@@ -381,7 +379,7 @@ class AbstractRSFileIO(RawIOBase):
             if not blocking: # else, we try again indefinitely
                 delay = time.time() - start_time
                 if(delay >= timeout): # else, we try again until success or timeout
-                    (error_code, title) = e.args
+                    (error_code, title) = env_error.args
                     filename = getattr(self, 'name', 'Unkown File') # to be improved
                     raise defs.LockingException(error_code, title, filename)
             
@@ -392,32 +390,34 @@ class AbstractRSFileIO(RawIOBase):
 
         while(not success):     
         
-        
-                # STEP ONE : acquiring ownership on the lock inside current process
-                res = IntraProcessLockRegistry.register_file_lock(self._lock_registry_inode, self._lock_registry_descriptor, length, abs_offset, blocking, shared)
-                if not res:
-                    check_timeout(IOError(100, "Current process has already locked this byte range")) # TODO CHANGE errno.EPERM
-                try:
-                    
-                    while(not success): 
-                        
-                        # STEP TWO : acquiring the lock for real, at kernel level
-                        try:
-                            
-                            #import multiprocessing
-                            #print "---------->", multiprocessing.current_process().name, " LOCKED ", (length, abs_offset)
-                            
-                            self._inner_file_lock(length=length, abs_offset=abs_offset, blocking=blocking, shared=shared) 
-                            
-                            success = True # we leave the two loops
-                            
-                        except EnvironmentError, e:
-                            check_timeout(e)
+    
+            # STEP ONE : acquiring ownership on the lock inside current process
+            res = IntraProcessLockRegistry.register_file_lock(self._lock_registry_inode, self._lock_registry_descriptor, length, abs_offset, blocking, shared)
+            if not res:
+                check_timeout(IOError(100, "Current process has already locked this byte range")) # TODO CHANGE errno.EPERM
+                continue
 
-                finally:
-                    if not success:
-                        res = IntraProcessLockRegistry.unregister_file_lock(self._lock_registry_inode, self._lock_registry_descriptor, length, abs_offset)
-                        assert res # there shall be no problem, since arguments MUST be valid there                        
+            try:
+                
+                while(not success): 
+                    
+                    # STEP TWO : acquiring the lock for real, at kernel level
+                    try:
+                        
+                        #import multiprocessing
+                        #print "---------->", multiprocessing.current_process().name, " LOCKED ", (length, abs_offset)
+                        
+                        self._inner_file_lock(length=length, abs_offset=abs_offset, blocking=blocking, shared=shared) 
+                        
+                        success = True # we leave the two loops
+                        
+                    except EnvironmentError, e:
+                        check_timeout(e)
+
+            finally:
+                if not success:
+                    res = IntraProcessLockRegistry.unregister_file_lock(self._lock_registry_inode, self._lock_registry_descriptor, length, abs_offset)
+                    assert res # there shall be no problem, since arguments MUST be valid there                        
 
         return self._lock_remover(length, abs_offset, os.SEEK_SET)     
         
@@ -463,7 +463,7 @@ class AbstractRSFileIO(RawIOBase):
         
     # # Private methods - no check is made on their argument or the file object state ! # #
         
-    def _inner_create_streams(self, path, read, write, append, must_exist, must_not_exist, synchronized, inheritable, hidden, fileno, handle, closefd, permissions):
+    def _inner_create_streams(self, path, read, write, append, must_exist, must_not_exist, synchronized, inheritable, fileno, handle, closefd, permissions):
         self._unsupported("_inner_create_streams")
 
     def _inner_close_streams(self):  

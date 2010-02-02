@@ -70,7 +70,7 @@ class IntraProcessLockRegistry(object):
             return True
         else:
             if create:
-                cls._lock_registry[uid] = [threading.Condition(cls.mutex), [], []]  # [condition, locks, data]       
+                cls._lock_registry[uid] = [threading.Condition(cls.mutex), [], [], 0]  # [condition, locks, data, number of threads waiting]       
             return False
             
             
@@ -79,6 +79,10 @@ class IntraProcessLockRegistry(object):
         # unprotected method - beware
         
         new_end = (new_start+new_length) if new_length else None # None -> infinity
+
+        print ">Thread %s handle %s TRYING TO TAKE lock with %s" % (threading.current_thread().name, new_handle, (new_shared, new_start, new_end))        
+
+        
         
         if cls._ensure_entry_exists(uid, create=True):
             
@@ -99,6 +103,7 @@ class IntraProcessLockRegistry(object):
                     else:
                         return False
 
+        print ">Thread %s handle %s takes lock with %s" % (threading.current_thread().name, new_handle, (new_shared, new_start, new_end))
         cls._lock_registry[uid][1].append((new_handle, new_shared, new_start, new_end)) # we register as owner of this lock inside this process
         return True # no badly overlapping range was found
     
@@ -106,7 +111,7 @@ class IntraProcessLockRegistry(object):
     @classmethod
     def _try_unlocking_range(cls, uid, new_handle, new_length, new_start):    
         """
-        Retursn True if there are not locks left for that uid
+        Returns True if there are not locks left for that uid
         """
         
         # unprotected method - beware
@@ -114,14 +119,18 @@ class IntraProcessLockRegistry(object):
             return True
         
         new_end = (new_start+new_length) if new_length else None # None -> infinity
+
+        print "<Thread %s handle %s wants to remove lock with %s" % (threading.current_thread().name, new_handle, (new_start, new_end))
+
         locks = cls._lock_registry[uid][1]
         for index, (handle, shared, start, end) in enumerate(locks):
             if (handle == new_handle and start == new_start and end == new_end):
                 del locks[index]
+                print "THREAD %s NOTIFYING %s" % ( threading.current_thread().name, uid)
+                cls._lock_registry[uid][0].notify() # we awake potential waiters
                 if not locks:
                     return True
                 else:
-                    cls._lock_registry[uid][0].notify() # we awake potential waiters
                     return False
       
         # no matching lock was found
@@ -141,8 +150,13 @@ class IntraProcessLockRegistry(object):
                 if res or not blocking:
                     break
                 else:
+                    print "THREAD %s WAITING REGISTRY %s" % (threading.current_thread().name, uid)
+                    cls._lock_registry[uid][3] += 1
                     cls._lock_registry[uid][0].wait() # we wait on the condition until locks get removed
- 
+                    cls._lock_registry[uid][3] -= 1
+                    print "THREAD %s LEAVING REGISTRY %s" % (threading.current_thread().name, uid)
+            
+            print ">Thread %s handle %s RETURNING %s from register_file_lock" % (threading.current_thread().name, handle, res)
             return res
               
               
@@ -178,10 +192,9 @@ class IntraProcessLockRegistry(object):
 
 
     @classmethod
-    def delete_uid_entry(cls, uid):
+    def try_deleting_uid_entry(cls, uid):
         """
-        Returns True iff there was well a structure to delete.
-        Raise RuntimeError if locks or data were remaining for this uid.
+        Returns True iff an entry existed and could be deleted.
         """
         with cls.mutex:  
             
@@ -189,9 +202,9 @@ class IntraProcessLockRegistry(object):
             
             if not cls._ensure_entry_exists(uid, create=False):
                 return False
+            elif cls._lock_registry[uid][1] or cls._lock_registry[uid][2] or cls._lock_registry[uid][3]: # locks, data, or waiting threads
+                return False
             else:
-                if cls._lock_registry[uid][1] or cls._lock_registry[uid][2]:
-                    raise RuntimeError("Trying to delete a lock registry structure with locks/data remaining.")
                 del cls._lock_registry[uid]
                 return True
         
@@ -206,6 +219,9 @@ class IntraProcessLockRegistry(object):
             cls._lock_registry[uid][2].append(data)
             
             cls.datacount += 1 # TO REMOVE
+            #print ">DATACOUNT : ", cls.datacount
+            if cls.datacount > 50: # TODO - make it configurable
+                raise RuntimeError("Lock Registry size exceeded")
             
             
     @classmethod
@@ -218,8 +234,10 @@ class IntraProcessLockRegistry(object):
                 data = cls._lock_registry[uid][2]
                 cls._lock_registry[uid][2] = []
                 cls.datacount -= len(data) # TO REMOVE
+                #print "<DATACOUNT : ", cls.datacount
                 return data
             else:
+                #print "<DATACOUNT : ", cls.datacount
                 return []
                 
                 
@@ -229,7 +247,7 @@ class IntraProcessLockRegistry(object):
             
             cls._check_forking()        
             
-            if cls._lock_registry.has_key(uid) and cls._lock_registry[1]:
+            if cls._lock_registry.has_key(uid) and cls._lock_registry[uid][1]:
                 return True
             else:
                 return False

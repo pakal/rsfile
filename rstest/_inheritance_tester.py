@@ -1,8 +1,7 @@
-#!/usr/local/bin/python
 
-#print "we enter function"
-
-import sys, os, time, random, string
+import sys, os
+#print "we enter function with path : ", sys.path, " | ", sys.executable
+import time, random, string
 import _workerProcess
 
 

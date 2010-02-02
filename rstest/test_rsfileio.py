@@ -26,8 +26,10 @@ TESTFN = "@TESTING" # we used our own one, since the test_support version is bro
 rsfile.monkey_patch_original_io_module()
 
 def test_original_io():
+    
     import test.test_support
-    test_support.use_resources = ["largefile"]  # -> decomment this to try 2Gb file operations !
+    #test_support.use_resources = ["largefile"]  # -> decomment this to try 2Gb file operations !
+    
     import test.test_io, test.test_memoryio, test.test_file, test.test_bufio, test.test_fileio, test.test_largefile
     test.test_io.test_main()
     test.test_memoryio.test_main()
@@ -275,11 +277,10 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
         
         # ------------
             
-        f = io.open(TESTFN, 'wb', buffering = 0) # low-level default python open()
+        f = io.open(TESTFN, 'wb', buffering = 0) # low-level version
         f.write("aaa")
 
         try:
-            f.handle() # checker
             
             copy1 = io.open(mode='AB', buffering=0, handle=f.handle(), closefd=False)
             copy1.write("bbb")
@@ -452,10 +453,9 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
                     executable = sys.executable
                     pre_args = ("python", os.path.join(os.path.dirname(__file__), "_inheritance_tester.py"))
                     args = (str(read), str(write), str(append), str(kwargs.get("fileno", "-")), str(kwargs.get("handle", "-")))
-                    
-                    
+                   
                     myfile.seek(0, os.SEEK_END) # to fulfill the expectations of the worker process 
-                    child = subprocess.Popen(pre_args+args, executable=executable, close_fds=False)
+                    child = subprocess.Popen(pre_args+args, executable=executable, shell=False, close_fds=False)
                     retcode = child.wait()
                     self.assertEqual(retcode, EXPECTED_RETURN_CODE, "Spawned child returned %d instead of %d"%(retcode, EXPECTED_RETURN_CODE))                               
                     """

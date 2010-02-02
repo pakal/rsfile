@@ -35,7 +35,7 @@ class win32FileIO(AbstractRSFileIO):
     
     
     @_win32_error_converter        
-    def _inner_create_streams(self, path, read, write, append, must_exist, must_not_exist, synchronized, inheritable, hidden, fileno, handle, permissions):
+    def _inner_create_streams(self, path, read, write, append, must_exist, must_not_exist, synchronized, inheritable, fileno, handle, permissions):
 
         #print("Creating file with : ",locals()) #PAKAL
         self._close_via_fileno = False

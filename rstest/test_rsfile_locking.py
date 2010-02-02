@@ -4,7 +4,7 @@
 from __future__ import with_statement
 
 
-import sys, os, unittest, tempfile, threading, multiprocessing, Queue , random, string, time
+import sys, os, unittest, tempfile, threading, multiprocessing, Queue , random, string, time, traceback
 
 import _workerProcess
 
@@ -27,7 +27,9 @@ class ThreadWithExitCode(threading.Thread):
     def run(self):
         try:
                 threading.Thread.run(self)
-        except Exception:
+        except Exception, e:
+            print "THREAD %s TERMINATION ON ERROR" % threading.current_thread().name
+            traceback.print_exc()
             self.exitcode = 1
         except SystemExit as e:
             self.exitcode = e.code
@@ -77,7 +79,7 @@ class TestSafeFile(unittest.TestCase):
         
     def _start_and_check_subprocesses(self):
         
-        print "----Subprocesses Launch type 1----"  
+        print "----Subprocesses Launch ----"  
         
         for process in self.processList:
             print "Process '%s' starting..."%process.name
@@ -98,9 +100,13 @@ class TestSafeFile(unittest.TestCase):
     def test_intra_process_locking(self):
         """We check the behaviour of locks when opening several times the same file from within a process.
         """
-        
-        # Warning - on linux this might succeed - how to prevent that ?????????????????
-                     
+
+        # the locking type must be compatible with the opening mode (enforced by some OSes)
+        with rsfile.rsOpen(self.dummyFileName, "RB", buffering=0, locking=False) as f:
+            self.assertRaises(IOError, f.lock_file, shared=False)
+        with rsfile.rsOpen(self.dummyFileName, "WB", buffering=0, locking=False) as f:
+            self.assertRaises(IOError, f.lock_file, shared=True)       
+  
                     
         # Locking from different open files
         with rsfile.rsOpen(self.dummyFileName, "RB", buffering=0, timeout=0) as _:
@@ -112,7 +118,7 @@ class TestSafeFile(unittest.TestCase):
             self.assertRaises(rsfile.LockingException, rsfile.rsOpen, self.dummyFileName, "WB", buffering=0, timeout=0)
 
 
-        with rsfile.rsOpen(self.dummyFileName, "WB", buffering=0, locking=False) as f:
+        with rsfile.rsOpen(self.dummyFileName, "RWB", buffering=0, locking=False) as f:
             
             f.lock_file(shared=True, timeout=0, length=1, offset=0, whence=os.SEEK_CUR)
             f.lock_file(shared=False, timeout=0, length=1, offset=1, whence=os.SEEK_CUR)
@@ -150,7 +156,7 @@ class TestSafeFile(unittest.TestCase):
         
         for i in range(self.SUBPROCESS_COUNT):
             
-            if (random.randint(0,1)%2 == 0):
+            if (True): #PAKAL -TODO -REPLACE THIS !!!  #random.randint(0,1)%2 == 0):
                 target = _workerProcess.chunk_writer_reader 
                 character = random.choice(string.ascii_lowercase)                
             else:

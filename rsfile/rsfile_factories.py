@@ -51,6 +51,7 @@ def rsOpen(name=None, mode="R", buffering=None, encoding=None, errors=None, newl
         raise ValueError("binary mode doesn't take a newline argument")     
     
     raw_kwargs['permissions'] = permissions 
+
     raw = RSFileIO(**raw_kwargs)
     
     if extended_kwargs["truncate"] and not raw.writable(): 
@@ -165,7 +166,6 @@ def parse_standard_args(name, mode, closefd): # warning - name can be a fileno h
                     must_not_exist=False,
                     synchronized=False,
                     inheritable=True, 
-                    hidden=False,
                     fileno=fileno, handle=None, closefd=closefd)
     
     extended_kwargs = dict(truncate=truncate, 
@@ -194,7 +194,6 @@ def parse_advanced_args(path, mode, fileno, handle, closefd):
     
     synchronized = "S" in mode
     inheritable = "I" in mode
-    hidden = "H" in mode
     
     truncate = "E" in mode # for "Erase"  
     binary = "B" in modes
@@ -207,7 +206,6 @@ def parse_advanced_args(path, mode, fileno, handle, closefd):
                     must_not_exist=must_not_exist,
                     synchronized=synchronized,
                     inheritable=inheritable, 
-                    hidden=hidden,
                     fileno=fileno, handle=handle, closefd=closefd)
     
     extended_kwargs = dict(truncate=truncate, 

@@ -1,6 +1,6 @@
 #-*- coding: utf-8 -*-
 
-import sys, os, functools, errno, time, threading
+import sys, os, functools, errno, time, stat, threading
 from rsfileio_abstract import AbstractRSFileIO, IntraProcessLockRegistry
 import rsfile_definitions as defs
 
@@ -8,7 +8,8 @@ import rsfile_definitions as defs
 try:
     import rsbackends.unix_stdlib as unix
 except ImportError:
-    import rsbackends.unix_ctypes as unix
+    raise
+    #import rsbackends.unix_ctypes as unix
         
 
 
@@ -71,7 +72,7 @@ class unixFileIO(AbstractRSFileIO):
         
     # # Private methods - no check is made on their argument or the file object state ! # #
     @_unix_error_converter
-    def _inner_create_streams(self, path, read, write, append, must_exist, must_not_exist, synchronized, inheritable, hidden, fileno, handle, permissions):
+    def _inner_create_streams(self, path, read, write, append, must_exist, must_not_exist, synchronized, inheritable, fileno, handle, permissions):
 
         
         # TODO - For delete on close ->  unlink immediately 
@@ -79,7 +80,7 @@ class unixFileIO(AbstractRSFileIO):
         if handle is not None:
             self._fileno = self._handle = handle
             
-        if fileno is not None:
+        elif fileno is not None:
             self._fileno = self._handle = fileno
         
         else: #we open the file with low level posix IO - the unix "open()"  function
@@ -90,7 +91,7 @@ class unixFileIO(AbstractRSFileIO):
                 strname = path
         
         
-            flags = 0
+            flags = 0 # TODO - use unix.O_LARGEFILE on linux filesystems !!!!
             
             if synchronized :
                 flags |= unix.O_SYNC
@@ -112,17 +113,13 @@ class unixFileIO(AbstractRSFileIO):
             else:
                 flags |= unix.O_CREAT # by default - we create the file iff it doesn't exists
         
-            # TODO - use linux O_CLOEXEC when available
-            # TODO - use F_FULLFSYNC on MAC OS X !!!   -> fcntl(fd, F_FULLFSYNC, 0);  51
-            """
-            if hidden:
-                mode = 0000
-            else:
-                mode = 0777 # umask will apply on it anyway
-            """
-            self._fileno = unix.open(strname, flags, permissions)
-            
-                
+
+            self._fileno = self._handle = unix.open(strname, flags, permissions)
+
+            # under unix we must prevent the opening of directories !
+            if stat.S_ISDIR(unix.fstat(self._fileno).st_mode):
+                raise IOError(errno.EISDIR, "Can't open directory as a regular file")     
+
             if not inheritable:
                 old_flags = unix.fcntl(self._fileno, unix.F_GETFD, 0);
                 if not (old_flags & unix.FD_CLOEXEC):
@@ -132,12 +129,6 @@ class unixFileIO(AbstractRSFileIO):
             self._lock_registry_inode = self._inner_uid()
             self._lock_registry_descriptor = self._fileno
             
-            """
-            if hidden:
-                unix.unlink()
-            """
-            # Here, if delete on close : unlink filepath !!!
-            #### NO - TODO - PAKAL - use RSFS to delete it immediately !!!
     
     
     @_unix_error_converter       
@@ -149,10 +140,9 @@ class unixFileIO(AbstractRSFileIO):
             
             with IntraProcessLockRegistry.mutex:
                 IntraProcessLockRegistry.add_uid_data(self._uid, self._fileno) 
-                res = self._purge_pending_related_file_descriptors()
-                if res:
-                    # we assume that there are chances for this to be the only handle pointing this precise file
-                    IntraProcessLockRegistry.delete_uid_entry(self._uid) 
+                self._purge_pending_related_file_descriptors()
+                # we assume that there are chances for this to be the only handle pointing this precise file
+                IntraProcessLockRegistry.try_deleting_uid_entry(self._uid) 
 
                          
 
