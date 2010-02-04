@@ -1,7 +1,11 @@
 
 
-Test on all python implementations, versions, on all platforms etc.
+*Test on all python implementations, versions, on all platforms etc.
 
-Make inheritable streams picklable for multiprocessing use, along with their semaphores
+*Make inheritable streams picklable for multiprocessing use, along with their semaphores
 
-Design a strong exception hierarchy for IO/OS errors
+*Design a strong exception hierarchy for IO/OS errors - if it is really possible from native error codes
+
+*Create a global option registry to activate debugging systems (open handle counting, deadlock detection...)
+
+*Test the behaviour of open() with broken symlinks, and how must-exist and must-not-exist deal with that 

@@ -27,16 +27,16 @@ rsfile.monkey_patch_original_io_module()
 
 def test_original_io():
     
-    import test.test_support
+    import test.test_support, test.test_io, test.test_memoryio, test.test_file, test.test_bufio, test.test_fileio, test.test_largefile
     #test_support.use_resources = ["largefile"]  # -> decomment this to try 2Gb file operations !
+    #test.test_largefile.test_main()
     
-    import test.test_io, test.test_memoryio, test.test_file, test.test_bufio, test.test_fileio, test.test_largefile
     test.test_io.test_main()
     test.test_memoryio.test_main()
     test.test_file.test_main()
     test.test_bufio.test_main()
     test.test_fileio.test_main()
-    test.test_largefile.test_main()
+    
     
     # Custom launching :
     #mytest = test.test_io.TextIOWrapperTest('testBasicIO')
@@ -280,25 +280,22 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
         f = io.open(TESTFN, 'wb', buffering = 0) # low-level version
         f.write("aaa")
 
-        try:
-            
-            copy1 = io.open(mode='AB', buffering=0, handle=f.handle(), closefd=False)
-            copy1.write("bbb")
 
-            copy2 = io.open(mode='AB', buffering=0, handle=f.handle(), closefd=True)
-            copy2.write("ccc")
+        copy1 = io.open(mode='AB', buffering=0, handle=f.handle(), closefd=False) # We trick the functools.partial object there...
+        copy1.write("bbb")
 
-            with open(TESTFN, "rb") as reader:
-                self.assertEquals(reader.read(), "aaabbbccc")
+        copy2 = io.open(mode='AB', buffering=0, handle=f.handle(), closefd=True) # We trick the functools.partial object there...
+        copy2.write("ccc")
 
-            copy1.close()
-            f.write("---")
+        with open(TESTFN, "rb") as reader:
+            self.assertEquals(reader.read(), "aaabbbccc")
 
-            copy2.close()
-            self.assertRaises(IOError, f.write, "---")
-            
-        except io.UnsupportedOperation:
-            pass # we're under unix surely, so no "handle"
+        copy1.close()
+        f.write("---")
+
+        copy2.close()
+        self.assertRaises(IOError, f.write, "---")
+        
         
         try:
             f.close() # this is normally buggy since the fd was closed through copy2...
@@ -502,6 +499,23 @@ class TestMiscStreams(unittest.TestCase):
     def tearDown(self):
         _cleanup()
     
+    def testIOErrorOnClose(self):
+        
+        def assertCloseOK(stream):
+            def ioerror():
+                raise IOError("dummy error again")
+            
+            stream.flush = ioerror
+            self.assertRaises(IOError, stream.close)
+            self.assertEqual(True, stream.closed)
+
+        assertCloseOK(io.open(TESTFN, "RB", buffering=100, locking=False))
+        assertCloseOK(io.open(TESTFN, "WB", buffering=100, locking=False))
+        assertCloseOK(io.open(TESTFN, "RWB", buffering=100, locking=False))
+        assertCloseOK(io.open(TESTFN, "RT", buffering=100, locking=False))
+        assertCloseOK(io.open(TESTFN, "WT", buffering=100, locking=False))
+        assertCloseOK(io.open(TESTFN, "RWT", buffering=100, locking=False))
+               
     
     def testMethodForwarding(self): # PAKAL - TODO - buffer reset doesn't work with seek_cur !!!
         
@@ -667,7 +681,7 @@ if __name__ == '__main__':
     #### run_unittest(TestMiscStreams) 
     
     #_cleanup()
-    #TestMiscStreams("testCreationPermissions").testCreationPermissions()
+    #TestMiscStreams("testIOErrorOnClose").testIOErrorOnClose()
     #print "===OVER==="
     
     test_main()

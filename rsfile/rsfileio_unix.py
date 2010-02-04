@@ -1,7 +1,7 @@
 #-*- coding: utf-8 -*-
 
 import sys, os, functools, errno, time, stat, threading
-from rsfileio_abstract import AbstractRSFileIO, IntraProcessLockRegistry
+import rsfileio_abstract
 import rsfile_definitions as defs
 
 
@@ -16,7 +16,7 @@ except ImportError:
 
 
 
-class unixFileIO(AbstractRSFileIO):      
+class unixFileIO(rsfileio_abstract.RSFileIO):      
 
     """
 
@@ -56,11 +56,11 @@ class unixFileIO(AbstractRSFileIO):
         Returns True iff this uid has no more locks left and data left, i/e really closing descriptors is OK.
         """
         
-        with IntraProcessLockRegistry.mutex:
+        with rsfileio_abstract.IntraProcessLockRegistry.mutex:
             
-            res = IntraProcessLockRegistry.uid_has_locks(self._uid)
+            res = rsfileio_abstract.IntraProcessLockRegistry.uid_has_locks(self._uid)
             if not res: # no more locks left for that uid
-                data_list = IntraProcessLockRegistry.remove_uid_data(self._uid)
+                data_list = rsfileio_abstract.IntraProcessLockRegistry.remove_uid_data(self._uid)
                 for fd in data_list: # we close all pending file descriptors (which were left opened to prevent fcntl() lock autoremoving)
                     try:
                         unix.close(fd) 
@@ -138,11 +138,11 @@ class unixFileIO(AbstractRSFileIO):
         """
         if self._closefd:
             
-            with IntraProcessLockRegistry.mutex:
-                IntraProcessLockRegistry.add_uid_data(self._uid, self._fileno) 
+            with rsfileio_abstract.IntraProcessLockRegistry.mutex:
+                rsfileio_abstract.IntraProcessLockRegistry.add_uid_data(self._uid, self._fileno) 
                 self._purge_pending_related_file_descriptors()
                 # we assume that there are chances for this to be the only handle pointing this precise file
-                IntraProcessLockRegistry.try_deleting_uid_entry(self._uid) 
+                rsfileio_abstract.IntraProcessLockRegistry.try_deleting_uid_entry(self._uid) 
 
                          
 

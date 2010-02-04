@@ -2,7 +2,7 @@
 
 import sys, os, functools, time
 
-from rsfileio_abstract import AbstractRSFileIO
+import rsfileio_abstract
 import rsfile_definitions as defs
 from rsbackends import _utilities as utilities
 import stat 
@@ -15,7 +15,7 @@ except ImportError:
 
 
 
-class win32FileIO(AbstractRSFileIO):        
+class win32FileIO(rsfileio_abstract.RSFileIO):        
 
 
     __POSITION_REFERENCES = {defs.SEEK_SET:win32.FILE_BEGIN , defs.SEEK_CUR:win32.FILE_CURRENT, defs.SEEK_END:win32.FILE_END}

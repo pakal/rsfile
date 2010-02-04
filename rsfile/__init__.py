@@ -22,7 +22,9 @@ When any file descriptor for that file is closed by the process, all of the lock
 are released, even if the locks were made using other descriptors that remain open. Likewise, locks are released when 
 a process exits, and are not inherited by child processes created using fork (see Creating a Process). 
 """
+# WARNING - shall we not modify close() of buffered streams to let exceptions propagate !!
 
+# A inclure dans la doc : atomic operations = bad idea... delete on close too..
 # TODO - prepare mixings to patch normal buffer/text classes !
 
 #TODO py2.7 the file object will now set the filename attribute on the IOError exception when trying to open a directory on POSIX platforms. (Noted by Jan Kaliszewski; issue 4764.)
@@ -97,8 +99,8 @@ def monkey_patch_original_io_module():
     io.BufferedWriter = RSBufferedWriter
     io.BufferedRandom = RSBufferedRandom
     io.TextIOWrapper = RSTextIOWrapper
-    io.open = functools.partial(rsOpen, locking=False, timeout=0) 
-    
+    io.open = functools.partial(rsOpen, handle=None, locking=False, timeout=0, thread_safe=False, mutex=None, permissions=0777) 
+
     
     """ # OLD, very magical monkey patching of buffer/text classes
         # New, use inherited classes of rsfile_streams instead

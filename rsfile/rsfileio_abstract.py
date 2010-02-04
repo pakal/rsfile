@@ -11,27 +11,114 @@ from rsfile_registries import IntraProcessLockRegistry
 
 
 
-        
-class AbstractRSFileIO(RawIOBase):  
-    """    GRANDE QUESTION : peut-on obtenir atomic appends on all platforms, en perdant la truncation ?????    """   
+
+class RSFileIO(RawIOBase):  # we're forced to use this name, because of autodocumentation constraints...
+    """
+    This class is an improved version of :class:`io.FileIO`, relying on native OS primitives, 
+    and offering much more control over the behaviour of the file stream.
+    
+    """
+    
     
     def __init__(self,
                  path=None, # it seems pywin32 already uses unicode versions of these functions, so it's cool  :-)
+                 fileno=None, 
+                 handle=None, 
+                 closefd=True,
+                 
                  read=False, 
                  write=False, append=False,  # writing to a file in append mode AUTOMATICALLY moves the file pointer to EOF # PAKAL -A TESTER
                  
                  must_exist=False, must_not_exist=False, # only used on file opening
                  synchronized=False,
                  inheritable=False,
-                 
-                 fileno=None, 
-                 handle=None, 
-                 closefd=True,
                  permissions=0777
                  ):
 
+
         """
-        pre:
+        This constructor exhibits the whole sets of functions offered by 
+        :class:`RSFileIO` instances.
+        
+        Hopefully you won't have to deal with it, anyway, since factory 
+        functions like :func:`rsOpen` give you a way easier access to 
+        streams chain, including buffering and encoding aspects.
+        
+        The file must necessarily be opened at least with read or write access,
+        and can be opened with both.
+        
+        **Target determination parameters**
+        
+        These parameters determine if a new raw file stream will be opened from the filesystem, or
+        if an existing one will be wrapped by the new RSFileIo instance.
+        
+        - *path* (unicode/bytes or None): The path of the regular file to be opened. 
+          If ``fileno`` or ``handle`` is provided, ``path`` is only used as additional 
+          information. 
+        - *fileno* (integer or None): if provided, it must be an open C-style file
+          descriptor, compatible with the *Mode parameters* requested, and which will be used
+          as an underlying raw stream. Such file descriptors should be available on all platforms,
+          but on windows (where they are only emulated) they might be too buggy to benefit 
+          from file locking and other advanced features.
+        - *handle* (handle or None): if provided, it must be a native open file
+          handle, compatible with the *Mode parameters* requested, and which will be used
+          as an underlying raw stream. On unix platforms, it is the same as a ``fileno``, 
+          and on windows it must be a win32 handle (an integer) or a pyHandle instance from pywin32.
+        - *closefd* (boolean): if ``fileno`` or ``handle``, this parameter determines whether or not
+          the wrapped raw file stream will be closed when the instance will be closed or deleted, or if
+          it will be left open. When creating a new rew file stream from ``path``, ``closefd`` must 
+          necessarily be True.
+        
+        
+        **Mode parameters**
+        
+        These parameters determine the access checking that will be done while manipulating
+        the stream.
+        
+        - *read* (boolean) : Open the file with read access (file truncation is not allowed).
+        - *write* (boolean) : Open the file with write access (file truncation is allowed).
+        - *append* (boolean) : Open the file in append mode, i.e all write operations
+          will automatically move the file pointer to the end of file 
+          before actually writing (the file pointer is not restored 
+          afterwards). ``append`` implicitly forces ``write`` to *True*.
+        
+        
+        **File creation parameters**
+        
+        These parameters are only taken in account when creating a new raw stream, 
+        not wrapping an existing fileno or handle. 
+        
+        - *must_exist* (boolean): File creation fails if the file doesn't exist. 
+          This is then negation of the O_CREATE unix flag, which is the default behaviour
+          of file opening via RSFileIo.
+        - *must_not_exist* (boolean): File opening fails if the file already exists.
+          This is the same semantic as (O_CREATE | O_EXCL) flags, which can be used to
+          handle some vulnerabilities on unix filesystems.
+        - *synchronized* (boolean): Opens the stream so that write operations don't return before
+          data gets pushed to physical device. Note that due to potential caching in your HDD, it 
+          doesn't fully guarantee that your data will be safe in case of immediate crash.        
+        - *inheritable* (boolean): If True, the raw file stream will be inheritable by child processes,
+          at least those created via native subprocessing calls (spawn, fork+exec, CreateProcess...). 
+          Note that streams are always "inheritable" by fork (no close-on-fork semantic is generally
+          available). Child processes must anyway be aware of the file streams they own, which can be
+          done through command-line arguments or other IPC means.
+        - *permissions* (integer): this shall be a valid combination of :mod:`stat` permission flags, 
+          which will be taken into only when creating a new file, to set its permission flags (on unix, 
+          the umask will be applied on these permissions first).
+                     
+          On windows, only the "user-write" flag is meaningful, its absence corresponding to a 
+          read-only file (note that contrary to unix, windows folders always behave as 
+          if they had a "sticky bit", so read-only files can't be moved/deleted).
+          
+          These permissions have no influence on the ``mode parameters`` of the new stream - you can very well
+          open in read-write mode a new file, giving it no permissions at all.
+
+        
+        Needless to say that having both *must_exist* and *must_not_exist* set to True might
+        irritate logical circuits of the __init__() method, and that creating a synchronized 
+        read-only stream is of little interest. ^^
+
+        pre::
             path is None or isinstance(path, basetring)  # if specified
             not (fileno and handle)
             closefd or (fileno or handle) 
@@ -39,7 +126,7 @@ class AbstractRSFileIO(RawIOBase):
             read or write or append
             not (must_exist and must_not_exist)
             # we don't care about other parameters, as these are independant boolean flags
-        post:
+        post::
             __return__ is None
         """
         
@@ -307,7 +394,11 @@ class AbstractRSFileIO(RawIOBase):
         self.unlock_file(length=length, offset=offset, whence=whence) 
     
     def lock_file(self, timeout=None, length=None, offset=0, whence=os.SEEK_SET, shared=None):
-        """Locks the whole file or a portion of it, depending on the arguments provided.
+        
+        
+        ___ = 222222222222222222222222222222222222222
+        """
+        Locks the whole file or a portion of it, depending on the arguments provided.
         
         WARNING -> shared = NONE !
         
@@ -332,7 +423,8 @@ class AbstractRSFileIO(RawIOBase):
         programs will be able to freely access your files if they have proper permissions. Note that it is possible to enforce mandatory locking thanks to some
         mount options and file flags (see XXX???urls)
         
-        Note that file locking is not reentrant: calling this function several times, on overlapping areas, would result in a deadlock (as with threading.Lock);
+        Note that file locking is not reentrant: calling this function several times, on overlapping areas, 
+        would result in a deadlock (as with threading.Lock);
         but you can still get different locks at the same time, for different parts of the same file (beware of deadlocks still,
         in case several process try to get them in different orders).
         ??? TELL EXCEPTIONS HERE
@@ -350,7 +442,9 @@ class AbstractRSFileIO(RawIOBase):
         post:
             isinstance(__return__, bool)
 
-        WARNING : WIN32 - Locking a portion of a file for shared access denies all processes write access to the specified region of the file, including the process that first locks the region. All processes can read the locked region.
+        WARNING : WIN32 - Locking a portion of a file for shared access denies all 
+        processes write access to the specified region of the file, including the 
+        process that first locks the region. All processes can read the locked region.
         
         """
         
