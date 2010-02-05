@@ -4,11 +4,13 @@ RSFileIO Streams
 
 Hello everyone
 
-.. currentmodule:: rsfile.rsfileio_abstract
+.. module:: rsfile
+
+
 
 
 .. autoclass:: RSFileIO
-	:show-inheritance:
+	
 	
 	
 	
@@ -19,7 +21,7 @@ Hello everyone
 	
 	
 ..	
-
+	:show-inheritance:
 	automethod:: lock_file
 	:undoc-members:
 	:member-order: groupwise

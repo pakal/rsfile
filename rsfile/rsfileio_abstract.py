@@ -45,7 +45,7 @@ class RSFileIO(RawIOBase):  # we're forced to use this name, because of autodocu
         streams chain, including buffering and encoding aspects.
         
         The file must necessarily be opened at least with read or write access,
-        and can be opened with both.
+        and can naturally be opened with both.
         
         **Target determination parameters**
         
@@ -89,18 +89,19 @@ class RSFileIO(RawIOBase):  # we're forced to use this name, because of autodocu
         not wrapping an existing fileno or handle. 
         
         - *must_exist* (boolean): File creation fails if the file doesn't exist. 
-          This is then negation of the O_CREATE unix flag, which is the default behaviour
-          of file opening via RSFileIo.
+          This is then negation of the O_CREATE semantic, which is the default behaviour
+          of file opening via RSFileIo (i.e, files are created if not existing, else they're 
+          simply opened).
         - *must_not_exist* (boolean): File opening fails if the file already exists.
           This is the same semantic as (O_CREATE | O_EXCL) flags, which can be used to
-          handle some vulnerabilities on unix filesystems.
+          handle some security issues on unix filesystems.
         - *synchronized* (boolean): Opens the stream so that write operations don't return before
           data gets pushed to physical device. Note that due to potential caching in your HDD, it 
           doesn't fully guarantee that your data will be safe in case of immediate crash.        
         - *inheritable* (boolean): If True, the raw file stream will be inheritable by child processes,
           at least those created via native subprocessing calls (spawn, fork+exec, CreateProcess...). 
-          Note that streams are always "inheritable" by fork (no close-on-fork semantic is generally
-          available). Child processes must anyway be aware of the file streams they own, which can be
+          Note that streams are always "inheritable" by fork (no close-on-fork semantic is widespread). 
+          Child processes must anyway be aware of the file streams they own, which can be
           done through command-line arguments or other IPC means.
         - *permissions* (integer): this shall be a valid combination of :mod:`stat` permission flags, 
           which will be taken into only when creating a new file, to set its permission flags (on unix, 
@@ -113,6 +114,8 @@ class RSFileIO(RawIOBase):  # we're forced to use this name, because of autodocu
           These permissions have no influence on the ``mode parameters`` of the new stream - you can very well
           open in read-write mode a new file, giving it no permissions at all.
 
+        
+        
         
         Needless to say that having both *must_exist* and *must_not_exist* set to True might
         irritate logical circuits of the __init__() method, and that creating a synchronized 
@@ -247,6 +250,7 @@ class RSFileIO(RawIOBase):  # we're forced to use this name, because of autodocu
 
     @property
     def path(self):  # Normalized, absolute path !!
+        """""" # todo, deal with problems here, and with name property !!
         return self._path    
 
     @property 
@@ -262,22 +266,23 @@ class RSFileIO(RawIOBase):  # we're forced to use this name, because of autodocu
         return self._inner_fileno()
 
     def handle(self):
-        """Returns the OS-specific native file handle, if it exists, else raises an 
-        UnsupportedOperation exception (inheriting IOError and ValueError).
-        Currently, only win32 handles are supported (posix systems only use file descriptors as returned by fileno()
+        """Returns the native file handle associated with the stream.
+        On most systems, it's the same as fileno, but on win32 it's a specific Handle value.
         """
         self._checkClosed()
         return self._inner_handle()  
     
     def uid(self):
-        """Returns a tuple (device, inode) identifying the node (disk file) targetted by the underlying OS handle.
+        """Returns a (device, inode) tuple, identifying unambiguously the node (disk file) 
+        targeted by the stream. Thus, several file objects refer to the same disk file if 
+        and only if they have the same uid.
     
-        Raises IOError in case it is impossible to retrieve this information (network filesystems etc.)
-        Several file objects refer to the same disk file if and only if they have the same uid.
+        Raises IOError if it is impossible to retrieve this information (network or virtual filesystems, etc.)
         
         Nota : the file path can't be used as an unique identifier, since it is often possible to delete/recreate 
-        a filesystem entry and make it point to different nodes, while streams born from that path are in use.  
+        a file, while streams born from that path are still in use.  
         """
+        
         self._checkClosed()
         if self._uid is not None:
             return self._uid
@@ -373,11 +378,17 @@ class RSFileIO(RawIOBase):  # we're forced to use this name, because of autodocu
     
     def sync(self, metadata=True, full_flush=True):
         """
-        Synchronizes file data between kernel cache and physical disk. 
-            If metadata is False, and if the platform supports it (win32 and Mac OS X don't), this sync is only a "datasync", i.e file metadata (file size, file times...) 
-            is not written to disk ; note that in this case, performance gains can be expected, but data appended to the file might be lost in case of crash, 
-            since the file size increasement won't have become persistent.
-            For a constant synchronization between the kernel cache and the disk oxyde, CF the "synchronized" argument of the stream opening.
+        Synchronizes file data between kernel cache and physical device. 
+        
+            If``metadata`` is False, and if the platform supports it (win32 and Mac OS X don't), 
+            this sync is a "datasync", i.e only data and file sizes are written to disk, not 
+            file times and other metadata (this can improve performance, but also i).
+            
+            If ``full_flush`` is True, RSFileIO will whenever possible force the flushing of the disk
+            cache too
+            
+            For a constant synchronization between the kernel cache and the disk oxyde, 
+            CF the "synchronized" argument of the stream opening.
         """
         self._inner_sync(metadata, full_flush)        
 

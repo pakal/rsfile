@@ -25,20 +25,19 @@ a process exits, and are not inherited by child processes created using fork (se
 # WARNING - shall we not modify close() of buffered streams to let exceptions propagate !!
 
 # A inclure dans la doc : atomic operations = bad idea... delete on close too..
-# TODO - prepare mixings to patch normal buffer/text classes !
 
 #TODO py2.7 the file object will now set the filename attribute on the IOError exception when trying to open a directory on POSIX platforms. (Noted by Jan Kaliszewski; issue 4764.)
 #TODO - The io.FileIO class now raises an OSError when passed an invalid file descriptor. (Implemented by Benjamin Peterson; issue 4991.)
 #---> valueerror on negative FD, and oserror on fstat-EBADF
 
-
 # TODO - warn in doc about the fact that writing on read-locked portion by current process fails on win32, NOT unix
-# Todo : in doc : tell that errors are left explicit when closing streams, eg. if flush fails !!!! (buggy in current io)
 
 # Todo : check that current buffer class work well when seeking (pos, seek_cur) ! (buggy in 2.6.1)
 # -> Could you construct a test case? (it's even better if you fix the offending code as well of course)
 
 # exception io.UnsupportedOperation - An exception inheriting IOError and ValueError that is raised when an unsupported operation is called on a stream.
+
+# Todo : in doc : tell that errors are left explicit when closing streams, eg. if flush fails !!!! (buggy in current io)
 
 # Todo - discuss the use of name, mode, closefd etc. as attributes of raw streams only ????
 

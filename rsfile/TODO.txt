@@ -9,3 +9,5 @@
 *Create a global option registry to activate debugging systems (open handle counting, deadlock detection...)
 
 *Test the behaviour of open() with broken symlinks, and how must-exist and must-not-exist deal with that 
+
+# test that buffers don't mess with file size !!!
