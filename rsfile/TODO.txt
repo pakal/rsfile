@@ -11,3 +11,8 @@
 *Test the behaviour of open() with broken symlinks, and how must-exist and must-not-exist deal with that 
 
 # test that buffers don't mess with file size !!!
+
+
+check __getattr__ and __setattr_ of theradsafe wrapper !
+
+Tester win32 truncate sur fichier locked

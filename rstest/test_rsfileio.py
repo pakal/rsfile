@@ -509,12 +509,12 @@ class TestMiscStreams(unittest.TestCase):
             self.assertRaises(IOError, stream.close)
             self.assertEqual(True, stream.closed)
 
-        assertCloseOK(io.open(TESTFN, "RB", buffering=100, locking=False))
-        assertCloseOK(io.open(TESTFN, "WB", buffering=100, locking=False))
-        assertCloseOK(io.open(TESTFN, "RWB", buffering=100, locking=False))
-        assertCloseOK(io.open(TESTFN, "RT", buffering=100, locking=False))
-        assertCloseOK(io.open(TESTFN, "WT", buffering=100, locking=False))
-        assertCloseOK(io.open(TESTFN, "RWT", buffering=100, locking=False))
+        assertCloseOK(io.open(TESTFN, "RB", buffering=100))
+        assertCloseOK(io.open(TESTFN, "WB", buffering=100))
+        assertCloseOK(io.open(TESTFN, "RWB", buffering=100))
+        assertCloseOK(io.open(TESTFN, "RT", buffering=100))
+        assertCloseOK(io.open(TESTFN, "WT", buffering=100))
+        assertCloseOK(io.open(TESTFN, "RWT", buffering=100))
                
     
     def testMethodForwarding(self): # PAKAL - TODO - buffer reset doesn't work with seek_cur !!!
