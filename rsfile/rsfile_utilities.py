@@ -1,5 +1,5 @@
 
-from rsfile_factories import rsOpen
+from rsfile_factories import rsopen
 
 
     
@@ -19,7 +19,7 @@ def write_to_file(filename, data, sync=False, must_exist=False, must_not_exist=F
     if not isinstance(data, unicode):
         mode += "B"
     
-    with rsOpen(filename, mode=mode, **open_kwargs) as myfile:
+    with rsopen(filename, mode=mode, **open_kwargs) as myfile:
         myfile.write(data)
         myfile.flush()
         if sync:
@@ -38,7 +38,7 @@ def append_to_file(filename, data, sync=False, must_exist=False, **open_kwargs):
     if not isinstance(data, unicode):
         mode += "B"
     
-    with rsOpen(filename, mode=mode, **open_kwargs) as myfile:
+    with rsopen(filename, mode=mode, **open_kwargs) as myfile:
         myfile.write(data)
         myfile.flush()
         if sync:
@@ -53,7 +53,7 @@ def read_from_file(filename, binary=False, **open_kwargs):
     if binary: 
         mode += "B"
     
-    with rsOpen(filename, mode=mode, **open_kwargs) as myfile:
+    with rsopen(filename, mode=mode, **open_kwargs) as myfile:
 
         data_blocks = []
         while True:

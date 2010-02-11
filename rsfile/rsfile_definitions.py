@@ -2,6 +2,9 @@
 
 from os import SEEK_SET, SEEK_CUR, SEEK_END
 
+
+SEEK_VALUES = (SEEK_SET, SEEK_CUR, SEEK_END)
+
 DEFAULT_BUFFER_SIZE = 8 * 1024  # bytes
 
 

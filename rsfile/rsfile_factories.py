@@ -4,7 +4,7 @@ import rsfile_definitions as defs
 from rsfile_streams import *
 
     
-def rsOpen(name=None, mode="R", buffering=None, encoding=None, errors=None, newline=None, fileno=None, handle=None, closefd=True, 
+def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newline=None, fileno=None, handle=None, closefd=True, 
             locking=True, timeout=None, thread_safe=True, mutex=None, permissions=0777):
     
     """
@@ -105,7 +105,7 @@ def rsOpen(name=None, mode="R", buffering=None, encoding=None, errors=None, newl
             return buffer
         
     text = RSTextIOWrapper(buffer, encoding, errors, newline, line_buffering)
-    text.mode = mode
+    text.mode = mode # Pakal - weird TODO change that !!!!!
     
     if thread_safe:
         return RSThreadSafeWrapper(text, mutex=mutex, interprocess=raw_kwargs["inheritable"])    
@@ -183,7 +183,7 @@ def parse_advanced_args(path, mode, fileno, handle, closefd):
     if modes - set("RAW+-SIHEBT") or len(mode) > len(modes):
         raise ValueError("invalid mode: %r" % mode)    
     
-    path = path # The file name  # PAKAL - MUST BE NONE OR A STRING IN ANYWAY - PYCONTRACT THIS PLZ !!!
+    path = path # MUST BE NONE OR A STRING IN ANY WAY 
     
     read = "R" in mode
     append = "A" in mode

@@ -37,8 +37,7 @@ class win32FileIO(rsfileio_abstract.RSFileIO):
     @_win32_error_converter        
     def _inner_create_streams(self, path, read, write, append, must_exist, must_not_exist, synchronized, inheritable, fileno, handle, permissions):
 
-        #print("Creating file with : ",locals()) #PAKAL
-        self._close_via_fileno = False
+
         
         # # # real opening of the file stream # # #
         if handle is not None:
@@ -46,7 +45,6 @@ class win32FileIO(rsfileio_abstract.RSFileIO):
             #print "FILE OPENED VIA HANDLE ", handle
             
         elif fileno is not None:
-            self._close_via_fileno = True # we shall close stream via its C wrapper
             self._fileno = fileno
             #print "FILE OPENED VIA FILENO ", fileno
             self._handle = win32._get_osfhandle(fileno) # required immediately
@@ -128,7 +126,7 @@ class win32FileIO(rsfileio_abstract.RSFileIO):
         """
         
         if self._closefd: # always True except when wrapping external file descriptors
-            if self._close_via_fileno:
+            if self._origin == "fileno":
                 os.close(self._fileno) # this closes the underlying native handle as well
             else:
                 win32.CloseHandle(self._handle)

@@ -127,7 +127,7 @@ class IntraProcessLockRegistry(object):
             if (handle == new_handle and start == new_start and end == new_end):
                 del locks[index]
                 #print "THREAD %s NOTIFYING %s" % ( threading.current_thread().name, uid)
-                cls._lock_registry[uid][0].notify() # we awake potential waiters
+                cls._lock_registry[uid][0].notify_all() # we awake potential waiters - ALL of them
                 if not locks:
                     return True
                 else:

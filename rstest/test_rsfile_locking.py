@@ -102,23 +102,23 @@ class TestSafeFile(unittest.TestCase):
         """
 
         # the locking type must be compatible with the opening mode (enforced by some OSes)
-        with rsfile.rsOpen(self.dummyFileName, "RB", buffering=0, locking=False) as f:
+        with rsfile.rsopen(self.dummyFileName, "RB", buffering=0, locking=False) as f:
             self.assertRaises(IOError, f.lock_file, shared=False)
-        with rsfile.rsOpen(self.dummyFileName, "WB", buffering=0, locking=False) as f:
+        with rsfile.rsopen(self.dummyFileName, "WB", buffering=0, locking=False) as f:
             self.assertRaises(IOError, f.lock_file, shared=True)       
   
                     
         # Locking from different open files
-        with rsfile.rsOpen(self.dummyFileName, "RB", buffering=0, timeout=0) as _:
+        with rsfile.rsopen(self.dummyFileName, "RB", buffering=0, timeout=0) as _:
             
-            with rsfile.rsOpen(self.dummyFileName, "RB", buffering=0, timeout=0) as _:
+            with rsfile.rsopen(self.dummyFileName, "RB", buffering=0, timeout=0) as _:
                 pass # OK - shared locking
             
             # Exclusively locking the same disk file twice from different open file objects should fail (or block...)
-            self.assertRaises(rsfile.LockingException, rsfile.rsOpen, self.dummyFileName, "WB", buffering=0, timeout=0)
+            self.assertRaises(rsfile.LockingException, rsfile.rsopen, self.dummyFileName, "WB", buffering=0, timeout=0)
 
 
-        with rsfile.rsOpen(self.dummyFileName, "RWB", buffering=0, locking=False) as f:
+        with rsfile.rsopen(self.dummyFileName, "RWB", buffering=0, locking=False) as f:
             
             f.lock_file(shared=True, timeout=0, length=1, offset=0, whence=os.SEEK_CUR)
             f.lock_file(shared=False, timeout=0, length=1, offset=1, whence=os.SEEK_CUR)

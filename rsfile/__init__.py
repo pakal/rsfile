@@ -98,7 +98,7 @@ def monkey_patch_original_io_module():
     io.BufferedWriter = RSBufferedWriter
     io.BufferedRandom = RSBufferedRandom
     io.TextIOWrapper = RSTextIOWrapper
-    io.open = functools.partial(rsOpen, handle=None, locking=False, timeout=0, thread_safe=False, mutex=None, permissions=0777) 
+    io.open = functools.partial(rsopen, handle=None, locking=False, timeout=0, thread_safe=False, mutex=None, permissions=0777) 
 
     
     """ # OLD, very magical monkey patching of buffer/text classes

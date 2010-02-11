@@ -65,15 +65,16 @@ class TestRawFileViaWrapper(unittest.TestCase):
     def testProperties(self):
         with io.open(TESTFN, 'wb', buffering=0) as f:
 
-            self.assertEquals(f.writable(), True)
-            self.assertEquals(f.seekable(), True)
-            self.assertEquals(f.readable(), False)
+            self.assertEqual(f.writable(), True)
+            self.assertEqual(f.seekable(), True)
+            self.assertEqual(f.readable(), False)
     
-            self.assertEquals(f.name, TESTFN)
-            self.assertEquals(f.mode, 'wb')
+            self.assertEqual(f.name, TESTFN)
+            self.assertEqual(f.origin, "path")
+            self.assertEqual(f.mode, 'wb')
     
-            #self.assertEquals(f._zerofill, True)
-            self.assertEquals(f._append, False)
+            #self.assertEqual(f._zerofill, True)
+            self.assertEqual(f._append, False)
     
             self.assertRaises(IOError, f.read, 10)
             self.assertRaises(IOError, f.readinto, sys.stdout)
@@ -98,31 +99,31 @@ class TestRawFileViaWrapper(unittest.TestCase):
         with io.open(TESTFN, 'wb', buffering=0) as f:
             nbytes = random.randint(0, 10000)
     
-            self.assertEquals(f.tell(), 0)
+            self.assertEqual(f.tell(), 0)
             x_written = f.write("x"*nbytes)
     
-            self.assertEquals(f.size(), x_written)
-            self.assertEquals(f.tell(), x_written)
+            self.assertEqual(f.size(), x_written)
+            self.assertEqual(f.tell(), x_written)
     
             f.seek(nbytes, os.SEEK_CUR)
             y_written = f.write("y"*nbytes)
     
-            self.assertEquals(f.size(), x_written+nbytes+y_written)
-            self.assertEquals(f.tell(), x_written+nbytes+y_written) 
+            self.assertEqual(f.size(), x_written+nbytes+y_written)
+            self.assertEqual(f.tell(), x_written+nbytes+y_written) 
     
             oldpos = f.tell()
             self.assertRaises(IOError, f.seek, -random.randint(1, 10))
-            self.assertEquals(f.tell(), oldpos) # we must not have moved !
+            self.assertEqual(f.tell(), oldpos) # we must not have moved !
     
             f.seek(0, os.SEEK_END)
-            self.assertEquals(f.tell(), f.size()) 
+            self.assertEqual(f.tell(), f.size()) 
     
         with io.open(TESTFN, "rb", buffering=0) as a:
             
             string = a.read(4*nbytes) 
-            self.assertEquals(a.read(10), "") # we should have read until EOF here, else pb !!
+            self.assertEqual(a.read(10), "") # we should have read until EOF here, else pb !!
     
-            self.assertEquals(string, "x"*x_written+"\0"*nbytes+"y"*y_written)
+            self.assertEqual(string, "x"*x_written+"\0"*nbytes+"y"*y_written)
 
 
     def testTruncation(self):        
@@ -132,31 +133,31 @@ class TestRawFileViaWrapper(unittest.TestCase):
     
             i_written = f.write("i"*nbytes)
             pos = f.tell()
-            self.assertEquals(pos, i_written) 
+            self.assertEqual(pos, i_written) 
     
             # we reduce the file
             f.truncate(nbytes)
-            self.assertEquals(f.size(), nbytes) 
-            self.assertEquals(f.tell(), pos)    
+            self.assertEqual(f.size(), nbytes) 
+            self.assertEqual(f.tell(), pos)    
     
             # we extend the file, by default it should fill the space with zeros !
             f.truncate(10*nbytes)
-            self.assertEquals(f.size(), 10*nbytes) 
-            self.assertEquals(f.tell(), pos) 
+            self.assertEqual(f.size(), 10*nbytes) 
+            self.assertEqual(f.tell(), pos) 
             
             #print "WE AVE CHOSEN ", x_written+nbytes+y_written
             # we try illegal, negative truncation
             self.assertRaises(IOError, f.truncate, -random.randint(1, 10))
-            self.assertEquals(f.size(), 10*nbytes) 
-            self.assertEquals(f.tell(), pos) 
+            self.assertEqual(f.size(), 10*nbytes) 
+            self.assertEqual(f.tell(), pos) 
 
             
         with io.open(TESTFN, "rb", buffering=0) as a:
             
             string = a.read(20*nbytes)
-            self.assertEquals(a.read(10), "") # we should have read until EOF here, else pb !!
+            self.assertEqual(a.read(10), "") # we should have read until EOF here, else pb !!
 
-            self.assertEquals(string, "i"*i_written+"\0"*(10*nbytes-i_written))
+            self.assertEqual(string, "i"*i_written+"\0"*(10*nbytes-i_written))
 
     def testAppending(self):
             
@@ -174,7 +175,7 @@ class TestRawFileViaWrapper(unittest.TestCase):
             string = a.read(3*nbytes)
             a.close()
             
-        self.assertEquals(string, "i"*nbytes+"j"*nbytes)
+        self.assertEqual(string, "i"*nbytes+"j"*nbytes)
 
 
 
@@ -237,7 +238,7 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
         copy2.write("ccc")
 
         with open(TESTFN, "rb") as reader:
-            self.assertEquals(reader.read(), "aaabbbccc")
+            self.assertEqual(reader.read(), "aaabbbccc")
 
         copy1.close()
         f.write("---")
@@ -256,13 +257,15 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
         f.write("aaa")
 
         copy1 = io.open(mode='AB', buffering=0, fileno=f.fileno(), closefd=False)
+        self.assertEqual(copy1.origin, "fileno")
         copy1.write("bbb")
 
         copy2 = io.open(mode='AB', buffering=0, fileno=f.fileno(), closefd=True)
+        self.assertEqual(copy2.origin, "fileno")
         copy2.write("ccc")
 
         with open(TESTFN, "rb") as reader:
-            self.assertEquals(reader.read(), "aaabbbccc")
+            self.assertEqual(reader.read(), "aaabbbccc")
 
         copy1.close()
         f.write("---")
@@ -282,13 +285,15 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
 
 
         copy1 = io.open(mode='AB', buffering=0, handle=f.handle(), closefd=False) # We trick the functools.partial object there...
+        self.assertEqual(copy1.origin, "handle")
         copy1.write("bbb")
 
         copy2 = io.open(mode='AB', buffering=0, handle=f.handle(), closefd=True) # We trick the functools.partial object there...
+        self.assertEqual(copy2.origin, "handle")
         copy2.write("ccc")
 
         with open(TESTFN, "rb") as reader:
-            self.assertEquals(reader.read(), "aaabbbccc")
+            self.assertEqual(reader.read(), "aaabbbccc")
 
         copy1.close()
         f.write("---")
@@ -340,12 +345,12 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
 
     def testCreationPermissions(self):
         
-        with rsfile.rsOpen(TESTFN, "RWB-", buffering=0, locking=False, permissions=0555) as f: # creating read-only file
+        with rsfile.rsopen(TESTFN, "RWB-", buffering=0, locking=False, permissions=0555) as f: # creating read-only file
             
-            with rsfile.rsOpen(TESTFN, "RB+", buffering=0, locking=False) as g:
+            with rsfile.rsopen(TESTFN, "RB+", buffering=0, locking=False) as g:
                 pass # no problem
             
-            self.assertRaises(IOError, rsfile.rsOpen, TESTFN, "WB+", buffering=0, locking=False) # can't open for writing
+            self.assertRaises(IOError, rsfile.rsopen, TESTFN, "WB+", buffering=0, locking=False) # can't open for writing
         
         # no need to test further, as other permissions are non-portable and simply forwarded to underlying system calls...
 
@@ -356,43 +361,43 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
         if os.path.exists(TESTFNBIS):
             os.remove(TESTFNBIS)
         
-        with rsfile.rsOpen(TESTFN, "RB", buffering=0) as h:
+        with rsfile.rsopen(TESTFN, "RB", buffering=0) as h:
             self.assertTrue(os.path.exists(TESTFN))
             os.rename(TESTFN, TESTFNBIS)
             os.remove(TESTFNBIS)
-            self.assertRaises(IOError, rsfile.rsOpen, TESTFN, "R+", buffering=0)
-            self.assertRaises(IOError, rsfile.rsOpen, TESTFNBIS, "R+", buffering=0) # on win32 the file remains but in a weird state, awaiting deletion...
+            self.assertRaises(IOError, rsfile.rsopen, TESTFN, "R+", buffering=0)
+            self.assertRaises(IOError, rsfile.rsopen, TESTFNBIS, "R+", buffering=0) # on win32 the file remains but in a weird state, awaiting deletion...
             
         """
         
         # NO NEED FOR BUILTIN DELETE ON CLOSE SEMANTIC
-        with rsfile.rsOpen(TESTFN, "RB", buffering=0) as f:
+        with rsfile.rsopen(TESTFN, "RB", buffering=0) as f:
             
-            with rsfile.rsOpen(TESTFN, "RBH", buffering=0) as g: # hidden file -> deleted on opening
+            with rsfile.rsopen(TESTFN, "RBH", buffering=0) as g: # hidden file -> deleted on opening
                 self.assertTrue(os.path.exists(TESTFN))
                 self.assertEqual(f.uid(), g.uid())
                 old_uid = f.uid()
             # Here, Delete On Close takes effect
             fullpath = os.path.join(os.getcwd(), TESTFN)
             self.assertFalse(os.path.exists(fullpath))
-            self.assertRaises(IOError, rsfile.rsOpen, TESTFN, "R") # on win32, deleted file is in a weird state until all handles are closed !!
+            self.assertRaises(IOError, rsfile.rsopen, TESTFN, "R") # on win32, deleted file is in a weird state until all handles are closed !!
         """
         
                     
     
     
-    def testRsOpenBehaviour(self):
+    def testRsopenBehaviour(self):
 
         # for ease of use, we just test binary unbuffered files...
         
-        with rsfile.rsOpen(TESTFN, "RAEB", buffering=0, locking=False) as f:
+        with rsfile.rsopen(TESTFN, "RAEB", buffering=0, locking=False) as f:
             self.assertEqual(f.readable(), True)
             self.assertEqual(f.writable(), True)
             self.assertEqual(f._append, True)
             self.assertEqual(f.size(), 0)
             f.write("abcde")          
 
-        with rsfile.rsOpen(TESTFN, "RAEB", buffering=0) as f:
+        with rsfile.rsopen(TESTFN, "RAEB", buffering=0) as f:
             #PAKAL TO REPUT self.assertEqual(f.size(), 0)
             f.write("abcdef")
             f.seek(0)
@@ -400,13 +405,13 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
             self.assertEqual(f.size(), 12)
             self.assertEqual(f.tell(), 12)
 
-        self.assertRaises(IOError, rsfile.rsOpen, TESTFN, "RB-", buffering=0)
+        self.assertRaises(IOError, rsfile.rsopen, TESTFN, "RB-", buffering=0)
             
-        with rsfile.rsOpen(TESTFN, "RAEBH", buffering=0) as f:
+        with rsfile.rsopen(TESTFN, "RAEBH", buffering=0) as f:
             os.rename(TESTFN, TESTFN+".temp") # for win32 platforms...
             os.remove(TESTFN+".temp") 
         
-        self.assertRaises(IOError, rsfile.rsOpen, TESTFN, "WB+", buffering=0)
+        self.assertRaises(IOError, rsfile.rsopen, TESTFN, "WB+", buffering=0)
         
         
             
@@ -526,9 +531,9 @@ class TestMiscStreams(unittest.TestCase):
             myfile.times().access_time
             myfile.size()
             
-            myfile.mode
+            myfile.mode # Pakal - todo - check how it works !!!
             myfile.name
-            myfile.path
+            myfile.origin
             myfile.closefd
             
             myfile.write(char)
@@ -577,10 +582,10 @@ class TestMiscStreams(unittest.TestCase):
             self.assertEqual(raw.tell(), 2) # read ahead buffer reset
             
             
-        with rsfile.rsOpen(TESTFN, "RWEB", buffering=100, locking=False) as myfile: # buffered binary stream
+        with rsfile.rsopen(TESTFN, "RWEB", buffering=100, locking=False) as myfile: # buffered binary stream
             test_new_methods(myfile, myfile.raw, "x")
             
-        with rsfile.rsOpen(TESTFN, "RWET", buffering=100, locking=False) as myfile: # text stream
+        with rsfile.rsopen(TESTFN, "RWET", buffering=100, locking=False) as myfile: # text stream
             test_new_methods(myfile, myfile.buffer.raw, u"x")     
             
         
@@ -617,24 +622,24 @@ class TestMiscStreams(unittest.TestCase):
     
     def testReturnedStreamTypes(self):
     
-        with rsfile.rsOpen(TESTFN, "RWB", buffering=0, thread_safe=True) as f:
+        with rsfile.rsopen(TESTFN, "RWB", buffering=0, thread_safe=True) as f:
             self.assertTrue(isinstance(f, rsfile.RSThreadSafeWrapper))
             f.write("abc")
-        with rsfile.rsOpen(TESTFN, "RWB", buffering=0, thread_safe=False) as f:
+        with rsfile.rsopen(TESTFN, "RWB", buffering=0, thread_safe=False) as f:
             self.assertTrue(isinstance(f, io.RawIOBase))        
             f.write("abc")
             
-        with rsfile.rsOpen(TESTFN, "RWB") as f:
+        with rsfile.rsopen(TESTFN, "RWB") as f:
             self.assertTrue(isinstance(f, rsfile.RSThreadSafeWrapper))
             f.write("abc")
-        with rsfile.rsOpen(TESTFN, "RWB", thread_safe=False) as f:
+        with rsfile.rsopen(TESTFN, "RWB", thread_safe=False) as f:
             self.assertTrue(isinstance(f, io.BufferedIOBase))   
             f.write("abc")
             
-        with rsfile.rsOpen(TESTFN, "RWT",) as f:
+        with rsfile.rsopen(TESTFN, "RWT",) as f:
             self.assertTrue(isinstance(f, rsfile.RSThreadSafeWrapper))
             f.write(u"abc")
-        with rsfile.rsOpen(TESTFN, "RWT", thread_safe=False) as f:
+        with rsfile.rsopen(TESTFN, "RWT", thread_safe=False) as f:
             self.assertTrue(isinstance(f, io.TextIOBase))     
             f.write(u"abc")    
 
