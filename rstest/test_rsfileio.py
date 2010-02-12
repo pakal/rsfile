@@ -49,6 +49,10 @@ def _cleanup():
     if os.path.exists(TESTFN):
         os.chmod(TESTFN, 0777)
         os.remove(TESTFN)
+    
+    if os.path.exists(TESTFN+".temp"):
+        os.chmod(TESTFN+".temp", 0777)
+        os.remove(TESTFN+".temp")
 
 
 
@@ -471,11 +475,10 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
                     """
                     
                     myfile.seek(0, os.SEEK_END) # to fulfill the expectations of the worker process 
-                    #print >>sys.stderr, "we spawn" #r"C:\Python26\python.exe"
-                    retcode = os.spawnv(os.P_WAIT, executable, pre_args+args)  # 1st argument must be the program itself !
-                    #print >>sys.stderr, "spawn over"
+                    cmdline = subprocess.list2cmdline(pre_args+args) # Important for space escaping
+                    retcode = os.spawnl(os.P_WAIT, executable, cmdline)  # 1st argument must be the program itself !
                     self.assertEqual(retcode, EXPECTED_RETURN_CODE, "Spawned process returned %d instead of %d"%(retcode, EXPECTED_RETURN_CODE))                    
-                    
+
                 
     def testSynchronization(self):
         

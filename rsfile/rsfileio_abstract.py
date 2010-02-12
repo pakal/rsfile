@@ -15,9 +15,9 @@ from rsfile_registries import IntraProcessLockRegistry
 class RSFileIO(RawIOBase):  # we're forced to use this name, because of autodocumentation constraints...
     """
     
-    This class is an improved version of :class:`io.FileIO`, relying on native OS primitives, 
+    This abstract class is an improved version of :class:`io.FileIO`, relying on native OS primitives, 
     and offering much more control over the behaviour of the file stream.
-    
+    The platform-specific implementation of this class is available as :class:`rsfile.RSFileIO`.
     """
     
     
@@ -534,7 +534,7 @@ class RSFileIO(RawIOBase):  # we're forced to use this name, because of autodocu
         
         On success, ``lock_file`` returns a context manager inside a with statement, 
         to automatically release the lock. However, it is advised that you don't release locks 
-        if you close the stream just after that ; letting the close() operation release the locks
+        if you close the stream just after that; letting the close() operation release the locks
         is as efficient, and on unix it prevents other threads from taking locks in teh short time
         between unlocking and stream closing (thus allowing the system to safely free handle resources
         in spite of the unsafe fcntl() semantic).

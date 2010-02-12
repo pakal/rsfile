@@ -118,7 +118,8 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
 
 
     
-def parse_standard_args(name, mode, closefd): # warning - name can be a fileno here ...
+def parse_standard_args(name, mode, fileno, handle, closefd): # warning - name can be a fileno here ...
+    # PAKAL - todo - insert fileno and handle into processing !!!!!!!!!!!!!!!!!!!!!!!!!
     
     modes = set(mode)
     if modes - set("arwb+tU") or len(mode) > len(modes):
