@@ -4,56 +4,27 @@ from rsfile_factories import rsopen
 
     
 # TODO - TEST THESE UTILITY METHODS !!!!
-    
-def write_to_file(filename, data, sync=False, must_exist=False, must_not_exist=False, **open_kwargs):    
 
-    assert "mode" not in open_kwargs # mode is automatically determined by this function
-
-    mode = "WE" # we erase the file
-    if sync: 
-        mode += "S"
-    if must_exist:
-        mode += "+"
-    if must_not_exist:
-        mode += "-"
-    if not isinstance(data, unicode):
-        mode += "B"
-    
-    with rsopen(filename, mode=mode, **open_kwargs) as myfile:
-        myfile.write(data)
-        myfile.flush()
-        if sync:
-            myfile.sync()
    
+def read_from_file(filename, binary=False, buffering=None, encoding=None, errors=None, newline=None, locking=True, timeout=None): 
+    """
+    Returns the whole content of the file ``filename``, as a binary or unicode string 
+    depending on the boolean``binary``.
     
-def append_to_file(filename, data, sync=False, must_exist=False, **open_kwargs):
-
-    assert "mode" not in open_kwargs # mode is automatically determiend by this function
-
-    mode = "WA"
-    if sync: 
-        mode += "S"
-    if must_exist:
-        mode += "+"
-    if not isinstance(data, unicode):
-        mode += "B"
+    Other arguments are the same as in :func:`rsfile.rsopen`.
     
-    with rsopen(filename, mode=mode, **open_kwargs) as myfile:
-        myfile.write(data)
-        myfile.flush()
-        if sync:
-            myfile.sync()
+    This function may raise **EnvironmentError** exceptions.
+    """
     
-   
-def read_from_file(filename, binary=False, **open_kwargs): 
-    assert "mode" not in open_kwargs # mode is automatically determined by this function
     # TODO - To be added - "limit" argument, to retrieve only part of a file ????????
     
     mode = "R+"
     if binary: 
         mode += "B"
+        
     
-    with rsopen(filename, mode=mode, **open_kwargs) as myfile:
+    with rsopen(filename, mode=mode, buffering=buffering, encoding=encoding, errors=errors, 
+                newline=newline, locking=locking, timeout=timeout, thread_safe=False) as myfile:
 
         data_blocks = []
         while True:
@@ -66,6 +37,66 @@ def read_from_file(filename, binary=False, **open_kwargs):
         else: joiner = u""   
             
         return joiner.join(data_blocks)
+    
+    
+    
+def write_to_file(filename, data, sync=False, must_exist=False, must_not_exist=False,
+                  buffering=None, encoding=None, errors=None, newline=None, locking=True, timeout=None):    
+    """
+    Write the binary or unicode string ``data`` to the file ``filename``.
+    
+    Other arguments are the same as in the constructor of :class:`rsfile.RSFileIO` and in :func:`rsfile.rsopen`.
+    
+    This function may raise **EnvironmentError** exceptions.
+    """
+
+    mode = "WE" # we erase the file
+    #if sync: mode += "S"   #  NO - final sync() will suffice
+    if must_exist:
+        mode += "+"
+    if must_not_exist:
+        mode += "-"
+    if not isinstance(data, unicode):
+        mode += "B"
+    
+    with rsopen(filename, mode=mode,
+                buffering=buffering, encoding=encoding, errors=errors, 
+                newline=newline, locking=locking, timeout=timeout, thread_safe=False) as myfile:
+        
+        myfile.write(data)
+        myfile.flush()
+        if sync:
+            myfile.sync()
+   
+    
+def append_to_file(filename, data, sync=False, must_exist=False, 
+                   buffering=None, encoding=None, errors=None, newline=None, locking=True, timeout=None):
+
+    """
+    Append the binary or unicode string ``data`` to the file ``filename``.
+    
+    Other arguments are the same as in the constructor of :class:`rsfile.RSFileIO` and in :func:`rsfile.rsopen`.
+    
+    This function may raise **EnvironmentError** exceptions.
+    """
+    
+    mode = "A"
+    #if sync: mode += "S"   #  NO - final sync() will suffice
+    if must_exist:
+        mode += "+"
+    if not isinstance(data, unicode):
+        mode += "B"
+    
+    with rsopen(filename, mode=mode,
+                buffering=buffering, encoding=encoding, errors=errors, 
+                newline=newline, locking=locking, timeout=timeout, thread_safe=False) as myfile:
+        
+        myfile.write(data)
+        myfile.flush()
+        if sync:
+            myfile.sync()
+    
+
     
     
     

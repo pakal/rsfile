@@ -12,10 +12,10 @@ from rsfile_registries import IntraProcessLockRegistry
 
 
 
-class RSFileIO(RawIOBase):  # we're forced to use this name, because of autodocumentation constraints...
+class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of autodocumentation constraints...
     """
     
-    This abstract class is an improved version of :class:`io.FileIO`, relying on native OS primitives, 
+    This abstract class is an improved version of the raw stream :class:`io.FileIO`, relying on native OS primitives, 
     and offering much more control over the behaviour of the file stream.
     The platform-specific implementation of this class is available as :class:`rsfile.RSFileIO`.
     """
@@ -39,16 +39,11 @@ class RSFileIO(RawIOBase):  # we're forced to use this name, because of autodocu
 
         """
         
-        This constructor exhibits the whole sets of functions offered by 
-        :class:`RSFileIO` instances.
-        
-        Hopefully you won't have to deal with it, anyway, since factory 
+        Hopefully you won't have to deal directly with its constructor, since factory 
         functions like :func:`rsopen` give you a much easier access to 
         streams chain, including buffering and encoding aspects.
         
-        The file must necessarily be opened at least with read or write access,
-        and can naturally be opened with both.
-        
+    
         
         .. rubric::
             Target determination parameters
@@ -78,7 +73,8 @@ class RSFileIO(RawIOBase):  # we're forced to use this name, because of autodocu
             Mode parameters
         
         These parameters determine the access checking that will be done while manipulating
-        the stream.
+        the stream. The file must necessarily be opened at least with read or write access,
+        and can naturally be opened with both.
         
         - *read* (boolean): Open the file with read access (file truncation is not allowed).
         - *write* (boolean): Open the file with write access (file truncation is allowed).
@@ -243,10 +239,14 @@ class RSFileIO(RawIOBase):  # we're forced to use this name, because of autodocu
     
     # # # Read-only Attributes # # #
     
-    
     # Pakal - to be removed ????
     @property # TODO - improve this
     def mode(self): 
+        """
+        At the moment, this property behaves like its sibling from the stdlib io module, 
+        i.e it computes and returns one of "rb", "wb" and "rb+" for binary streams, 
+        and the actual opening mode for text streams. This might change in the future.
+        """
         # we mimic the _fileio.c implementation, that's weird but well...
         if self.readable():
             return "rb+" if self.writable() else "rb"
@@ -461,8 +461,8 @@ class RSFileIO(RawIOBase):  # we're forced to use this name, because of autodocu
         unless they use the same type of lock as rsFile
         (currently, fcntl calls), programs will freely access your files if they have 
         proper permissions. Note that it is possible to enforce mandatory 
-        locking thanks to some mount options and file flags (see XXX???urls), 
-        but this practice is highly advised against : (url??)
+        locking thanks to some mount options and file flags, 
+        but this practice is highly advised against by unix gurus.
         
         Native locks have very different semantics depending on the platform, but 
         rsfile enforces a single semantic : *per-handle, non-reentrant locks*.
@@ -547,8 +547,8 @@ class RSFileIO(RawIOBase):  # we're forced to use this name, because of autodocu
         if length is not None and (not isinstance(length, (int, long)) or length<0):
             raise ValueError("length must be None or positive integer.")        
         
-        if offset is not None and (not isinstance(offset, (int, long)) or offset<0):
-            raise ValueError("offset must be None or positive integer.") 
+        if offset is not None and not isinstance(offset, (int, long)):
+            raise ValueError("offset must be None or an integer.") 
         
         if whence not in defs.SEEK_VALUES:
             raise ValueError("whence must be a valid SEEK_\* value") 

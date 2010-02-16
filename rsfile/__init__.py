@@ -6,6 +6,8 @@ import sys, os
 import functools
 import io
 
+from rsfileio_abstract import RSFileIOAbstract
+
 from rsfile_definitions import * # constants, base types and exceptions
 from rsfile_streams import *
 from rsfile_factories import *
@@ -86,7 +88,7 @@ def monkey_patch_original_io_module():
         Interface to rsFile accepting the limited "fopen()" modes (no file locking, no O_EXCL|O_CREAT semantic...)
         """
         def __init__(self, name, mode="r", closefd=True):
-            (raw_kwargs, extended_kwargs) = parse_standard_args(name, mode, closefd)
+            (raw_kwargs, extended_kwargs) = parse_standard_args(name, mode, None, None, closefd)
             RSFileIO.__init__(self, **raw_kwargs)
             if extended_kwargs["truncate"]:
                 # HERE, ERROR IF FILE NOT WRITABLE !!!! PAKAL

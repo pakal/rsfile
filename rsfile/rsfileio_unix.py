@@ -16,7 +16,7 @@ except ImportError:
 
 
 
-class unixFileIO(rsfileio_abstract.RSFileIO):      
+class unixFileIO(rsfileio_abstract.RSFileIOAbstract):      
 
     """
 

@@ -411,7 +411,7 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
 
         self.assertRaises(IOError, rsfile.rsopen, TESTFN, "RB-", buffering=0)
             
-        with rsfile.rsopen(TESTFN, "RAEBH", buffering=0) as f:
+        with rsfile.rsopen(TESTFN, "RAEB", buffering=0) as f:
             os.rename(TESTFN, TESTFN+".temp") # for win32 platforms...
             os.remove(TESTFN+".temp") 
         
@@ -617,7 +617,7 @@ class TestMiscStreams(unittest.TestCase):
         
         for (mode1, mode2) in combinations.items():
             
-            res1 = parser1(TESTFN, mode1, True)
+            res1 = parser1(TESTFN, mode1, None, None, True)
             res2 = parser2(TESTFN, mode2, None, None, True)
             msg = str((mode1,mode2))
             self.assertEqual(res1, res2, msg)
@@ -649,7 +649,8 @@ class TestMiscStreams(unittest.TestCase):
             
     def testStreamUtilities(self):
         
-        self.assertRaises(AssertionError, rsfile.write_to_file, TESTFN, "abc", mode="W")
+        # TODO IMPROVE THIS WITH OTHER ARGUMENTS
+        
         self.assertRaises(ValueError, rsfile.write_to_file, TESTFN, "abc", must_exist=True, must_not_exist=True)
         self.assertRaises(IOError, rsfile.append_to_file, TESTFN, "abc", must_exist=True)        
         

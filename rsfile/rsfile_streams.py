@@ -2,7 +2,6 @@
 import sys, multiprocessing, threading, functools, collections, io
 
 
-
 if sys.platform == 'win32':
     try:
         from rsfileio_win32 import RSFileIO

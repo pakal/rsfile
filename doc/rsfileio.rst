@@ -1,15 +1,24 @@
 
-RSFileIO Streams
+Advanced Streams
 ================
 
-Hello everyone
-
-.. module:: rsfile.rsfileio_abstract
+.. module:: rsfile
 
 
+.. rubric::
+	**Intermediary Streams**
+	
+Miscellaneous I/O streams have been created/modified to give access to the
+advanced raw FileIO class described below. They can be found in the *rsfile*
+as module, as classes named *RSBufferedReader*, *RSBufferedWriter*, *RSBufferedRandom*,
+*RSTextIOWrapper* and *RSThreadSafeWrapper*.
 
 
-.. autoclass:: RSFileIO
+.. rubric::
+	**RSFileIO Streams**
+
+
+.. autoclass:: RSFileIOAbstract
 	
 	
 	.. rubric::
@@ -45,7 +54,7 @@ Hello everyone
 	
 	.. autoattribute:: origin
 	
-	
+	.. autoattribute:: mode
 	
 	
 	

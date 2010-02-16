@@ -8,16 +8,78 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
             locking=True, timeout=None, thread_safe=True, mutex=None, permissions=0777):
     
     """
-    Warning : setting lockingFalse allows you to benefit from new-style modes without dealing with any automated locking, but be aware that in this configuration, 
-    file truncation on opening will become rather sensitive, as nothing will prevent it from disrupting other processes using the same file.
+    This function is a factory similar to :func:`io.open`, which returns chains of I/O streams targeting files, with
+    a focus set on security and concurrency protections.
     
-    Buffering:
-        <0 or None -> full buffering
-        0 -> disabled
-        1 -> line buffering
-        >1 -> take that buffer size
+    ``name`` is the path to the file, in case no existing fileno or handle is provided for wrapping 
+    through the ``fileno``/``handle`` arguments.
+
+    ``mode`` is the access mode of the stream, it can be given either as a standard mode string, or as an advanced mode string 
+    (see :ref:`file opening modes<file_opening_modes>`). 
     
-    thread_safe : if true, wraps the top-most stream object into a thread-safe interface
+    ``closefd`` (boolean) can only be False when wrapping a fileno or a handle, and in this case the wrapped 
+    stream will not be closed when the stream objects are closed.
+ 
+    .. note:: 
+            For backward compatibility, when using standard modes, it is still possible to provide 
+            a fileno for wrapping directly as the ``name`` argument, but this way of proceeding is deprecated.
+
+    ``buferring``, ``encoding``, ``errors``, and ``newline`` arguments have the same meaning as in :func:`io.open`.
+    
+    If ``locking`` is True, the file will immediately be fully locked on opening, with a 
+    default share mode (exclusive for writable streams, shared for read-only streams) 
+    and the ``timeout`` argument provided. This is particularly useful is the file is opened in 
+    "truncation" mode, as it prevents this truncation from happening without inter-process protection.
+    Note that it is still possible to abort that locking with a call to :meth:`unlock` (without arguments).
+
+    If ``thread_safe`` is True, the chain of streams returned by the function will be wrapped into 
+    a thread-safe interface ; in this case, if ``mutex`` is provided, it is used as the concurrency lock, 
+    else a new lock is created (a multiprocessing RLock() if the stream is inheritable, else a threading RLock(). 
+
+    ``permissions`` will simply be forwarded to the lowest level stream, 
+    so as to be applied in case a file creation occurs (note : decimal '511' corresponds to octal '0777', i.e whole permissions).
+
+
+    .. _file_opening_modes:
+    
+    .. rubric::
+        FILE OPENING MODES
+    
+    In addition to standard modes as described in the documentation of :func:`io.open`,
+    a set of advanced modes is available, as capital-case flags. These advanced modes
+    should be combinated in the order listed below, for ease of reading. Standard and advanced 
+    modes may not be mixed together.
+    
+    ========= ===============================================================
+    Character Meaning
+    ========= ===============================================================
+    'R'       Stream is Readable
+    'W'       Stream is Writable
+    'A'       Stream is in Append mode (implicitly enforces W)
+    '+'       The file entry must already exist
+    '-'       The file entry must not exist (it will be created)
+    'S'       Stream is Synchronized
+    'I'       Stream is Inheritable
+    'E'       Stream will be Erased on opening
+    'B'       Stream is in Binary mode
+    'T'       Stream is in Text mode (default)
+    ========= ===============================================================
+    
+    
+    ========= =====================
+    Modes Equivalences
+    ===============================
+    'r'           'R+'
+    'w'           'WE'
+    'a'           'A'
+    'r+'          'RW+'
+    'w+'          'RWE'
+    'a+'          'RA'
+    '...b'        '...B'
+    '...t'        '...T'
+    ========= =====================
+
+
     """
     
     # TODO - PYCONTRACT !!! check that no mutex if not thread-safe
@@ -37,7 +99,7 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
     cleaned_mode = mode.replace("U", "")
     if cleaned_mode.lower() == cleaned_mode:
         assert handle is None and fileno is None # to handle these, use advanced open mode
-        (raw_kwargs, extended_kwargs) = parse_standard_args(name, mode, closefd)
+        (raw_kwargs, extended_kwargs) = parse_standard_args(name, mode, fileno, handle, closefd)
     elif cleaned_mode.upper() == cleaned_mode:
         (raw_kwargs, extended_kwargs) = parse_advanced_args(name, mode, fileno, handle, closefd)
     else:
@@ -126,7 +188,6 @@ def parse_standard_args(name, mode, fileno, handle, closefd): # warning - name c
         raise ValueError("invalid mode: %r" % mode)
     
     # raw analysis
-    modes = set(mode)
     reading_flag = "r" in modes or "U" in modes
     writing_flag = "w" in modes
     appending_flag = "a" in modes
@@ -136,10 +197,11 @@ def parse_standard_args(name, mode, fileno, handle, closefd): # warning - name c
     binary = "b" in modes
     text = "t" in modes
     
-    if "U" in modes:
-        if appending_flag or appending_flag:
+    if "U" in modes: # only for backward compatibility
+        if writing_flag or appending_flag or updating_flag:
             raise ValueError("can't use U and writing mode at once")
         reading_flag = True # we enforce reading 
+        
     if text and binary:
         raise ValueError("can't have text and binary mode at once")
     if reading_flag + writing_flag + appending_flag > 1:
@@ -149,6 +211,8 @@ def parse_standard_args(name, mode, fileno, handle, closefd): # warning - name c
     
     # real semantic
     if isinstance(name, int):
+        if fileno is not None:
+            raise ValueError("Impossible to provide a file descriptor via both name and fileno arguments")
         fileno = name
         path = None
     else:
@@ -167,7 +231,7 @@ def parse_standard_args(name, mode, fileno, handle, closefd): # warning - name c
                     must_not_exist=False,
                     synchronized=False,
                     inheritable=True, 
-                    fileno=fileno, handle=None, closefd=closefd)
+                    fileno=fileno, handle=handle, closefd=closefd)
     
     extended_kwargs = dict(truncate=truncate, 
                             binary=binary,
@@ -181,7 +245,7 @@ def parse_advanced_args(path, mode, fileno, handle, closefd):
 
     
     modes = set(mode)
-    if modes - set("RAW+-SIHEBT") or len(mode) > len(modes):
+    if modes - set("RAW+-SIEBT") or len(mode) > len(modes):
         raise ValueError("invalid mode: %r" % mode)    
     
     path = path # MUST BE NONE OR A STRING IN ANY WAY 

@@ -1,37 +1,3 @@
-    def lock_chunk(self, shared=False, timeout=None, length=None, offset=0, whence=os.SEEK_SET):
-        """Locks the whole file or a portion of it, depending on the arguments provided.
-        
-        If shared is True, the lock is a "reader", non-exclusive lock, which can be shared by several 
-        processes, but prevents "writer" locks from being taken on the locked portion. 
-        Else, the lock is a "writer" lock which is fully exclusive, preventing both writer 
-        and reader locks from being taken by other processes on the locked portion.
-        
-        If timeout is None, the process will block on this operation until it manages to get the lock; 
-        else, it must be a number indicating how many seconds
-        the operation will wait before raising a timeout????? exception 
-        (thus, timeout=0 means a non-blocking locking attempt).
-        
-        Offset and/or length can be used to specify a portion of file to lock. 
-        They must both be None or positive integers. If length is 0 or None, this means all the rest of the file will be locked, from the specified offset. Whence is the same as in seek(), and specifies where the offset is calculated from (beginning, current position, or end of file).
-        
-        The strength of the locking depends on the underlying platform. On windows, all file locks are mandatory, i.e even programs which are not using 
-        file locks won't be able to access locked parts of files for reading or writing (depending on the type of lock used).
-        On posix platforms, most of the time locking is only advisory, i.e unless they use the same type of lock as rsFile's ones (currently, fcntl calls), programs will be able to freely access your files if they have proper permissions. Note that it is possible to enforce mandatory locking thanks to some
-        mount options and file flags (see XXX???urls)
-        
-        Note that file locking is not reentrant: calling this function several times, on overlapping areas, will raise a Rntime Error; but you can still get different locks at the same time, for different parts of the same file (beware of deadlocks however, in case several process try to get them in different orders).
-        ??? TELL EXCEPTIONS HER        
-
-        # TO BE ADDED : MORE ASSERTIONS PYCONTRACT !!! 
-        pre:
-            offset is None or isistance(offset, int)
-            length is None or (isistance(length, int) and length >= 0)
-        post:
-            isinstance(__return__, bool)
-
-        WARNING : WIN32 - Locking a portion of a file for shared access denies all processes write access to the specified region of the file, including the process that first locks the region. All processes can read the locked region.-> do not enforce that on unix !!!!!! advisory only !!!
-        
-        """
 
 
 
@@ -52,8 +18,6 @@ This might be interesting in two particular cases
 - your application will only run in posix system, and you 
 /FALSE
 
-TODO : check behaviour of double lock in win32 and posix - do not allow deadlocks !! 
-just test if 2° thread can unlok the file locked by another one !
 
 If the principle of "composed streams" affords a great flexibility, it comes at the cost of losing the notion of "public method". Indeed, depending on the chainning of different IOBase instances, they will be directly accessible, or instead wrapped in other objects. This is particularly embarrassing concerning thread-safety : in prevision of the moment when it might be used as"top-level" object, each stream type currently implements its own mutex system, which is both error-prone (in the IO implementation, some methods like xxx.truncate are not thread-safe ??????), and performance-hindering (there might easily be until 3 levels of redundant locking, eg. in common textIOWrapper streams).
 To solve the problem, rsFile uses some kind of "thread-safe interface" pattern : each class inheriting IOBase shall implement its logic in a thread-unsafe way, and it's up to each factory functions (like io.open()) to wrap the top-level object of the IO chain inside a "thread-safe adapter", a transparent wrapper which simply ensures that only one thread at a time may access the methods and properties of the stream ????

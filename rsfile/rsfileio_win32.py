@@ -15,7 +15,7 @@ except ImportError:
 
 
 
-class win32FileIO(rsfileio_abstract.RSFileIO):        
+class win32FileIO(rsfileio_abstract.RSFileIOAbstract):        
 
 
     __POSITION_REFERENCES = {defs.SEEK_SET:win32.FILE_BEGIN , defs.SEEK_CUR:win32.FILE_CURRENT, defs.SEEK_END:win32.FILE_END}
