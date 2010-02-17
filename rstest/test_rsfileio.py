@@ -28,8 +28,8 @@ rsfile.monkey_patch_original_io_module()
 def test_original_io():
     
     import test.test_support, test.test_io, test.test_memoryio, test.test_file, test.test_bufio, test.test_fileio, test.test_largefile
-    #test_support.use_resources = ["largefile"]  # -> decomment this to try 2Gb file operations !
-    #test.test_largefile.test_main()
+    test_support.use_resources = ["largefile"]  # -> decomment this to try 2Gb file operations !
+    test.test_largefile.test_main()
     
     test.test_io.test_main()
     test.test_memoryio.test_main()
@@ -464,19 +464,17 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
                     child = subprocess.Popen(pre_args+args, executable=executable, shell=False, close_fds=False)
                     retcode = child.wait()
                     self.assertEqual(retcode, EXPECTED_RETURN_CODE, "Spawned child returned %d instead of %d"%(retcode, EXPECTED_RETURN_CODE))                               
-                    """
-                    # We test inheritance via subprocess module
-                    process = multiprocessing.Process(name="%s"%(target.__name__), target=target, kwargs=kwargs)   
-                    process.start()
-                    #myfile.close() # we close our own handle immediately !
-                    process.join() 
-                    #print process.exitcode
                     
-                    """
                     
                     myfile.seek(0, os.SEEK_END) # to fulfill the expectations of the worker process 
-                    cmdline = subprocess.list2cmdline(pre_args+args) # Important for space escaping
-                    retcode = os.spawnl(os.P_WAIT, executable, cmdline)  # 1st argument must be the program itself !
+                    
+                    if rsfile.FILE_IMPLEMENTATION == "win32":
+                        cmdline = subprocess.list2cmdline(pre_args+args) # Important for space escaping, with the buggy win32 spawn implementation...
+                        retcode = os.spawnl(os.P_WAIT, executable, cmdline)  # 1st argument must be the program itself !
+                    else:
+                        cmdline = pre_args+args
+                        retcode = os.spawnv(os.P_WAIT, executable, cmdline)
+                        
                     self.assertEqual(retcode, EXPECTED_RETURN_CODE, "Spawned process returned %d instead of %d"%(retcode, EXPECTED_RETURN_CODE))                    
 
                 

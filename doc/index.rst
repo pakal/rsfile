@@ -27,12 +27,16 @@ eventually contain.
 	
 	rsfile.rst	
 
+.. rubric::
+	**Sources, downloads, bugs:**
 
+All is in the `Bitbucket Repository <http://bitbucket.org/pchambon/python-rock-solid-tools/>`_.
+	
 .. rubric::
 	**Contacts:**
 	
-Any feedback / bug report is highly appreciated ; if you don't feel like subscribing to mailing-lists or bug trackers,
-just leave me an email at the address below.
+Any feedback / bug report is highly appreciated; and if you don't feel like subscribing to mailing-lists or bug trackers,
+feel free to send an email at the address below.
 
 .. image:: email_pythoniks.png	
 	

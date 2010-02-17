@@ -495,6 +495,10 @@ class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of 
             To avoid this, simply plan lock-less moments for this flushing of pending handles, 
             or reuse the same file objects as much as possible.
             
+            Note that rsfile protections can't do anything if a third-party functions or C extensions
+            used by the process open the same file without using rsfile's interface  - in this case, 
+            file locks might be silently lost...
+            
         .. rubric::
             Parameters
         
@@ -535,7 +539,7 @@ class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of 
         On success, ``lock_file`` returns a context manager inside a with statement, 
         to automatically release the lock. However, it is advised that you don't release locks 
         if you close the stream just after that; letting the close() operation release the locks
-        is as efficient, and on unix it prevents other threads from taking locks in teh short time
+        is as efficient, and on unix it prevents other threads from taking locks in the short time
         between unlocking and stream closing (thus allowing the system to safely free handle resources
         in spite of the unsafe fcntl() semantic).
         

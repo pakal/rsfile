@@ -22,7 +22,7 @@ as module, as classes named *RSBufferedReader*, *RSBufferedWriter*, *RSBufferedR
 	
 	
 	.. rubric::
-		**SPECIFIC/MODIFIED METHODS**
+		**SPECIFIC OR MODIFIED METHODS**
 	
 	.. automethod:: close
 	
@@ -48,7 +48,7 @@ as module, as classes named *RSBufferedReader*, *RSBufferedWriter*, *RSBufferedR
 	
 	
 	.. rubric::
-		**SPECIFIC/MODIFIED ATTRIBUTES**
+		**SPECIFIC OR MODIFIED ATTRIBUTES**
 	
 	.. autoattribute:: name
 	
