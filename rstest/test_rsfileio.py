@@ -90,13 +90,15 @@ class TestRawFileViaWrapper(unittest.TestCase):
         try:
             os.rmdir(DIRNAME)
         except EnvironmentError:
-            pass
+            pass # not existing surely...
         
         os.mkdir(DIRNAME)
         
         # we must NOT be able to open directories via rsfile !
         self.assertRaises(IOError, io.open, DIRNAME, 'rb', buffering=0)
         self.assertRaises(IOError, io.open, DIRNAME, 'wb', buffering=0)   
+        
+        os.rmdir(DIRNAME)
 
         
     def testSizeAndPos(self):
