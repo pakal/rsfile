@@ -13,6 +13,19 @@
 # test that buffers don't mess with file size !!!
 
 
-check __getattr__ and __setattr_ of theradsafe wrapper !
+check __getattr__ and __setattr_ of threadsafe wrapper !
 
 Tester win32 truncate sur fichier locked
+
+
+
+  	
+"""
+TODO : add support for sparse files on ntfs !!!
+
+See also FSCTL_SET_ZERO_DATA Control Code
+
+The bug requests that sparse files be created by default at least by RandomAccessFile.  It is probably inappropriate to do this for all files, but adding an API to File (or a new constructor) to explicitly request creation of a sparse file is reasonable. RAF could be modified to always (or optionally) call that API.  Random access files are used by applications on many systems in a way where system support for sparse files is of benefit.  Existing programs, such as data bases that are implemented in C often take advantage of this.  It should be possible to do so in Java as well on OSs that support this.  As noted in the description, we already support this for unix. 
+ 
+To support this on NTFS, will need to add a call to the win32 API DeviceIoControl with the FSCTL_SET_SPARSE flag after the file has been  created. 
+""" 

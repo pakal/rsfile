@@ -24,7 +24,14 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
             For backward compatibility, when using standard modes, it is still possible to provide 
             a fileno for wrapping directly as the ``name`` argument, but this way of proceeding is deprecated.
 
-    ``buferring``, ``encoding``, ``errors``, and ``newline`` arguments have the same meaning as in :func:`io.open`.
+    ``buffering``, ``encoding``, ``errors``, and ``newline`` arguments have the same meaning as in :func:`io.open`.
+    
+    .. warning::
+    
+        Like io.open(), if buffering is 0, this function returns a raw stream, the methods of which
+        only issue one system call. So in this case, checking the number of bytes written/read after 
+        each operation is highly advised.
+        
     
     If ``locking`` is True, the file will immediately be fully locked on opening, with a 
     default share mode (exclusive for writable streams, shared for read-only streams) 
@@ -67,7 +74,7 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
     
     
     ========= =====================
-    Modes Equivalences
+    Mode Equivalences
     ===============================
     'r'           'R+'
     'w'           'WE'
@@ -85,11 +92,11 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
     # TODO - PYCONTRACT !!! check that no mutex if not thread-safe
     
     # Quick type checking
-    if name and not isinstance(name, (basestring, int)):
+    if name and not isinstance(name, (basestring, int, long)):
         raise TypeError("invalid file: %r" % name)
     if not isinstance(mode, basestring):
         raise TypeError("invalid mode: %r" % mode)
-    if buffering is not None and not isinstance(buffering, int):
+    if buffering is not None and not isinstance(buffering, (int, long)):
         raise TypeError("invalid buffering: %r" % buffering)
     if encoding is not None and not isinstance(encoding, basestring):
         raise TypeError("invalid encoding: %r" % encoding)

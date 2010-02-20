@@ -278,33 +278,15 @@ class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of 
     # # # Methods that must be overridden in OS-specific file types # # #    
 
     def fileno(self):
-        """
-        returns the C file descriptor giving access to the file. Note that on win32,
-        this file descriptor is just a (buggy) wrapper around native Handle types, 
-        and it shouldn't be relied upon too much.
-        """
         
         self._checkClosed()
         return self._inner_fileno()
 
     def handle(self):
-        """Returns the native file handle associated with the stream.
-        On most systems, it's the same as fileno, but on win32 it's a specific Handle value.
-        """
         self._checkClosed()
         return self._inner_handle()  
     
     def uid(self):
-        """Returns a (device, inode) tuple, identifying unambiguously the node (disk file) 
-        targeted by the stream. Thus, several file objects refer to the same disk file if 
-        and only if they have the same uid.
-    
-        Raises IOError if it is impossible to retrieve this information (on some network or virtual filesystems...).
-        
-        Nota : the file path can't be used as an unique identifier, since it is often possible to delete/recreate 
-        a file, while streams born from that path are still in use.  
-        """
-        
         self._checkClosed()
         if self._uid is not None:
             return self._uid
@@ -312,20 +294,10 @@ class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of 
             return self._inner_uid()
     
     def times(self):
-        """Returns a :class:`FileTimes` instance with portable file time attributes, as integers or floats. 
-        Their precision may vary depending on the platform, but they're always expressed in seconds.
-        Currently supported attributes: ``access_time`` and ``modification_time``.
-        
-        .. note:: more specific times are supported by different platforms, they might be included
-                  in next releases through OS-specific FileTimes attributes.
-        """
         self._checkClosed()
         return self._inner_times()
         
     def size(self): # non standard method    
-        """Returns the size, in bytes, of the opened file.
-        Intermediary buffers are flushed before the size is actually computed.
-        """
         self._checkClosed()
         return self._inner_size()
 
@@ -341,20 +313,55 @@ class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of 
         return self._inner_seek(offset, whence)
 
         
-    #def readall(self): <inherited>
 
-    #def read(self, n = -1): ## NOOOO <inherited> - read() uses readinto() to do its job !
+    def readall(self):
+        """Reads until EOF, using multiple read() calls."""
+        res = bytearray()
+        while True:
+            data = self.read(DEFAULT_BUFFER_SIZE)
+            if not data:
+                break
+            res += data
+        return bytes(res)
+    
+            
+    def read(self, n = -1): 
+        """Reads and returns up to n bytes (a negative value for n means *infinity*).
+
+        Returns an empty bytes object on EOF, or None if the object is
+        set not to block and has no data to read.
+        """
+        # PAKAL - to be checked !!!!
+        if n is None:
+            n = -1
+        if n < 0:
+            return self.readall()
+        b = bytearray(n.__index__())
+        n = self.readinto(b)
+        del b[n:]
+        return bytes(b)        
+        
+        ## NOOOO <inherited> - read() uses readinto() to do its job !
     # PAKAL - TODO - allow overriding of an _inner_read method !!!!!!!!!!!!!!
     
     def readinto(self, buffer):
+        """Reads up to len(b) bytes into b.
+
+        Returns number of bytes read (0 for EOF), or None if the object
+        is set not to block as has no data to read.
+        """
+        
         self._checkClosed()
         self._checkReadable()
         return self._inner_readinto(buffer)
 
     def write(self, buffer):
-        """Write the given buffer to the IO stream. #PAKAL - TO FIX !!!!!
-        Returns the number of bytes written, which may be less than len(b) ???????????
+        """Writes the given buffer data to the IO stream.
+
+        Returns the number of bytes written, which may be less than len(b).
+        
         """
+        
         self._checkClosed()
         self._checkWritable()
         
@@ -362,14 +369,17 @@ class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of 
             pass # WARNING - todo - fix stlib test suite first !!! raise TypeError("Only buffer-like objects can be written to raw files, not %s objects" % type(buffer))
                 
         res = self._inner_write(buffer)
-        assert res == len(buffer), str(res, len(buffer))
+        #assert res == len(buffer), str(res, len(buffer)) # NOOO - we might have less than that actually if disk full !
+        
+        if not res and len(buffer): 
+            # weird, no error detected but no byets written...
+            raise IOError("Unknown error, no bytes could be written to the device.")
+        
         return res
 
+
     def truncate(self, size=None, zero_fill=True):
-        """
-        TODO PAKAL - what about file pointers ? -> we must change them to new bhevaiour !!!
-        TODO - recheeck code coverage on this, and fallback extend-with-zeros
-        """
+
         with self._multi_syscall_lock: # to be removed, with threadsafe interface ???
             self._checkClosed()
             self._checkWritable() # Important !
@@ -405,23 +415,7 @@ class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of 
         pass # that raw stream should have no buffering except the kernel's one, which gets flushed by sync calls
     
     def sync(self, metadata=True, full_flush=True):
-        """
-        Synchronizes file data between kernel cache and physical device. 
-        
-            If ``metadata`` is False, and if the platform supports it (win32 and Mac OS X don't), 
-            this sync is a "datasync", i.e only data and file sizes are written to disk, not 
-            file times and other metadata (this can improve performance, but also i).
-            
-            If ``full_flush`` is True, RSFileIO will whenever possible force the flushing of the disk
-            cache too
-            
-            For a constant synchronization between the kernel cache and the disk oxyde, 
-            CF the "synchronized" argument at stream opening.
-        """
         self._inner_sync(metadata, full_flush)        
-
-
-
 
 
 
@@ -438,7 +432,6 @@ class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of 
             abs_offset = self._inner_size() + offset
         
         return abs_offset
-    
     
     @contextmanager
     def _lock_remover(self, length, offset, whence):
@@ -721,5 +714,6 @@ class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of 
     def _inner_file_unlock(self, length, abs_offset):
         self._unsupported("file_unlock")
 
+io.RawIOBase.register(RSRawIOBase)
 
         
