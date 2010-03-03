@@ -13,12 +13,7 @@ from rsfile_registries import IntraProcessLockRegistry
 
 
 class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of autodocumentation constraints...
-    """
-    
-    This abstract class is an improved version of the raw stream :class:`io.FileIO`, relying on native OS primitives, 
-    and offering much more control over the behaviour of the file stream.
-    The platform-specific implementation of this class is available as :class:`rsfile.RSFileIO`.
-    """
+
     
     
     def __init__(self,
@@ -36,8 +31,10 @@ class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of 
                  permissions=0777
                  ):
 
-
         """
+        
+        This class is an improved version of the raw stream :class:`io.FileIO`, relying on native OS primitives, 
+        and offering much more control over the behaviour of the file stream.
         
         Hopefully you won't have to deal directly with its constructor, since factory 
         functions like :func:`rsopen` give you a much easier access to 
