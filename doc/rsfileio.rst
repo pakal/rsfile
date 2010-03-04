@@ -18,7 +18,7 @@ as module, as classes named *RSBufferedReader*, *RSBufferedWriter*, *RSBufferedR
 	**RSFileIO Streams**
 
 
-.. autoclass:: RSFileIOAbstract
+.. autoclass:: RSFileIO
 	
 	
 	.. rubric::

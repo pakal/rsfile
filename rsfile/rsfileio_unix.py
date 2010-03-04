@@ -16,7 +16,7 @@ except ImportError:
 
 
 
-class unixFileIO(rsfileio_abstract.RSFileIOAbstract):      
+class RSFileIO(rsfileio_abstract.RSFileIOAbstract):      
 
     """
 
@@ -252,7 +252,6 @@ class unixFileIO(rsfileio_abstract.RSFileIOAbstract):
             self._purge_pending_related_file_descriptors() # todo - optimize this out during unlock-on-close loop
             
 
-RSFileIO = unixFileIO 
 
 
 
