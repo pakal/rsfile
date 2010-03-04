@@ -17,7 +17,10 @@ check __getattr__ and __setattr_ of threadsafe wrapper !
 
 Tester win32 truncate sur fichier locked
 
+OPTIMISER READALL() avec join()
 
+Regler problemes de buffering -> raw stream
+En particulier dans read_from_file : readall() or read(None) ???
 
   	
 """

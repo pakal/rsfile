@@ -72,7 +72,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         
     # # Private methods - no check is made on their argument or the file object state ! # #
     @_unix_error_converter
-    def _inner_create_streams(self, path, read, write, append, must_exist, must_not_exist, synchronized, inheritable, fileno, handle, permissions):
+    def _inner_create_streams(self, path, read, write, append, must_create, must_not_create, synchronized, inheritable, fileno, handle, permissions):
 
         
         # TODO - For delete on close ->  unlink immediately 
@@ -106,9 +106,9 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
             if append:
                 flags |= unix.O_APPEND
         
-            if must_exist:
+            if must_not_create:
                 pass # it's the default case for open() function
-            elif must_not_exist: 
+            elif must_create: 
                 flags |= unix.O_CREAT | unix.O_EXCL
             else:
                 flags |= unix.O_CREAT # by default - we create the file iff it doesn't exists

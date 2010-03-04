@@ -35,7 +35,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
     
     
     @_win32_error_converter        
-    def _inner_create_streams(self, path, read, write, append, must_exist, must_not_exist, synchronized, inheritable, fileno, handle, permissions):
+    def _inner_create_streams(self, path, read, write, append, must_create, must_not_create, synchronized, inheritable, fileno, handle, permissions):
 
 
         
@@ -62,9 +62,9 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
             shareMode = win32.FILE_SHARE_READ | win32.FILE_SHARE_WRITE | win32.FILE_SHARE_DELETE
 
             creationDisposition = 0
-            if must_exist:
+            if must_not_create:
                 creationDisposition = win32.OPEN_EXISTING # 3
-            elif must_not_exist: 
+            elif must_create: 
                 creationDisposition = win32.CREATE_NEW # 1
             else:
                 creationDisposition = win32.OPEN_ALWAYS # 4

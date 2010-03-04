@@ -12,8 +12,8 @@ and to improve test suites in order to handle rare gotchas and platform-specific
 
 .. toctree::
 	:maxdepth: 2
-	
-	rsfileio.rst
+
 	rsopen.rst
-	utilities.rst	
+	rsfileio.rst
+	utilities_options.rst	
 	

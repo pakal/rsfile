@@ -25,7 +25,8 @@ class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of 
                  read=False, 
                  write=False, append=False,  # writing to a file in append mode AUTOMATICALLY moves the file pointer to EOF # PAKAL -A TESTER
                  
-                 must_exist=False, must_not_exist=False, # only used on file opening
+                 must_create=False, must_not_create=False,# only used on file opening
+                 
                  synchronized=False,
                  inheritable=False,
                  permissions=0777
@@ -87,13 +88,13 @@ class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of 
         These parameters are only taken in account when creating a new raw stream, 
         not wrapping an existing fileno or handle. 
         
-        - *must_exist* (boolean): File creation fails if the file doesn't exist. 
+        - *must_create* (boolean): File opening fails if the file already exists.
+          This is the same semantic as (O_CREATE | O_EXCL) flags, which can be used to
+          handle some security issues on unix filesystems.        
+        - *must_not_create* (boolean): File creation fails if the file doesn't already exist. 
           This is then negation of the O_CREATE semantic, which is the default behaviour
           of file opening via RSFileIo (i.e, files are created if not existing, else they're 
           simply opened).
-        - *must_not_exist* (boolean): File opening fails if the file already exists.
-          This is the same semantic as (O_CREATE | O_EXCL) flags, which can be used to
-          handle some security issues on unix filesystems.
         - *synchronized* (boolean): Opens the stream so that write operations don't return before
           data gets pushed to physical device. Note that due to potential caching in your HDD, it 
           doesn't fully guarantee that your data will be safe in case of immediate crash.        
@@ -138,7 +139,7 @@ class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of 
         if not read and not write:
             raise ValueError("File must be opened at least in 'read', 'write' or 'append' mode.")
 
-        if must_exist and must_not_exist:
+        if must_create and must_not_create :
             raise ValueError("File can't be wanted both existing and unexisting.")
 
         if not closefd and not (fileno or handle):
@@ -312,10 +313,16 @@ class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of 
         
 
     def readall(self):
-        """Reads until EOF, using multiple read() calls."""
+        """Reads until EOF, using multiple read() calls.
+      
+        No limit is set on the amount of data read, so you might
+        fill up your RAM with this method.
+        
+        PAKAL - TODO - TO BE OPTIMIZED AND SENT TO RSIOBASE !!!"""
+        
         res = bytearray()
         while True:
-            data = self.read(DEFAULT_BUFFER_SIZE)
+            data = self.read(defs.DEFAULT_BUFFER_SIZE)
             if not data:
                 break
             res += data
@@ -663,7 +670,7 @@ class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of 
         
     # # Private methods - no check is made on their argument or the file object state ! # #
         
-    def _inner_create_streams(self, path, read, write, append, must_exist, must_not_exist, synchronized, inheritable, fileno, handle, closefd, permissions):
+    def _inner_create_streams(self, path, read, write, append, must_create, must_not_create, synchronized, inheritable, fileno, handle, closefd, permissions):
         self._unsupported("_inner_create_streams")
 
     def _inner_close_streams(self):  
@@ -711,6 +718,6 @@ class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of 
     def _inner_file_unlock(self, length, abs_offset):
         self._unsupported("file_unlock")
 
-io.RawIOBase.register(RSRawIOBase)
+io.RawIOBase.register(RSFileIOAbstract)
 
         

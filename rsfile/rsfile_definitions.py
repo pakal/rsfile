@@ -1,6 +1,6 @@
 #-*- coding: utf-8 -*-
 
-from io import SEEK_SET, SEEK_CUR, SEEK_END
+from os import SEEK_SET, SEEK_CUR, SEEK_END
 
 
 SEEK_VALUES = (SEEK_SET, SEEK_CUR, SEEK_END)

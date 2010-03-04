@@ -9,7 +9,7 @@ from rsfile_factories import rsopen
 def read_from_file(filename, binary=False, buffering=None, encoding=None, errors=None, newline=None, locking=True, timeout=None): 
     """
     Returns the whole content of the file ``filename``, as a binary or unicode string 
-    depending on the boolean``binary``.
+    depending on the boolean ``binary``.
     
     Other arguments are the same as in :func:`rsfile.rsopen`.
     
@@ -28,7 +28,7 @@ def read_from_file(filename, binary=False, buffering=None, encoding=None, errors
 
         data_blocks = []
         while True:
-            temp = myfile.read()
+            temp = myfile.readall()
             if not temp:
                 break
             data_blocks.append(temp)
@@ -40,7 +40,7 @@ def read_from_file(filename, binary=False, buffering=None, encoding=None, errors
     
     
     
-def write_to_file(filename, data, sync=False, must_exist=False, must_not_exist=False,
+def write_to_file(filename, data, sync=False, must_create=False, must_not_create=False,
                   buffering=None, encoding=None, errors=None, newline=None, locking=True, timeout=None):    
     """
     Write the binary or unicode string ``data`` to the file ``filename``.
@@ -52,9 +52,9 @@ def write_to_file(filename, data, sync=False, must_exist=False, must_not_exist=F
 
     mode = "WE" # we erase the file
     #if sync: mode += "S"   #  NO - final sync() will suffice
-    if must_exist:
+    if must_not_create:
         mode += "+"
-    if must_not_exist:
+    if must_create:
         mode += "-"
     if not isinstance(data, unicode):
         mode += "B"
@@ -69,7 +69,7 @@ def write_to_file(filename, data, sync=False, must_exist=False, must_not_exist=F
             myfile.sync()
    
     
-def append_to_file(filename, data, sync=False, must_exist=False, 
+def append_to_file(filename, data, sync=False, must_not_create=False, 
                    buffering=None, encoding=None, errors=None, newline=None, locking=True, timeout=None):
 
     """
@@ -82,7 +82,7 @@ def append_to_file(filename, data, sync=False, must_exist=False,
     
     mode = "A"
     #if sync: mode += "S"   #  NO - final sync() will suffice
-    if must_exist:
+    if must_not_create:
         mode += "+"
     if not isinstance(data, unicode):
         mode += "B"

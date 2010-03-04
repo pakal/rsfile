@@ -26,11 +26,12 @@ TESTFN = "@TESTING" # we used our own one, since the test_support version is bro
 rsfile.monkey_patch_original_io_module()
 
 def test_original_io():
-    
+
     import test.test_support, test.test_io, test.test_memoryio, test.test_file, test.test_bufio, test.test_fileio, test.test_largefile
+    """
     test_support.use_resources = ["largefile"]  # -> decomment this to try 2Gb file operations !
     test.test_largefile.test_main()
-    
+    """
     test.test_io.test_main()
     test.test_memoryio.test_main()
     test.test_file.test_main()
@@ -322,7 +323,7 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
         kargs = dict(path=TESTFN,
                      read=True, 
                      write=True, append=True,
-                     must_exist=True, must_not_exist=False, # only used on file opening
+                     must_not_create=True, must_create=False, # only used on file opening
                      )  
 
         with io.open(TESTFN, "wb") as f:
@@ -333,8 +334,8 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
         f.close()
         
         
-        kargs["must_exist"] = False
-        kargs["must_not_exist"] = True
+        kargs["must_not_create"] = False
+        kargs["must_create"] = True
         self.assertRaises(IOError, rsfile.RSFileIO, **kargs)
 
 
@@ -343,8 +344,8 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
         f.close()
 
         os.remove(TESTFN) # important
-        kargs["must_exist"] = True
-        kargs["must_not_exist"] = False
+        kargs["must_not_create"] = True
+        kargs["must_create"] = False
         self.assertRaises(IOError, rsfile.RSFileIO, **kargs)
 
 
@@ -485,7 +486,7 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
         kargs = dict(path=TESTFN,
                      read=False, 
                      write=True, append=True,
-                     must_exist=False, must_not_exist=False, # only used on file opening
+                     must_not_create=False, must_create=False, # only used on file opening
                      synchronized=True)
          
         string = "abcdefghijklmnopqrstuvwxyz"*1014*1024
@@ -651,14 +652,14 @@ class TestMiscStreams(unittest.TestCase):
         
         # TODO IMPROVE THIS WITH OTHER ARGUMENTS
         
-        self.assertRaises(ValueError, rsfile.write_to_file, TESTFN, "abc", must_exist=True, must_not_exist=True)
-        self.assertRaises(IOError, rsfile.append_to_file, TESTFN, "abc", must_exist=True)        
+        self.assertRaises(ValueError, rsfile.write_to_file, TESTFN, "abc", must_not_create=True, must_create=True)
+        self.assertRaises(IOError, rsfile.append_to_file, TESTFN, "abc", must_not_create=True)        
         
-        rsfile.write_to_file(TESTFN, "abcdef", sync=True, must_not_exist=True)
-        rsfile.write_to_file(TESTFN, u"abcdef", sync=False, must_exist=True) # we overwrite TESTFN with unicode data
+        rsfile.write_to_file(TESTFN, "abcdef", sync=True, must_create=True)
+        rsfile.write_to_file(TESTFN, u"abcdef", sync=False, must_not_create=True) # we overwrite TESTFN with unicode data
         
-        rsfile.append_to_file(TESTFN, u"ghijkl", sync=True, must_exist=True)
-        rsfile.append_to_file(TESTFN, u"mnopqr", sync=True, must_exist=False)
+        rsfile.append_to_file(TESTFN, u"ghijkl", sync=True, must_not_create=True)
+        rsfile.append_to_file(TESTFN, u"mnopqr", sync=True, must_not_create=False)
         
         mystr = rsfile.read_from_file(TESTFN, binary=True, buffering=0)
         mytext = rsfile.read_from_file(TESTFN, binary=False, buffering=5)

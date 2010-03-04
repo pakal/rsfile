@@ -63,11 +63,11 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
     'R'       Stream is Readable
     'W'       Stream is Writable
     'A'       Stream is in Append mode (implicitly enforces W)
-    '+'       The file entry must already exist
-    '-'       The file entry must not exist (it will be created)
+    '+'       File must be created (i.e it mustn't already exist)
+    '-'       File must NOT be created (i.e it must already exist)
     'S'       Stream is Synchronized
     'I'       Stream is Inheritable
-    'E'       Stream will be Erased on opening
+    'E'       File is Erased on opening
     'B'       Stream is in Binary mode
     'T'       Stream is in Text mode (default)
     ========= ===============================================================
@@ -229,13 +229,13 @@ def parse_standard_args(name, mode, fileno, handle, closefd): # warning - name c
     read = reading_flag or updating_flag
     write = writing_flag or appending_flag or updating_flag
     append = appending_flag
-    must_exist = reading_flag # "r" and "r+" modes require the file to exist, but no flag enforced "must_not_exist"
+    must_not_create = reading_flag # "r" and "r+" modes require the file to exist, but no flag enforced "must_create"
     
     raw_kwargs = dict(path=path,
                     read=read, 
                     write=write, append=append,
-                    must_exist=must_exist,
-                    must_not_exist=False,
+                    must_create=False,
+                    must_not_create=must_not_create,
                     synchronized=False,
                     inheritable=True, 
                     fileno=fileno, handle=handle, closefd=closefd)
@@ -261,8 +261,8 @@ def parse_advanced_args(path, mode, fileno, handle, closefd):
     append = "A" in mode
     write = "W" in mode or append 
     
-    must_exist = "+" in mode
-    must_not_exist = "-" in mode
+    must_create = "-" in mode
+    must_not_create = "+" in mode
     
     synchronized = "S" in mode
     inheritable = "I" in mode
@@ -274,8 +274,8 @@ def parse_advanced_args(path, mode, fileno, handle, closefd):
     raw_kwargs = dict(path=path,
                     read=read, 
                     write=write, append=append,
-                    must_exist=must_exist, 
-                    must_not_exist=must_not_exist,
+                    must_create=must_create,
+                    must_not_create=must_not_create, 
                     synchronized=synchronized,
                     inheritable=inheritable, 
                     fileno=fileno, handle=handle, closefd=closefd)

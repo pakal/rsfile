@@ -3,28 +3,55 @@ import os, threading
 
 
 # ######### DEFAULT PARAMETERS ######## #
-"""
-_default_safety_options = {
-    "unified_locking_behaviour": True, # TODO ???
-    "default_locking_timeout": None, # all locking attempts which have no timeout set will actually fail after this time (prevents denial of service)
-    "default_locking_exception": IOError, # exception raised when an enforced timeout occurs (helps detecting deadlocks)
-    "max_input_load_bytes": None,  # makes readall() and other greedy operations to fail when the data gotten exceeds this size (prevents memory overflow)
-    "default_spinlock_delay": 0.1 # how many seconds the program must sleep between attempts at locking a file
+
+_default_rsfile_options = {
+    "enforced_locking_timeout_value": None, # all locking attempts which have no timeout set will actually fail after this time in seconds (prevents denial of service)
+    "default_spinlock_delay": 0.1, # how many seconds the program must sleep between attempts at locking a file
+    "max_input_load_bytes": None  # makes readall() and other greedy operations fail when the data gotten exceeds this size (prevents memory overflow)
     }
 
-_locked_chunks_registry = {} # for unified_locking_behaviour ?? # keys are absolute file paths, values are lists of inodes identified by their uuid, and each inode has a list of (slice_start, slice_end or None) tuples - "None" meaning "until infinity"
 
-
-def get_default_safety_options():
-    return _default_safety_options.copy()
-
-def set_default_safety_options(**options):
+def set_rsfile_options(**options):
+    """
+    Sets process-global options for rsfile, according to keyword arguments provided.
+    
+    .. warning::
+        These options shall not be set from program libraries, only from main scripts, 
+        as they affect the behaviour of rsfile in the whole program.
+    
+    The following keyword arguments are currently available:
+    
+    - *enforced_locking_timeout_value* (None or positive float, defaults to None): if set, this value is enforced 
+      as a timeout value (in seconds) for all *blocking* :meth:`rsfile.lock_file()` calls (i.e these having a timeout argument 
+      set to None).
+      If that timeout is reached, a RuntimeError is raised. This exception is not meant to be caught, as it's
+      normally the sign that a deadlock is occurring around the locking of that file. This feature is for 
+      debugging purpose only.
+    - *default_spinlock_delay* (positive float, default to 0.1): this value represents the sleeping time between two attempts 
+      at locking a file, when using :meth:`rsfile.lock_file()` with a non-zero timeout argument. Modify this 
+      value with care, as some libraries might expect a sufficient reactivity for file locking operations.
+    - *max_input_load_bytes* (None or positive integer, defaults to None): if set, this value (in bytes) will be used as a limit 
+      in greedy methods like :meth:`IOBase.readall` or :meth:`rsfile.read_from_file`. If the number of bytes read
+      exceeds it, a RuntimeError is raised. This exception is not meant to be caught, as it's
+      normally the sign that an abnormal, dangerous amount of data has been loaded into RAM. 
+      This feature is for debugging purpose only.
+    """
+    
     new_options = set(options.keys())
-    all_options = set(_default_safety_options.keys())
+    all_options = set(_default_rsfile_options.keys())
     if not new_options <= all_options:
         raise ValueError("Unknown safety option : "+", ".join(list(new_options - all_options)))
-    _default_safety_options.update(options)
-"""
+    _default_rsfile_options.update(options)
+
+def get_rsfile_options():
+    """
+    Returns a dictionary with all rsfile options as key/value entries.
+    """
+    return _default_rsfile_options.copy()
+
+
+
+
 ############################################
 
 
