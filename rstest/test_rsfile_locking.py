@@ -96,6 +96,55 @@ class TestSafeFile(unittest.TestCase):
     
     
     
+    def test_global_locking_options(self):
+        
+        old_options = rsfile.get_rsfile_options()
+        
+        try:
+                
+            rsfile.set_rsfile_options(enforced_locking_timeout_value=2, 
+                                      default_spinlock_delay=1)
+    
+            with rsfile.rsopen(self.dummyFileName, "RWEB", buffering=100, locking=True) as myfile1:
+    
+                with rsfile.rsopen(self.dummyFileName, "RWEB", buffering=100, locking=False) as myfile2:
+                    
+                    self.assertEqual(myfile2.enforced_locking_timeout_value, 2)
+                    self.assertEqual(myfile2.default_spinlock_delay, 1)
+                    
+                    self.assertRaises(rsfile.LockingException, myfile2.lock_file, timeout=1)
+    
+                    self.assertRaises(rsfile.LockingException, myfile2.lock_file, timeout=3)
+                    
+                    self.assertRaises(RuntimeError, myfile2.lock_file, timeout=None)# blocking mode -> global option applies
+      
+                    start = time.time()
+                    self.assertRaises(rsfile.LockingException, myfile2.lock_file, timeout=0.3)
+                    delay = time.time() - start
+                    self.assertTrue(0.7 < delay < 1.3, "Delay is %d" %delay) # we check that the 1 s spinlock works
+       
+       
+            target = _workerProcess.lock_tester
+    
+            lockingKwargs = {'timeout': 0}            
+            kwargs = {'resultQueue':None, 'targetFileName':self.dummyFileName, 'multiprocessing_lock':None, 
+                        'lockingKwargs':lockingKwargs, 'pause':9 , 'multiprocess':True}
+            
+            process = multiprocessing.Process(name="%s %s"%(target.__name__, "SEEK_SET"), target=target, kwargs=kwargs)                    
+            process.daemon = True       
+            process.start()
+            
+            time.sleep(4) # let the child process start
+            with rsfile.rsopen(self.dummyFileName, "RWEB", buffering=100, locking=False) as myfile:
+                self.assertRaises(rsfile.LockingException, myfile.lock_file, timeout=1) 
+                self.assertRaises(RuntimeError, myfile.lock_file, timeout=None) # global timeout due to interprocess locking conflict
+                
+            process.join()
+            self.assertEqual(process.exitcode, 0, "Process '%s' encountered some trouble during execution"%process.name)
+    
+        finally:
+            rsfile.set_rsfile_options(**old_options)
+        
     
     def test_intra_process_locking(self):
         """We check the behaviour of locks when opening several times the same file from within a process.
@@ -394,6 +443,6 @@ class TestSafeFile(unittest.TestCase):
 if __name__ == '__main__':
     unittest.main()
     
-    #suite = unittest.defaultTestLoader.loadTestsFromName("__main__.TestSafeFile.test_intra_process_locking")
+    #suite = unittest.defaultTestLoader.loadTestsFromName("__main__.TestSafeFile.test_global_locking_options")
     #unittest.TextTestRunner(verbosity=2).run(suite)
     

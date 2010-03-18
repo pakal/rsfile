@@ -259,7 +259,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
 
 
 
-"""
+""" TO BE DELETED 
     @_unix_error_converter
     def _inner_register_file_lock(self, length, abs_offset, blocking, shared):
         return IntraProcessLockRegistry.register_file_lock(self._uid, self._fileno, length, abs_offset, blocking, shared)

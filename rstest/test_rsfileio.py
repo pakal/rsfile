@@ -508,6 +508,25 @@ class TestMiscStreams(unittest.TestCase):
     def tearDown(self):
         _cleanup()
     
+    def WIP_____testGlobalOptions(self):
+        
+        old_options = rsfile.get_rsfile_options()
+        
+        try:
+        
+            new_options = dict(enforced_locking_timeout_value=2, 
+                              default_spinlock_delay=1)
+           
+            rsfile.set_rsfile_options(**new_options)
+            self.assertEqual(rsfile.get_rsfile_options(), new_options)
+           
+            # we ignore locking options, which are tested in the "locking-related" unit-test
+            
+            # here, add tests for new option....
+                        
+        finally:
+            rsfile.set_rsfile_options(**old_options)
+    
     def testIOErrorOnClose(self):
         
         def assertCloseOK(stream):

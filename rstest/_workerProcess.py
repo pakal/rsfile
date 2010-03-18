@@ -149,7 +149,7 @@ def chunk_reader(targetFileName, multiprocessing_lock, character=None, ioOffset=
                     pass
 
                 
-def lock_tester(resultQueue, targetFileName, multiprocessing_lock, multiprocess, ioOffset=0, whence=os.SEEK_SET, lockingKwargs={}):
+def lock_tester(resultQueue, targetFileName, multiprocessing_lock, multiprocess, ioOffset=0, whence=os.SEEK_SET, pause=0, lockingKwargs={}):
         """Tries to lock the file with the given locking parameters, and returns, in the exit code,
         if it managed to lock the file, and in any case, how much time the operation took (before success or timeout)
         Note that due to return code constraints, the timeout value must be lower than 50 for the test to work
@@ -168,6 +168,7 @@ def lock_tester(resultQueue, targetFileName, multiprocessing_lock, multiprocess,
             try:
                 with targetFile.lock_file(**lockingKwargs):
                     success = True
+                    time.sleep(pause)
             except rsfile.LockingException:  
                 success = False
                   
@@ -178,14 +179,17 @@ def lock_tester(resultQueue, targetFileName, multiprocessing_lock, multiprocess,
             else:
                 myname = threading.current_thread().name
                 
-            if isinstance(resultQueue, basestring):
-                with io.open(resultQueue, "ab", 0) as f:
-                    f.write("%s|%d|%f\n" % (myname, 1 if success else 0, total))
-            else:
-                resultQueue.put((myname, success, total))
-                if hasattr(resultQueue, "close"):
-                    resultQueue.close() # multithreading queue.Queue has no close() method...
-            
+                
+            if resultQueue is not None:
+                
+                if isinstance(resultQueue, basestring):
+                    with io.open(resultQueue, "ab", 0) as f:
+                        f.write("%s|%d|%f\n" % (myname, 1 if success else 0, total))
+                else:
+                    resultQueue.put((myname, success, total))
+                    if hasattr(resultQueue, "close"):
+                        resultQueue.close() # multithreading queue.Queue has no close() method...
+                
             sys.exit(0)
         
         

@@ -5,7 +5,7 @@ from contextlib import contextmanager
 import io
 from io import RawIOBase
 import rsfile_definitions as defs
-from rsfile_registries import IntraProcessLockRegistry
+from rsfile_registries import IntraProcessLockRegistry, _default_rsfile_options
 
 
 
@@ -116,6 +116,10 @@ class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of 
 
         """
         
+        self.enforced_locking_timeout_value = _default_rsfile_options["enforced_locking_timeout_value"]
+        self.default_spinlock_delay = _default_rsfile_options["default_spinlock_delay"]
+
+
         # Preliminary normalization
         if append: 
             write = True # append implies write
@@ -339,7 +343,7 @@ class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of 
         if n is None:
             n = -1
         if n < 0:
-            return self.readall()
+            return self.readall() # PAKAL - TODO - REMOVE THIS, we SAID ONE system call !!!!
         b = bytearray(n.__index__())
         n = self.readinto(b)
         del b[n:]
@@ -542,8 +546,8 @@ class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of 
         
         """
         
-        if timeout is not None and (not isinstance(timeout, (int, long)) or timeout<0):
-            raise ValueError("timeout must be None or positive integer.")
+        if timeout is not None and (not isinstance(timeout, (int, long, float)) or timeout<0):
+            raise ValueError("timeout must be None or positive float.")
 
         if length is not None and (not isinstance(length, (int, long)) or length<0):
             raise ValueError("length must be None or positive integer.")        
@@ -569,7 +573,7 @@ class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of 
             raise IOError("Can't obtain exclusive lock on non-writable stream, or share lock on non-writable stream.") # TODO - improve this exception
         
         abs_offset = self._convert_relative_offset_to_absolute(offset, whence)      
-        blocking = timeout is None
+        blocking = timeout is None # here, it means "forever waiting for the lock"
         
         start_time = time.time()
         def check_timeout(env_error):
@@ -577,24 +581,28 @@ class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of 
             If timeout has expired, raises the exception given as parameter.
             Else, sleeps for a short period.
             """
-        
-            if not blocking: # else, we try again indefinitely
-                delay = time.time() - start_time
+            delay = time.time() - start_time
+            if not blocking: # we have a timeout set
+                
                 if(delay >= timeout): # else, we try again until success or timeout
                     (error_code, title) = env_error.args
                     filename = getattr(self, 'name', 'Unkown File') # to be improved
                     raise defs.LockingException(error_code, title, filename)
             
-            time.sleep(1) # TODO - PAKAL - make this use global parameters !
+            elif (delay >= self.enforced_locking_timeout_value): # for blocking attempts only
+                raise RuntimeError("Locking delay exceeded 'enforced_locking_timeout_value' option (%d s)." % self.enforced_locking_timeout_value)
+            
+            time.sleep(self.default_spinlock_delay)
             
 
         success = False
 
         while(not success):     
         
-    
             # STEP ONE : acquiring ownership on the lock inside current process
-            res = IntraProcessLockRegistry.register_file_lock(self._lock_registry_inode, self._lock_registry_descriptor, length, abs_offset, blocking, shared)
+            res = IntraProcessLockRegistry.register_file_lock(self._lock_registry_inode, self._lock_registry_descriptor, 
+                                                              length, abs_offset, blocking, shared, self.enforced_locking_timeout_value)
+
             if not res:
                 check_timeout(IOError(100, "Current process has already locked this byte range")) # TODO CHANGE errno.EPERM
                 continue
@@ -602,14 +610,15 @@ class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of 
             try:
                 
                 while(not success): 
-                    
+   
                     # STEP TWO : acquiring the lock for real, at kernel level
                     try:
                         
                         #import multiprocessing
                         #print "---------->", multiprocessing.current_process().name, " LOCKED ", (length, abs_offset)
                         
-                        self._inner_file_lock(length=length, abs_offset=abs_offset, blocking=blocking, shared=shared) 
+                        low_level_blocking = blocking if (self.enforced_locking_timeout_value is None) else False # we enforce spin-locking if a global timeout exists
+                        self._inner_file_lock(length=length, abs_offset=abs_offset, blocking=low_level_blocking, shared=shared) 
                         
                         success = True # we leave the two loops
                         

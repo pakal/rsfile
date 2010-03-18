@@ -7,7 +7,9 @@ import os, threading
 _default_rsfile_options = {
     "enforced_locking_timeout_value": None, # all locking attempts which have no timeout set will actually fail after this time in seconds (prevents denial of service)
     "default_spinlock_delay": 0.1, # how many seconds the program must sleep between attempts at locking a file
-    "max_input_load_bytes": None  # makes readall() and other greedy operations fail when the data gotten exceeds this size (prevents memory overflow)
+    
+    # "max_input_load_bytes": None  # Problem - hard to implement, we'd need to hack into every readall() and read() method from io...
+    # makes readall() and other greedy operations fail when the data gotten exceeds this size (prevents memory overflow)
     }
 
 
@@ -22,7 +24,7 @@ def set_rsfile_options(**options):
     The following keyword arguments are currently available:
     
     - *enforced_locking_timeout_value* (None or positive float, defaults to None): if set, this value is enforced 
-      as a timeout value (in seconds) for all *blocking* :meth:`rsfile.lock_file()` calls (i.e these having a timeout argument 
+      as a timeout value (in seconds) for all *blocking* :meth:`rsfile.lock_file()` calls (i.e those having a timeout argument 
       set to None).
       If that timeout is reached, a RuntimeError is raised. This exception is not meant to be caught, as it's
       normally the sign that a deadlock is occurring around the locking of that file. This feature is for 
@@ -30,18 +32,22 @@ def set_rsfile_options(**options):
     - *default_spinlock_delay* (positive float, default to 0.1): this value represents the sleeping time between two attempts 
       at locking a file, when using :meth:`rsfile.lock_file()` with a non-zero timeout argument. Modify this 
       value with care, as some libraries might expect a sufficient reactivity for file locking operations.
-    - *max_input_load_bytes* (None or positive integer, defaults to None): if set, this value (in bytes) will be used as a limit 
-      in greedy methods like :meth:`IOBase.readall` or :meth:`rsfile.read_from_file`. If the number of bytes read
-      exceeds it, a RuntimeError is raised. This exception is not meant to be caught, as it's
-      normally the sign that an abnormal, dangerous amount of data has been loaded into RAM. 
-      This feature is for debugging purpose only.
-    """
+      """
     
     new_options = set(options.keys())
     all_options = set(_default_rsfile_options.keys())
     if not new_options <= all_options:
         raise ValueError("Unknown safety option : "+", ".join(list(new_options - all_options)))
     _default_rsfile_options.update(options)
+
+    """ UNUSED OPTION
+    - *max_input_load_bytes* (None or positive integer, defaults to None): if set, this value (in bytes) will be used as a limit 
+      in greedy methods like :meth:`IOBase.readall` or :meth:`rsfile.read_from_file`. If the number of bytes read
+      exceeds it, a RuntimeError is raised. This exception is not meant to be caught, as it's
+      normally the sign that an abnormal, dangerous amount of data has been loaded into RAM. 
+      This feature is for debugging purpose only.
+    """
+
 
 def get_rsfile_options():
     """
@@ -166,7 +172,7 @@ class IntraProcessLockRegistryClass(object):
             
     
     
-    def register_file_lock(self, uid, handle, length, offset, blocking, shared):
+    def register_file_lock(self, uid, handle, length, offset, blocking, shared, timeout):
         with self.mutex:
             
             self._check_forking()
@@ -180,7 +186,7 @@ class IntraProcessLockRegistryClass(object):
                 else:
                     #print "THREAD %s WAITING REGISTRY %s" % (threading.current_thread().name, uid)
                     self._lock_registry[uid][3] += 1
-                    self._lock_registry[uid][0].wait() # we wait on the condition until locks get removed
+                    self._lock_registry[uid][0].wait(timeout) # we wait on the condition until locks get removed
                     self._lock_registry[uid][3] -= 1
                     #print "THREAD %s LEAVING REGISTRY %s" % (threading.current_thread().name, uid)
             
