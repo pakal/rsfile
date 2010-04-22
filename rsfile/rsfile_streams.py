@@ -20,7 +20,7 @@ else:
 class _buffer_forwarder_mixin(object):
     
     def _reset_buffers(self):
-        self.seek(self.tell()) # Pakal - todo - change when io module fixed !!!
+        self.seek(self.tell()) # Warning - does not work in Py2.6, buffered seek is buggy there !
         # # # # self.seek(0, os.SEEK_CUR) # we flush i/o buffers !
 
     def uid(self):
@@ -46,10 +46,8 @@ class _buffer_forwarder_mixin(object):
 
     def close(self):
         if not self.closed:
-            try:
-                self.flush() # we do NOT swallow exceptions !
-            finally:
-                self.raw.close()
+            self.flush() # we do NOT swallow exceptions !
+            self.raw.close()
                   
     def __getattr__(self, name):
         # print "--> taking ", name, "in ", self
@@ -57,8 +55,8 @@ class _buffer_forwarder_mixin(object):
         return getattr(raw, name)  
 
 
-class _text_forwarder_mixin(object):
-    
+
+class _text_forwarder_mixin(object):    
     
     def _reset_buffers(self):
         self.seek(self.tell()) # Pakal - todo - change when io module fixed !!!
@@ -87,10 +85,8 @@ class _text_forwarder_mixin(object):
     
     def close(self):
         if not self.closed:
-            try:
-                self.flush() # we do NOT swallow exceptions !
-            finally:
-                self.buffer.close()
+            self.flush() # we do NOT swallow exceptions !
+            self.buffer.close()
             
     def __getattr__(self, name):
         # print "--> taking ", name, "in ", self
@@ -115,8 +111,6 @@ class RSTextIOWrapper(_text_forwarder_mixin, io.TextIOWrapper):
     pass
 
 
-
-    
 
 
     

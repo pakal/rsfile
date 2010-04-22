@@ -1,0 +1,123 @@
+X-Account-Key: account5
+X-UIDL: 1171421727.32099
+X-Mozilla-Status: 0001
+X-Mozilla-Status2: 00000000
+X-Mozilla-Keys:                                                                                 
+Return-Path: <python-announce-list-bounces+chambon.pascal=wanadoo.fr@python.org>
+Received: from mwinf2f06.orange.fr (mwinf2f06 [10.232.18.34])
+	 by mwinb0m05 with LMTPA;
+	 Wed, 31 Mar 2010 09:21:06 +0200
+X-Sieve: CMU Sieve 2.3
+X-Bcc: chambon.pascal@wanadoo.fr
+Received: from me-wanadoo.net (localhost [127.0.0.1])
+	by mwinf2f06.orange.fr (SMTP Server) with ESMTP id C48522000113
+	for <wfr400014567be10a73f73eb76e@back0m-mail01-03.me-wanadoo.net>; Wed, 31 Mar 2010 09:21:06 +0200 (CEST)
+Received: from mail.python.org (mail.python.org [82.94.164.166])
+	by mwinf2f06.orange.fr (SMTP Server) with ESMTP id 9DE01200012A
+	for <chambon.pascal@wanadoo.fr>; Wed, 31 Mar 2010 09:21:06 +0200 (CEST)
+X-ME-UUID: 20100331072106646.9DE01200012A@mwinf2f06.orange.fr
+Received: from albatross.python.org (localhost [127.0.0.1])
+	by mail.python.org (Postfix) with ESMTP id 61A63DA6F
+	for <chambon.pascal@wanadoo.fr>; Wed, 31 Mar 2010 09:21:06 +0200 (CEST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=python.org; s=200901;
+	t=1270020066; bh=g6v65GvOgjL4TtU7GhixIREx3XrxzoZJdBygB57s5XE=;
+	h=From:Subject:Date:Message-Id:To:Mime-Version:Reply-To:List-Id:
+	 List-Unsubscribe:List-Archive:List-Post:List-Help:List-Subscribe:
+	 Content-Type:Content-Transfer-Encoding:Sender;
+	b=N1Db+ietz2eVyZqFcU5iGpp00tO6OWZMikoHNhgaCfJNFPipcb8IQWZnG6VqWHd+S
+	 7ifiMYPYY4jAsw6Z2iIXFOEE04RAwr9Io/+tUmHaqj6z3vlC99kkPDFbwfGAFtSLEe
+	 zNc3SgDu9pfQl+xu+jVXs1Koai3/xSvODFzXeaTw=
+X-Original-To: python-announce-list@python.org
+Delivered-To: python-announce-list@mail.python.org
+Received: from albatross.python.org (localhost [127.0.0.1])
+	by mail.python.org (Postfix) with ESMTP id EAD28C7D1
+	for <python-announce-list@python.org>;
+	Tue, 30 Mar 2010 23:00:51 +0200 (CEST)
+X-Spam-Status: OK 0.106
+X-Spam-Level: *
+X-Spam-Evidence: '*H*': 0.80; '*S*': 0.01; 'url:pypi': 0.03; 'python':
+	0.05; 'subject:released': 0.15; 'dev': 0.16; 'reply-to:addr
+	:python-list': 0.16; 'subject:package': 0.16; 'initial': 0.26;
+	'template': 0.28; 'entry': 0.29; 'received:204': 0.32; 'header
+	:Mime-Version:1': 0.33; 'date:': 0.33; 'received:192': 0.37;
+	'url:org': 0.37; 'url:python': 0.37; 'release': 0.38; 'using':
+	0.38; 'reply-to:addr:python.org': 0.39; 'to:addr:python.org':
+	0.39; 'simple': 0.62; 'charset:windows-1252': 0.63; 'projects':
+	0.67; 'reply-to:no real name:2**0': 0.75; 'header:Reply-To:1':
+	0.75; 'followed': 0.82; '====': 0.84
+Received: from localhost (HELO mail.python.org) (127.0.0.1)
+	by albatross.python.org with SMTP; 30 Mar 2010 23:00:51 +0200
+Received: from mx.activestate.com (mx.activestate.com [204.244.102.3])
+	(using TLSv1 with cipher ADH-AES256-SHA (256/256 bits))
+	(No client certificate requested)
+	by mail.python.org (Postfix) with ESMTPS
+	for <python-announce-list@python.org>;
+	Tue, 30 Mar 2010 23:00:51 +0200 (CEST)
+Received: from box5.activestate.com (box25.activestate.com [192.168.69.70])
+	by mx.activestate.com (Postfix) with ESMTP id 0AEA118018
+	for <python-announce-list@python.org>;
+	Tue, 30 Mar 2010 14:00:45 -0700 (PDT)
+Received: from dhcp-23.activestate.com (dhcp-23.activestate.com
+	[192.168.69.23])
+	by box5.activestate.com (Postfix) with ESMTP id 0C18AB82AA
+	for <python-announce-list@python.org>;
+	Tue, 30 Mar 2010 13:59:29 -0700 (PDT)
+From: Sridhar Ratnakumar <sridharr@activestate.com>
+Subject: modern-package-template 1.0c1 released
+Date: Tue, 30 Mar 2010 13:59:28 -0700
+Message-Id: <D1807745-7955-4B43-9A27-60B5DAEBF7EA@activestate.com>
+To: python-announce-list@python.org
+Mime-Version: 1.0 (Apple Message framework v1078)
+X-Mailer: Apple Mail (2.1078)
+X-Mailman-Approved-At: Wed, 31 Mar 2010 09:17:49 +0200
+X-BeenThere: python-announce-list@python.org
+X-Mailman-Version: 2.1.12
+Precedence: list
+Reply-To: python-list@python.org, Sridhar Ratnakumar <SridharR@activestate.com>
+List-Id: Announcement-only list for the Python programming language
+	<python-announce-list.python.org>
+List-Unsubscribe: <http://mail.python.org/mailman/options/python-announce-list>, 
+	<mailto:python-announce-list-request@python.org?subject=unsubscribe>
+List-Archive: <http://mail.python.org/pipermail/python-announce-list>
+List-Post: <mailto:python-announce-list@python.org>
+List-Help: <mailto:python-announce-list-request@python.org?subject=help>
+List-Subscribe: <http://mail.python.org/mailman/listinfo/python-announce-list>, 
+	<mailto:python-announce-list-request@python.org?subject=subscribe>
+Content-Type: text/plain; charset="windows-1252"
+Content-Transfer-Encoding: quoted-printable
+Sender: python-announce-list-bounces+chambon.pascal=wanadoo.fr@python.org
+Errors-To: python-announce-list-bounces+chambon.pascal=wanadoo.fr@python.org
+X-me-spamlevel: not-spam
+X-me-spamrating: 36.799999
+X-me-spamcause:  OK, (-80)(0000)gggruggvucftvghtrhhoucdtuddrvdeluddrtdelgdeftddujecuteggodetufdouefnucfrrhhofhhilhgvmecuoffgnecuuegrihhlohhuthemuceftddtnecufghrlhcuvffnffculddvtddmneforghilhhinhhgnfhishhtucdlqddutddtmd
+X-Antivirus: avast! (VPS 100331-1, 31/03/2010), Inbound message
+X-Antivirus-Status: Clean
+
+
+modern-package-template is a PasteScript template to create an initial layo=
+ut for your Python projects using modern tools and practices followed in th=
+e Python community.
+
+  http://pypi.python.org/pypi/modern-package-template/
+
+1.0c1
+=3D=3D=3D=3D
+
+Release date: 30-Mar-2010
+
+	=95	Add a 'Credits' section to README.txt
+	=95	#2: Include a sample entry point
+	=95	#13: Include .hgignore
+	=95	#11: Include dev howtos in HACKING.txt
+	=95	Remove setup.cfg -- simple to have no .dev marker
+
+-srid
+
+-- =
+
+http://mail.python.org/mailman/listinfo/python-announce-list
+
+        Support the Python Software Foundation:
+        http://www.python.org/psf/donations/
+
+

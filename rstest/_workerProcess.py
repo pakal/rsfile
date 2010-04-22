@@ -149,10 +149,9 @@ def chunk_reader(targetFileName, multiprocessing_lock, character=None, ioOffset=
                     pass
 
                 
-def lock_tester(resultQueue, targetFileName, multiprocessing_lock, multiprocess, ioOffset=0, whence=os.SEEK_SET, pause=0, lockingKwargs={}):
-        """Tries to lock the file with the given locking parameters, and returns, in the exit code,
-        if it managed to lock the file, and in any case, how much time the operation took (before success or timeout)
-        Note that due to return code constraints, the timeout value must be lower than 50 for the test to work
+def lock_tester(resultQueue, targetFileName, multiprocessing_lock, multiprocess, ioOffset=0, whence=os.SEEK_SET, pause=0, lockingKwargs={}, res_by_exit_code=False):
+        """Tries to lock the file with the given locking parameters, and returns whether it succeeded or not,
+        and the time it took.
         """
         _init_streams(multiprocessing_lock)
         
@@ -171,7 +170,13 @@ def lock_tester(resultQueue, targetFileName, multiprocessing_lock, multiprocess,
                     time.sleep(pause)
             except rsfile.LockingException:  
                 success = False
-                  
+            
+            print ">>>>>>>>>", res_by_exit_code
+            
+            if res_by_exit_code:
+                sys.exit(1 if success else 2)  # quick result
+            
+            
             total = time.time() - start  # we let it in float format
             
             if multiprocess:

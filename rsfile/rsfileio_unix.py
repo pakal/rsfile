@@ -117,8 +117,8 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
             self._fileno = self._handle = unix.open(strname, flags, permissions)
 
             # under unix we must prevent the opening of directories !
-            if stat.S_ISDIR(unix.fstat(self._fileno).st_mode):
-                raise IOError(errno.EISDIR, "Can't open directory as a regular file")     
+            if not stat.S_ISREG(unix.fstat(self._fileno).st_mode):
+                raise IOError(errno.EINVAL, "RSFile can only open regular files")     
 
             if not inheritable:
                 old_flags = unix.fcntl(self._fileno, unix.F_GETFD, 0);

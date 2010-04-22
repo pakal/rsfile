@@ -185,8 +185,7 @@ class TestSafeFile(unittest.TestCase):
             self.assertRaises(RuntimeError, f.lock_file, length=2, offset=0, whence=os.SEEK_CUR) # no lock merging !
             self.assertRaises(RuntimeError, f.lock_file, length=1, offset=3, whence=os.SEEK_CUR) # no lock splitting !
             
-
-                        
+           
             # Todo - test locking with duplicate handles     
             """                     
                 if sys.platform == 'win32':
@@ -194,8 +193,24 @@ class TestSafeFile(unittest.TestCase):
                if sys.platform != 'win32':
                     self.fail("Exclusively locking the same disk file twice from different open file objects shouldn't fail on unix")
                 """
-                
-
+        
+        # has the FCNTL gotcha disappeared ?
+        with rsfile.rsopen(self.dummyFileName, "RWB", buffering=0, locking=True) as f:
+            
+            with rsfile.rsopen(self.dummyFileName, "RWB", buffering=0, locking=False) as g:
+                pass 
+            # we close the file -> in normal conditions, we'd lose all fcntl() locks
+            
+            target = _workerProcess.lock_tester
+            lockingKwargs = {'timeout': 0}            
+            kwargs = {'resultQueue':None, 'targetFileName':self.dummyFileName, 'multiprocessing_lock':None, 
+                        'lockingKwargs':lockingKwargs, 'pause':0 , 'multiprocess':True, 'res_by_exit_code':True}
+            
+            process = multiprocessing.Process(name="%s %s"%(target.__name__, "SEEK_SET"), target=target, kwargs=kwargs)                    
+            process.daemon = True       
+            process.start()
+            process.join()
+            self.assertEqual(process.exitcode, 2, "We lost all locks when closing a file descriptor - exitcode %s" % process.exitcode)
                 
                 
             
@@ -443,6 +458,6 @@ class TestSafeFile(unittest.TestCase):
 if __name__ == '__main__':
     unittest.main()
     
-    #suite = unittest.defaultTestLoader.loadTestsFromName("__main__.TestSafeFile.test_global_locking_options")
+    #suite = unittest.defaultTestLoader.loadTestsFromName("__main__.TestSafeFile.test_intra_process_locking")
     #unittest.TextTestRunner(verbosity=2).run(suite)
     

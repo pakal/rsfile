@@ -494,6 +494,12 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
         self.assertEqual(f._synchronized, True)
         res = f.write(string)   
         self.assertEqual(res, len(string))
+        
+        f.sync(metadata=True, full_flush=True)
+        f.sync(metadata=False, full_flush=True)
+        f.sync(metadata=True, full_flush=False)
+        f.sync(metadata=False, full_flush=False)
+        
         f.close()
         
         # We have no easy way to check that the stream is REALLY in sync mode, except manually crashing the computer...
@@ -535,7 +541,7 @@ class TestMiscStreams(unittest.TestCase):
             
             stream.flush = ioerror
             self.assertRaises(IOError, stream.close)
-            self.assertEqual(True, stream.closed)
+            self.assertEqual(False, stream.closed) # stream has NOT been closed
 
         assertCloseOK(io.open(TESTFN, "RB", buffering=100))
         assertCloseOK(io.open(TESTFN, "WB", buffering=100))
@@ -545,7 +551,7 @@ class TestMiscStreams(unittest.TestCase):
         assertCloseOK(io.open(TESTFN, "RWT", buffering=100))
                
     
-    def testMethodForwarding(self): # PAKAL - TODO - buffer reset doesn't work with seek_cur !!!
+    def testMethodForwarding(self): # PAKAL - TODO - buffer reset doesn't work with seek_cur in py26 !!!
         
         def test_new_methods(myfile, raw, char):
             

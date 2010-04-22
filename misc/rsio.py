@@ -54,7 +54,7 @@ class RSIOBase(IO_BASE):
 
     This class provides dummy implementations for many methods that
     derived classes can override selectively; the default implementations
-    represents a file that cannot be read, written or seeked.
+    represents a file that cannot be read, written or sought.
 
     Even though RSIOBase does not declare read, readinto, or write because
     their signatures will vary, implementations and clients should
@@ -409,6 +409,206 @@ if USE_ABC:
 
 
 
+class _BufferedIOMixin(BufferedIOBase):
+
+    """A mixin implementation of BufferedIOBase with an underlying raw stream.
+
+    This passes most requests on to the underlying raw stream.  It
+    does *not* provide implementations of read(), readinto() or
+    write().
+    """
+
+    def __init__(self, raw):
+        self.raw = raw
+
+    ### Positioning ###
+
+    def seek(self, pos, whence=0):
+        new_position = self.raw.seek(pos, whence)
+        if new_position < 0:
+            raise IOError("seek() returned an invalid position")
+        return new_position
+
+    def tell(self):
+        pos = self.raw.tell()
+        if pos < 0:
+            raise IOError("tell() returned an invalid position")
+        return pos
+
+    def truncate(self, pos=None):
+        self.flush()
+        if pos is None:
+            pos = self.tell()
+        return self.raw.truncate(pos)
+
+
+    ### Flush and close ###
+
+    def flush(self):
+        self.raw.flush()
+
+    def close(self):
+        if not self.closed and self.raw is not None:
+            self.flush()
+            self.raw.close()
+
+    def detach(self):
+        if self.raw is None:
+            raise ValueError("raw stream already detached")
+        self.flush()
+        raw = self.raw
+        self.raw = None
+        return raw
+
+
+    ### Inquiries ###
+
+    def seekable(self):
+        return self.raw.seekable()
+
+    def readable(self):
+        return self.raw.readable()
+
+    def writable(self):
+        return self.raw.writable()
+
+    @property
+    def closed(self):
+        return self.raw.closed
+
+    @property
+    def name(self):
+        return self.raw.name
+
+    @property
+    def mode(self):
+        return self.raw.mode
+
+    def __repr__(self):
+        clsname = self.__class__.__name__
+        try:
+            name = self.name
+        except AttributeError:
+            return "<_pyio.{0}>".format(clsname)
+        else:
+            return "<_pyio.{0} name={1!r}>".format(clsname, name)
+
+    ### Lower-level APIs ###
+
+    def fileno(self):
+        return self.raw.fileno()
+
+    def isatty(self):
+        return self.raw.isatty()
+
+
+
+
+
+class BufferedReader(_BufferedIOMixin):
+
+    """BufferedReader(raw[, buffer_size])
+
+    A buffer for a readable, sequential BaseRawIO object.
+
+    The constructor creates a BufferedReader for the given readable raw
+    stream and buffer_size. If buffer_size is omitted, DEFAULT_BUFFER_SIZE
+    is used.
+    """
+
+    def __init__(self, raw, buffer_size=DEFAULT_BUFFER_SIZE):
+        """Create a new buffered reader using the given readable raw IO object.
+        """
+        if not raw.readable():
+            raise IOError('"raw" argument must be readable.')
+
+        if buffer_size <= 0:
+            raise ValueError("invalid buffer size")
+        self.buffer_size = buffer_size
+        
+        # Reading
+        self._read_buf = b""
+        self._read_pos = 0
+    
+        
+        self._reset_read_buf()
+
+
+
+
+
+
+    def _reset_read_buf(self):
+        self._read_buf = b""
+        self._read_pos = 0
+
+    def read(self, n=None):
+        """Read n bytes.
+
+        Returns exactly n bytes of data unless the underlying raw IO
+        stream reaches EOF or if the call would block in non-blocking
+        mode. If n is negative, read until EOF or until read() would
+        block.
+        """
+        if n is not None and n < -1:
+            raise ValueError("invalid number of bytes to read")
+        with self._read_lock:
+            return self._read_unlocked(n)
+
+    def _read_unlocked(self, n=None):
+     
+
+    def peek(self, n=0):
+        """Returns buffered bytes without advancing the position.
+
+        The argument indicates a desired minimal number of bytes; we
+        do at most one raw read to satisfy it.  We never return more
+        than self.buffer_size.
+        """
+        with self._read_lock:
+            return self._peek_unlocked(n)
+
+    def _peek_unlocked(self, n=0):
+        want = min(n, self.buffer_size)
+        have = len(self._read_buf) - self._read_pos
+        if have < want or have <= 0:
+            to_read = self.buffer_size - have
+            current = self.raw.read(to_read)
+            if current:
+                self._read_buf = self._read_buf[self._read_pos:] + current
+                self._read_pos = 0
+        return self._read_buf[self._read_pos:]
+
+    def read1(self, n):
+        """Reads up to n bytes, with at most one read() system call."""
+        # Returns up to n bytes.  If at least one byte is buffered, we
+        # only return buffered bytes.  Otherwise, we do one raw read.
+        if n < 0:
+            raise ValueError("number of bytes to read must be positive")
+        if n == 0:
+            return b""
+        with self._read_lock:
+            self._peek_unlocked(1)
+            return self._read_unlocked(
+                min(n, len(self._read_buf) - self._read_pos))
+
+    def tell(self):
+        return _BufferedIOMixin.tell(self) - len(self._read_buf) + self._read_pos
+
+    def seek(self, pos, whence=0):
+        if not (0 <= whence <= 2):
+            raise ValueError("invalid whence value")
+        with self._read_lock:
+            if whence == 1:
+                pos -= len(self._read_buf) - self._read_pos
+            pos = _BufferedIOMixin.seek(self, pos, whence)
+            self._reset_read_buf()
+            return pos
+
+
+
+
+
 
 
 class RSBufferedRandom(RSIOBase, BUFFER_BASE):
@@ -471,9 +671,7 @@ class RSBufferedRandom(RSIOBase, BUFFER_BASE):
         
         self.buffer_size = buffer_size
         
-        # Reading
-        self._read_buf = b""
-        self._read_pos = 0
+
 
         # Writing
         self._write_buf = bytearray()

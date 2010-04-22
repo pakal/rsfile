@@ -97,7 +97,9 @@ class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of 
           simply opened).
         - *synchronized* (boolean): Opens the stream so that write operations don't return before
           data gets pushed to physical device. Note that due to potential caching in your HDD, it 
-          doesn't fully guarantee that your data will be safe in case of immediate crash.        
+          doesn't fully guarantee that your data will be safe in case of immediate crash. Using this 
+          flag for programs running on laptops might increase HDD power consumption, and thus reduce
+          battery life.
         - *inheritable* (boolean): If True, the raw file stream will be inheritable by child processes,
           at least those created via native subprocessing calls (spawn, fork+exec, CreateProcess...). 
           Note that streams are always "inheritable" by fork (no close-on-fork semantic is widespread). 
@@ -423,6 +425,14 @@ class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of 
         pass # that raw stream should have no buffering except the kernel's one, which gets flushed by sync calls
     
     def sync(self, metadata=True, full_flush=True):
+        """
+        Forces the writing of data from the kernel cache to the persistent device.
+        If *metadata* is True, file metadata (like access/modification times) are flushed as well.
+        *full_flush* attempts to force the flushing of device caches as well, 
+        on systems where it is possible. 
+        
+        No return value is expected.
+        """
         self._inner_sync(metadata, full_flush)        
 
 

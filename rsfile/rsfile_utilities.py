@@ -16,7 +16,7 @@ def read_from_file(filename, binary=False, buffering=None, encoding=None, errors
     This function may raise **EnvironmentError** exceptions.
     """
     
-    # TODO - To be added - "limit" argument, to retrieve only part of a file ????????
+    # TODO - To be added - "limit" argument, to retrieve only part of a file ???????? Nope ?
     
     mode = "R+"
     if binary: 
@@ -28,7 +28,7 @@ def read_from_file(filename, binary=False, buffering=None, encoding=None, errors
 
         data_blocks = []
         while True:
-            temp = myfile.readall()
+            temp = myfile.readall() # Warning - change rsiopen so that we never get a raw file here !!!
             if not temp:
                 break
             data_blocks.append(temp)
