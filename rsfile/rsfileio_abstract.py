@@ -389,7 +389,10 @@ class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of 
 
 
     def truncate(self, size=None, zero_fill=True):
-
+        """
+        Truncates the file to the given size (or the current position), without moving the file pointer.
+        """
+        
         with self._multi_syscall_lock: # to be removed, with threadsafe interface ???
             self._checkClosed()
             self._checkWritable() # Important !
@@ -422,15 +425,32 @@ class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of 
             return self.size()
 
     def flush(self):
+        """
+        Flushes read and/or write buffers, if applicable.
+        
+        These operations ensure that all bytes written get pushed 
+        at least from the application to the kernel I/O cache, and
+        that the file pointer of underlying low level stream becomes 
+        the same as the 'virtual' file position returned by tell().
+        
+        Returns None.
+        """
         pass # that raw stream should have no buffering except the kernel's one, which gets flushed by sync calls
     
     def sync(self, metadata=True, full_flush=True):
-        """
-        Forces the writing of data from the kernel cache to the persistent device.
-        If *metadata* is True, file metadata (like access/modification times) are flushed as well.
-        *full_flush* attempts to force the flushing of device caches as well, 
-        on systems where it is possible. 
+        """Synchronizes file data between kernel cache and physical device. 
         
+        If ``metadata`` is False, and if the platform supports it (win32 and Mac OS X don't), 
+        this sync is a "datasync", i.e only data and file sizes are written to disk, not 
+        file times and other metadata (this can improve performance, but also i).
+        
+        If ``full_flush`` is True, RSFileIO will whenever possible force the flushing of device
+        cache too.
+        
+        For a constant synchronization between the kernel cache and the disk oxyde, 
+        CF the "synchronized" argument at stream opening.
+        
+        Raises an IOError if no sync operation is available for the stream.
         No return value is expected.
         """
         self._inner_sync(metadata, full_flush)        
@@ -460,101 +480,6 @@ class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of 
     
     def lock_file(self, timeout=None, length=None, offset=None, whence=os.SEEK_SET, shared=None):
         
-        """
-        Locks the whole file or a portion of it, depending on the arguments provided.
-
-        The strength of the locking depends on the underlying platform. 
-        On windows, all file locks (using LockFile()) are mandatory, i.e even programs 
-        which are not using file locks won't be able to access locked 
-        parts of files for reading or writing (depending on the type 
-        of lock used).
-        On posix platforms, most of the time locking is only advisory:
-        unless they use the same type of lock as rsFile
-        (currently, fcntl calls), programs will freely access your files if they have 
-        proper permissions. Note that it is possible to enforce mandatory 
-        locking thanks to some mount options and file flags, 
-        but this practice is highly advised against by unix gurus.
-        
-        Native locks have very different semantics depending on the platform, but 
-        rsfile enforces a single semantic : *per-handle, non-reentrant locks*.
-        
-        *per handle*: once a lock has been acquired via a native handle, 
-        this handle is the owner of the lock. No other handle, even in the current
-        process, even if they have been duplicated or inherited from the owner handle, 
-        can lock/unlock bytes that are protected by the original lock.
-        
-        *non-reentrant*: no merging/splitting of byte ranges can be performed with
-        this method : the ranges targetted by unlock() calls must be exactly the same
-        as those previously locked.
-        Also, trying to lock the same bytes several times will raise a 
-        RuntimeError, even if the sharing mode is not the same (no atomic lock 
-        upgrade/downgrade is available in kernels, anyway).
-        
-        This way, rsfile locks act both as inter-process and intra-process locks. 
-
-        .. note: this semantic doesn't tell anything about thread-safety, which must 
-                 be ensured through other means, like a :class:`RSThreadSafeWrapper`. 
-                 Also, nothing is done to detect inter-process or intra-process
-                 deadlocks - that's the responsibility of the programmer.
-        
-        .. warning::
-            
-            Due to the amazing semantic of fcntl() calls, native handles can't be released
-            as long as locks exist on the target file. So if your process constantly opens 
-            and closes the same files while keeping locks on them, you might eventually 
-            run out of process resources.
-            To avoid this, simply plan lock-less moments for this flushing of pending handles, 
-            or reuse the same file objects as much as possible.
-            
-            Note that rsfile protections can't do anything if a third-party functions or C extensions
-            used by the process open the same file without using rsfile's interface  - in this case, 
-            file locks might be silently lost...
-            
-        .. rubric::
-            Parameters
-        
-        - *timeout* (None or positive integer):  
-          If timeout is None, the process will block on this operation until it manages to get the lock; 
-          else, it must be a number indicating how many seconds
-          the operation will wait before raising a timeout IOError
-          (thus, timeout=0 means a non-blocking locking attempt).
-    
-    
-        - *length* (None or positive integer): Specifies how many bytes must be locked.
-          If length is None or 0, it means *infinity*, i.e all the bytes after the 
-          locking offset will be locked. It is not an error to lock bytes farther 
-          than the current end of file.
-          
-        - *offset* (None or positive integer):
-          Relative offset, starting at which bytes should be locked. 
-          This position can be beyond the end of file.
-        
-        - *offset* (SEEK_SET, SEEK_CUR or SEEK_END):
-          Whence is the same as in seek(), and specifies what the offset is 
-          referring to(beginning, current position, or end of file).
-                
-        - *shared* (None or boolean): 
-          If ``shared`` is True, the lock is a "reader", non-exclusive lock, which can be shared by several 
-          processes, but prevents "writer" locks from being taken on the locked portion. 
-          The owner of the lock shall himself not attempt to write to the locked area.
-          
-          If ``shared`` is False, the lock is a "writer", exclusive lock, preventing both writer 
-          and reader locks from being taken by other processes on the locked portion.
-          
-          By default, ``shared`` is set to False for writable streams, and to True for others.
-          Note that this sharing mode can be compatible with the stream permission, i.e shared locks can only
-          by taken by stream having read access, and exclusive locks are reserve to writable streams. 
-          Thus, this parameter is only useful for read/write streams, which can alternate 
-          shared and exclusive locks depening on their needs.
-        
-        On success, ``lock_file`` returns a context manager inside a with statement, 
-        to automatically release the lock. However, it is advised that you don't release locks 
-        if you close the stream just after that; letting the close() operation release the locks
-        is as efficient, and on unix it prevents other threads from taking locks in the short time
-        between unlocking and stream closing (thus allowing the system to safely free handle resources
-        in spite of the unsafe fcntl() semantic).
-        
-        """
         
         if timeout is not None and (not isinstance(timeout, (int, long, float)) or timeout<0):
             raise ValueError("timeout must be None or positive float.")
@@ -584,7 +509,8 @@ class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of 
         
         abs_offset = self._convert_relative_offset_to_absolute(offset, whence)      
         blocking = timeout is None # here, it means "forever waiting for the lock"
-        
+        low_level_blocking = blocking if (self.enforced_locking_timeout_value is None) else False # we enforce spin-locking if a global timeout exists
+
         start_time = time.time()
         def check_timeout(env_error):
             """
@@ -599,7 +525,7 @@ class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of 
                     filename = getattr(self, 'name', 'Unkown File') # to be improved
                     raise defs.LockingException(error_code, title, filename)
             
-            elif (delay >= self.enforced_locking_timeout_value): # for blocking attempts only
+            elif (self.enforced_locking_timeout_value is not None) and (delay >= self.enforced_locking_timeout_value): # for blocking attempts only
                 raise RuntimeError("Locking delay exceeded 'enforced_locking_timeout_value' option (%d s)." % self.enforced_locking_timeout_value)
             
             time.sleep(self.default_spinlock_delay)
@@ -611,7 +537,7 @@ class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of 
         
             # STEP ONE : acquiring ownership on the lock inside current process
             res = IntraProcessLockRegistry.register_file_lock(self._lock_registry_inode, self._lock_registry_descriptor, 
-                                                              length, abs_offset, blocking, shared, self.enforced_locking_timeout_value)
+                                                              length, abs_offset, low_level_blocking, shared, self.enforced_locking_timeout_value)
 
             if not res:
                 check_timeout(IOError(100, "Current process has already locked this byte range")) # TODO CHANGE errno.EPERM
@@ -627,7 +553,6 @@ class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of 
                         #import multiprocessing
                         #print "---------->", multiprocessing.current_process().name, " LOCKED ", (length, abs_offset)
                         
-                        low_level_blocking = blocking if (self.enforced_locking_timeout_value is None) else False # we enforce spin-locking if a global timeout exists
                         self._inner_file_lock(length=length, abs_offset=abs_offset, blocking=low_level_blocking, shared=shared) 
                         
                         success = True # we leave the two loops
@@ -643,23 +568,9 @@ class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of 
         return self._lock_remover(length, abs_offset, os.SEEK_SET)     
         
 
-    
-    def unlock_file(self, length=None, offset=0, whence=os.SEEK_SET):
-        """
-        Unlocks a file portion previously locked through the same native handle. 
-        
-        The specifications of the locked area (absolute offset and length) must 
-        be the same as those used when calling locking methods,
-        else errors will occur; its is thus not possible to release only 
-        a part of a locked area, or to unlock with only one call
-        two consecutive ranges.
-        
-        This function should usually be implicitly called thanks to a context manager
-        returned by :meth:`lock_file`. But as stated above, don't use it if you plan 
-        to close the file immediately - the closing system will handle the unlocking
-        in a safer manner. 
-        """
 
+    def unlock_file(self, length=None, offset=0, whence=os.SEEK_SET):
+    
         if length is not None and (not isinstance(length, (int, long)) or length<0):
             raise ValueError("length must be None or positive integer.")        
         
@@ -679,13 +590,6 @@ class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of 
             self._inner_file_unlock(length, abs_offset)
         
     
-    
-        
-
-    
-    
- 
-
         
     # # Private methods - no check is made on their argument or the file object state ! # #
         

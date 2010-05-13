@@ -5,15 +5,17 @@ Advanced Streams
 .. module:: rsfile.rsiobase
 
 
-
-RS Streams
--------------------------- 
+.. rubric::
+    **Intermediary Streams**
+    
     
 Miscellaneous I/O streams have been created/modified to give access to the
 advanced raw FileIO class described below. They can be found in the *rsfile*
 module, as classes named *RSBufferedReader*, *RSBufferedWriter*, *RSBufferedRandom*,
 *RSTextIOWrapper* and *RSThreadSafeWrapper*. They implement all methods from the original
 io.IOBase abstract class, with the new methods and semantics described below in their parent class *RSIOBase*.
+
+
 
 
 .. autoclass:: RSIOBase
@@ -50,34 +52,10 @@ io.IOBase abstract class, with the new methods and semantics described below in 
     
     
     
-
-New raw streams
----------------------
-
-.. module:: rsfile
-
-The replacement for io.FileIO streams has a quite different constructor, 
-giving a far broader range of possible semantics, as well as some new attributes.
-
-.. autoclass:: RSFileIO
-	
-	
-	.. rubric::
-		**SPECIFIC OR MODIFIED ATTRIBUTES**
-	
-	.. autoattribute:: name
-	
-	.. autoattribute:: origin
-	
-	.. autoattribute:: mode
-	
-	
-	
-	
-	
-..	
-	:show-inheritance:
-	automethod:: lock_file
-	:undoc-members:
-	:member-order: groupwise
-	:members: lock_file, seekable, closed
+    
+..    
+    :show-inheritance:
+    automethod:: lock_file
+    :undoc-members:
+    :member-order: groupwise
+    :members: lock_file, seekable, closed

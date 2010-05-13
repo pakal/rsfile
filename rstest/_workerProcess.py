@@ -170,8 +170,7 @@ def lock_tester(resultQueue, targetFileName, multiprocessing_lock, multiprocess,
                     time.sleep(pause)
             except rsfile.LockingException:  
                 success = False
-            
-            print ">>>>>>>>>", res_by_exit_code
+
             
             if res_by_exit_code:
                 sys.exit(1 if success else 2)  # quick result

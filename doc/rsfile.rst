@@ -1,19 +1,38 @@
 
-rsfile package v1.0 alpha1
+RsFile package v1.0 Beta1
 ==========================
+
+
+
+RsFile aims at providing python with a cross-platform, reliable, and comprehensive file 
+I/O API (that is, file stream manipulation, not filesystem operations like shutil does). 
+
+Stdlib file stream APIs suffer indeed from their history and C/unix origins : 
+they are scattered all over lots of modules (os, stat, fnctl, tempfile...), 
+poorly object-oriented, full of platform-specific behaviours, and worst of all 
+they sometimes rely on castrated implementations, like windows' libc compatibility layer.
+
+That's why RsFile offers more than a simple interfacing/adaptation layer : it 
+also wraps native file objects (like win32 "Handles"), to ensure a maximal flexibility 
+for the API.
+
+The main idea behind the design of the API, is that "cross-platform" doesn't mean 
+"lowest denominator", and that "high level" doesn't mean "poor". That's why, even though 
+RsFile can transparently replace python's built-in file object, it also provides 
+lots of additional methods and parameters to finely tweak the streams you need : file chunk 
+locking, timeout handling, disk synchronization, atomic file creation, handle inheritance, 
+thread safety...
 
 This modules currently provides pure-python reimplementations of parts of the stdlib **io** modules,
 and is compliant with stdlib test suites.
+It mainly relies on stdlib modules and ctypes extensions (on windows, if pywin32 is available, it is used instead).
 
-It relies on the stdlib, ctypes extensions, and if available on pywin32 for the windows port.
-
-The main goals of the current release are to get feedback on the API design, to stabilize it,
-and to improve test suites in order to handle rare gotchas and platform-specific details.
+The 1.x series will remain in pure python, but future versions might run under cython, for performance considerations.
 
 .. toctree::
 	:maxdepth: 2
-
+   
 	rsopen.rst
 	rsfileio.rst
 	utilities_options.rst	
-	
+	native_io_concepts.rst

@@ -1,5 +1,7 @@
 
 
+* DOES IO STREAM INHERITANCE WORK VIA PICKLE / MULTITHREADING ???????????
+
 *Test on all python implementations, versions, on all platforms etc.
 
 

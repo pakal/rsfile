@@ -718,8 +718,13 @@ if __name__ == '__main__':
     #_cleanup()
     #TestMiscStreams("testIOErrorOnClose").testIOErrorOnClose()
     #print "===OVER==="
+
+    import _utilities
+    backends = _utilities.launch_rsfile_tests_on_backends(test_main)
+
+    print "** RSFILEIO Test Suite has been run on backends %s **" % backends
+
     
-    test_main()
 
 
 

@@ -210,7 +210,7 @@ class TestSafeFile(unittest.TestCase):
             process.daemon = True       
             process.start()
             process.join()
-            self.assertEqual(process.exitcode, 2, "We lost all locks when closing a file descriptor - exitcode %s" % process.exitcode)
+            self.assertEqual(process.exitcode, 2, "Error, we lost all locks when closing a file descriptor - exitcode %s" % process.exitcode)
                 
                 
             
@@ -456,7 +456,11 @@ class TestSafeFile(unittest.TestCase):
                     
 
 if __name__ == '__main__':
-    unittest.main()
+    
+    import _utilities
+    backends = _utilities.launch_rsfile_tests_on_backends(unittest.main)
+
+    print "** RSFILE_LOCKING Test Suite has been run on backends %s **" % backends
     
     #suite = unittest.defaultTestLoader.loadTestsFromName("__main__.TestSafeFile.test_intra_process_locking")
     #unittest.TextTestRunner(verbosity=2).run(suite)

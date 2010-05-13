@@ -72,7 +72,7 @@ class RSIOBase(IO_BASE):
     that an RSIOBase object can be iterated over yielding the lines in a
     stream.
 
-    IOBase also supports the :keyword:`with` statement. In this example,
+    RSIOBase also supports the :keyword:`with` statement. In this example,
     fp is closed after the suite of the with statement is complete:
 
     with open('spam.txt', 'r') as fp:
@@ -395,6 +395,125 @@ class RSIOBase(IO_BASE):
         for line in lines:
             self.write(line)
 
+
+
+    def lock_file(self, timeout=None, length=None, offset=None, whence=os.SEEK_SET, shared=None):
+        
+        """
+        Locks the whole file or a portion of it, depending on the arguments provided.
+
+        The strength of the locking depends on the underlying platform. 
+        On windows, all file locks (using LockFile()) are mandatory, i.e even programs 
+        which are not using file locks won't be able to access locked 
+        parts of files for reading or writing (depending on the type 
+        of lock used).
+        On posix platforms, most of the time locking is only advisory:
+        unless they use the same type of lock as rsFile
+        (currently, fcntl calls), programs will freely access your files if they have 
+        proper permissions. Note that it is possible to enforce mandatory 
+        locking thanks to some mount options and file flags, 
+        but this practice is highly advised against by unix gurus.
+        
+        Native locks have very different semantics depending on the platform, but 
+        rsfile enforces a single semantic : *per-handle, non-reentrant locks*.
+        
+        *per handle*: once a lock has been acquired via a native handle, 
+        this handle is the owner of the lock. No other handle, even in the current
+        process, even if they have been duplicated or inherited from the owner handle, 
+        can lock/unlock bytes that are protected by the original lock.
+        
+        *non-reentrant*: no merging/splitting of byte ranges can be performed with
+        this method : the ranges targetted by unlock() calls must be exactly the same
+        as those previously locked.
+        Also, trying to lock the same bytes several times will raise a 
+        RuntimeError, even if the sharing mode is not the same (no atomic lock 
+        upgrade/downgrade is available in kernels, anyway).
+        
+        This way, rsfile locks act both as inter-process and intra-process locks. 
+
+        .. note: this semantic doesn't tell anything about thread-safety, which must 
+                 be ensured through other means, like a :class:`RSThreadSafeWrapper`. 
+                 Also, nothing is done to detect inter-process or intra-process
+                 deadlocks - that's the responsibility of the programmer.
+        
+        .. warning::
+            
+            Due to the amazing semantic of fcntl() calls, native handles can't be released
+            as long as locks exist on the target file. So if your process constantly opens 
+            and closes the same files while keeping locks on them, you might eventually 
+            run out of process resources.
+            To avoid this, simply plan lock-less moments for this flushing of pending handles, 
+            or reuse the same file objects as much as possible.
+            
+            Note that rsfile protections can't do anything if a third-party functions or C extensions
+            used by the process open the same file without using rsfile's interface  - in this case, 
+            file locks might be silently lost...
+            
+        .. rubric::
+            Parameters
+        
+        - *timeout* (None or positive integer):  
+          If timeout is None, the process will block on this operation until it manages to get the lock; 
+          else, it must be a number indicating how many seconds
+          the operation will wait before raising a timeout IOError
+          (thus, timeout=0 means a non-blocking locking attempt).
+    
+    
+        - *length* (None or positive integer): Specifies how many bytes must be locked.
+          If length is None or 0, it means *infinity*, i.e all the bytes after the 
+          locking offset will be locked. It is not an error to lock bytes farther 
+          than the current end of file.
+          
+        - *offset* (None or positive integer):
+          Relative offset, starting at which bytes should be locked. 
+          This position can be beyond the end of file.
+        
+        - *offset* (SEEK_SET, SEEK_CUR or SEEK_END):
+          Whence is the same as in seek(), and specifies what the offset is 
+          referring to(beginning, current position, or end of file).
+                
+        - *shared* (None or boolean): 
+          If ``shared`` is True, the lock is a "reader", non-exclusive lock, which can be shared by several 
+          processes, but prevents "writer" locks from being taken on the locked portion. 
+          The owner of the lock shall himself not attempt to write to the locked area.
+          
+          If ``shared`` is False, the lock is a "writer", exclusive lock, preventing both writer 
+          and reader locks from being taken by other processes on the locked portion.
+          
+          By default, ``shared`` is set to False for writable streams, and to True for others.
+          Note that this sharing mode can be compatible with the stream permission, i.e shared locks can only
+          by taken by stream having read access, and exclusive locks are reserve to writable streams. 
+          Thus, this parameter is only useful for read/write streams, which can alternate 
+          shared and exclusive locks depening on their needs.
+        
+        On success, ``lock_file`` returns a context manager inside a with statement, 
+        to automatically release the lock. However, it is advised that you don't release locks 
+        if you close the stream just after that; letting the close() operation release the locks
+        is as efficient, and on unix it prevents other threads from taking locks in the short time
+        between unlocking and stream closing (thus allowing the system to safely free handle resources
+        in spite of the unsafe fcntl() semantic).
+        
+        """
+        self._unsupported("lock_file")
+        
+    def unlock_file(self, length=None, offset=0, whence=os.SEEK_SET):
+        """
+        Unlocks a file portion previously locked through the same native handle. 
+        
+        The specifications of the locked area (absolute offset and length) must 
+        be the same as those used when calling locking methods,
+        else errors will occur; its is thus not possible to release only 
+        a part of a locked area, or to unlock with only one call
+        two consecutive ranges.
+        
+        This function should usually be implicitly called thanks to a context manager
+        returned by :meth:`lock_file`. But as stated above, don't use it if you plan 
+        to close the file immediately - the closing system will handle the unlocking
+        in a safer manner. 
+        """
+        self._unsupported("unlock_file")
+        
+     
 if USE_ABC:
     io.IOBase.register(RSIOBase)
 
@@ -405,6 +524,8 @@ if USE_ABC:
 
 
 
+
+'''
 
 
 
@@ -1047,5 +1168,5 @@ class RSTextIOWrapper(io.TextIOWrapper, RSIOBase):
                 pass  # If flush() fails, just give up
             self.buffer.close()
            
-           
+'''
            

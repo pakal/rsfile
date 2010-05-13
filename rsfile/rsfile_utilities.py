@@ -13,7 +13,7 @@ def read_from_file(filename, binary=False, buffering=None, encoding=None, errors
     
     Other arguments are the same as in :func:`rsfile.rsopen`.
     
-    This function may raise **EnvironmentError** exceptions.
+    This function may raise *EnvironmentError* exceptions.
     """
     
     # TODO - To be added - "limit" argument, to retrieve only part of a file ???????? Nope ?
@@ -47,7 +47,7 @@ def write_to_file(filename, data, sync=False, must_create=False, must_not_create
     
     Other arguments are the same as in the constructor of :class:`rsfile.RSFileIO` and in :func:`rsfile.rsopen`.
     
-    This function may raise **EnvironmentError** exceptions.
+    This function may raise *EnvironmentError* exceptions.
     """
 
     mode = "WE" # we erase the file
@@ -77,7 +77,7 @@ def append_to_file(filename, data, sync=False, must_not_create=False,
     
     Other arguments are the same as in the constructor of :class:`rsfile.RSFileIO` and in :func:`rsfile.rsopen`.
     
-    This function may raise **EnvironmentError** exceptions.
+    This function may raise *EnvironmentError* exceptions.
     """
     
     mode = "A"

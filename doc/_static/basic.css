@@ -5,7 +5,8 @@
 
 /* -- main layout ----------------------------------------------------------- */
 dl > dt {
-    margin : 0 0 20px
+    margin : 20 0 10px;
+    font-weight: bold;
 }
 
 div.clearer {
@@ -190,6 +191,7 @@ div.body td {
 p.rubric {
     margin-top: 30px;
     font-weight: bold;
+    font-size: 120%;
 }
 
 /* -- sidebars -------------------------------------------------------------- */
