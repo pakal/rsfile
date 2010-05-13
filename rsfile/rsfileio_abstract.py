@@ -3,7 +3,6 @@
 import sys, os, time, threading, multiprocessing, collections, functools
 from contextlib import contextmanager
 import io
-from io import RawIOBase
 import rsfile_definitions as defs
 from rsfile_registries import IntraProcessLockRegistry, _default_rsfile_options
 
@@ -12,7 +11,7 @@ from rsfile_registries import IntraProcessLockRegistry, _default_rsfile_options
 
 
 
-class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of autodocumentation constraints...
+class RSFileIOAbstract(io.RawIOBase):  # we're forced to use this name, because of autodocumentation constraints...
 
     
     
@@ -210,7 +209,7 @@ class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of 
 
             if not self.closed:
                 
-                RawIOBase.close(self) # we first mark the stream as closed... it flushes, also.
+                io.RawIOBase.close(self) # we first mark the stream as closed... it flushes, also.
 
                 # Unlock-On-Close and fcntl() safety mechanisms
                 with IntraProcessLockRegistry.mutex:
@@ -273,7 +272,6 @@ class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of 
     # # # Methods that must be overridden in OS-specific file types # # #    
 
     def fileno(self):
-        
         self._checkClosed()
         return self._inner_fileno()
 
@@ -316,7 +314,6 @@ class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of 
         fill up your RAM with this method.
         
         """ # Beware - TODO - TO BE OPTIMIZED AND SENT TO RSIOBASE !!!
-        
         res = bytearray()
         while True:
             data = self.read(defs.DEFAULT_BUFFER_SIZE)
@@ -343,7 +340,7 @@ class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of 
         return bytes(b)        
         
         ## NOOOO <inherited> - read() uses readinto() to do its job !
-    # PAKAL - TODO - allow overriding of an _inner_read method !!!!!!!!!!!!!!
+        # PAKAL - TODO - allow overriding of an _inner_read method !!!!!!!!!!!!!!
     
     def readinto(self, buffer):
         """Reads up to len(b) bytes into b.
@@ -355,6 +352,7 @@ class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of 
         self._checkClosed()
         self._checkReadable()
         return self._inner_readinto(buffer)
+
 
     def write(self, buffer):
         """Writes the given buffer data to the IO stream.
@@ -426,7 +424,7 @@ class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of 
         
         Returns None.
         """
-        pass # that raw stream should have no buffering except the kernel's one, which gets flushed by sync calls
+        self._checkClosed() # that raw stream should have no buffering except the kernel's one, which gets flushed by sync calls
     
     def sync(self, metadata=True, full_flush=True):
         """Synchronizes file data between kernel cache and physical device. 
@@ -444,6 +442,7 @@ class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of 
         Raises an IOError if no sync operation is available for the stream.
         No return value is expected.
         """
+        self._checkClosed()
         self._inner_sync(metadata, full_flush)        
 
 
@@ -471,6 +470,7 @@ class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of 
     
     def lock_file(self, timeout=None, length=None, offset=None, whence=os.SEEK_SET, shared=None):
         
+        self._checkClosed()
         
         if timeout is not None and (not isinstance(timeout, (int, long, float)) or timeout<0):
             raise ValueError("timeout must be None or positive float.")
@@ -562,6 +562,8 @@ class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of 
 
     def unlock_file(self, length=None, offset=0, whence=os.SEEK_SET):
     
+        self._checkClosed()
+        
         if length is not None and (not isinstance(length, (int, long)) or length<0):
             raise ValueError("length must be None or positive integer.")        
         

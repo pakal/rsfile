@@ -1,8 +1,9 @@
-"""
-Python implementation of the io module.
-"""
+
+## THIS CLASS IS CURRENTLY ONLY USED FOR DOCUMENTATION PURPOSE ##
 
 ### Based on trunk _pyio version 77890 ! ###
+
+
 
 from __future__ import print_function
 from __future__ import unicode_literals
@@ -18,7 +19,6 @@ except ImportError:
     from dummy_thread import allocate_lock as Lock
 
 import io
-#from io import __all__
 from rsfile_definitions import SEEK_SET, SEEK_CUR, SEEK_END
 
 
@@ -27,6 +27,7 @@ __metaclass__ = type
 # open() uses st_blksize whenever we can
 DEFAULT_BUFFER_SIZE = 8 * 1024  # bytes
 
+
 # NOTE: Base classes defined here are registered with the "official" ABCs
 # defined in io.py. We don't use real inheritance though, because we don't
 # want to inherit the C implementations.
@@ -34,7 +35,7 @@ DEFAULT_BUFFER_SIZE = 8 * 1024  # bytes
 from io import BlockingIOError, UnsupportedOperation, OpenWrapper   # useless ?
 
 if hasattr(io.IOBase, "register"):
-    USE_ABC = True # python >= 2.7
+    USE_ABC = True # python >= 2.7 ?
     IO_BASE = object
     RAW_BASE = object
     BUFFER_BASE = object
@@ -44,7 +45,9 @@ else:
     BUFFER_BASE = io.BufferedIOBase
 
 
-## THIS CLASS IS CURRENTLY ONLY USED FOR DOCUMENTATION PURPOSE ##
+
+
+
 
 class RSIOBase(IO_BASE):
     __metaclass__ = abc.ABCMeta
