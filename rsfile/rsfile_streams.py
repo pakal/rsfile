@@ -1,6 +1,7 @@
 
-import sys, multiprocessing, threading, functools, collections, io
+import sys, multiprocessing, threading, functools, collections
 
+import io
 
 if sys.platform == 'win32':
     try:
@@ -95,7 +96,9 @@ class _text_forwarder_mixin(object):
     
     
     
-### HERE EXTEND ADVANCED BUFFER AND TEXT INTERFACES !!!!!!!!
+    
+    
+### EXTENDED BUFFER AND TEXT STREAMS !!!!!!!!
 
 class RSBufferedReader(_buffer_forwarder_mixin, io.BufferedReader):
     pass
@@ -115,9 +118,13 @@ class RSTextIOWrapper(_text_forwarder_mixin, io.TextIOWrapper):
 
     
 class RSThreadSafeWrapper(object):
-    """A quick wrapper, to ensure thread safety !
+    """
+    A quick wrapper, to ensure thread safety !
+    
     If a threading or multiprocessing mutex is provided, it will be used for locking,
-    else a multiprocessing or multithreading (depending on *interprocess* boolean value) will be created."""
+    else a multiprocessing or multithreading (depending on *interprocess* boolean value) will be created.
+    """
+    
     def __init__(self, wrapped_stream, mutex=None, interprocess=False):
         self.wrapped_stream = wrapped_stream
         self.interprocess = interprocess

@@ -43,7 +43,7 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
     a thread-safe interface ; in this case, if ``mutex`` is provided, it is used as the concurrency lock, 
     else a new lock is created (a multiprocessing RLock() if the stream is inheritable, else a threading RLock(). 
 
-    ``permissions`` will simply be forwarded to the lowest level stream, 
+    The ``permissions`` argument will simply be forwarded to the lowest level stream, 
     so as to be applied in case a file creation occurs (note : decimal '511' corresponds to octal '0777', i.e whole permissions).
 
 
@@ -174,7 +174,7 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
             return buffer
         
     text = RSTextIOWrapper(buffer, encoding, errors, newline, line_buffering)
-    text.mode = mode # Pakal - weird TODO change that !!!!!
+    text.mode = mode # Pakal - weird TODO change that ?!
     
     if thread_safe:
         return RSThreadSafeWrapper(text, mutex=mutex, interprocess=raw_kwargs["inheritable"])    
@@ -188,7 +188,6 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
 
     
 def parse_standard_args(name, mode, fileno, handle, closefd): # warning - name can be a fileno here ...
-    # PAKAL - todo - insert fileno and handle into processing !!!!!!!!!!!!!!!!!!!!!!!!!
     
     modes = set(mode)
     if modes - set("arwb+tU") or len(mode) > len(modes):
@@ -248,6 +247,7 @@ def parse_standard_args(name, mode, fileno, handle, closefd): # warning - name c
     
 
 
+
 def parse_advanced_args(path, mode, fileno, handle, closefd):
 
     
@@ -255,7 +255,7 @@ def parse_advanced_args(path, mode, fileno, handle, closefd):
     if modes - set("RAW+-SIEBT") or len(mode) > len(modes):
         raise ValueError("invalid mode: %r" % mode)    
     
-    path = path # MUST BE NONE OR A STRING IN ANY WAY 
+    path = path # must be None or a string
     
     read = "R" in mode
     append = "A" in mode
@@ -285,10 +285,6 @@ def parse_advanced_args(path, mode, fileno, handle, closefd):
                       text=text)
                       
     return (raw_kwargs, extended_kwargs)
-
-    
-
-    
 
 
 

@@ -205,15 +205,6 @@ class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of 
 
             
     def close(self):
-        """
-        This methods releases all the locks still held by the stream's handle and 
-        releases it whenever possible (due to fcntl() limitation, on unix platforms, 
-        native handles actually won't be released as long as the process owns 
-        some locks on the target file). 
-        
-        Contrarily to the stdlib implementation, this method will not swallow 
-        potential environment errors occurring during the closing of the stream.
-        """
         
         with self._multi_syscall_lock: # we must avoid having several threads entering this # TODO - remove lock
 
@@ -324,7 +315,7 @@ class RSFileIOAbstract(RawIOBase):  # we're forced to use this name, because of 
         No limit is set on the amount of data read, so you might
         fill up your RAM with this method.
         
-        PAKAL - TODO - TO BE OPTIMIZED AND SENT TO RSIOBASE !!!"""
+        """ # Beware - TODO - TO BE OPTIMIZED AND SENT TO RSIOBASE !!!
         
         res = bytearray()
         while True:

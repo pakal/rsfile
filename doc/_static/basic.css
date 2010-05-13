@@ -3,10 +3,25 @@
  * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  */
 
+
 /* -- main layout ----------------------------------------------------------- */
 dl > dt {
-    margin : 20 0 10px;
+    margin : 20px 0 10px;
     font-weight: bold;
+}
+
+dl > dt > em {
+    font-size: 80%;
+}
+
+
+dl.method > dt , dl.function > dt  {
+    font-size: 110%;
+}
+
+dl.class > dt {
+    margin : 15px 0 20px;
+    font-size: 160%;
 }
 
 div.clearer {

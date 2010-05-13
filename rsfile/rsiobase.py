@@ -44,6 +44,7 @@ else:
     BUFFER_BASE = io.BufferedIOBase
 
 
+## THIS CLASS IS CURRENTLY ONLY USED FOR DOCUMENTATION PURPOSE ##
 
 class RSIOBase(IO_BASE):
     __metaclass__ = abc.ABCMeta
@@ -168,15 +169,17 @@ class RSIOBase(IO_BASE):
     __closed = False
 
     def close(self):
-        """Flushes and closes the IO object.
-
+        """Flushes and closes the IO object. Potential exceptions are NOT swallowed, 
+        and the streams is only marked as closed closed if the whole flush() was successful.
+        
         This method has no effect if the file is already closed.
         
-        .. warning::
-            Contrary to the stdlib version, this one does NOT swallow I/O errors
-            happening while closing, and only marks the stream as closed if
-            the flush() was successful.
+        All the locks still held by the stream's file descriptor are released,
+        but on unix systems the descriptor itself is only closed when no more locks 
+        are held by the process on the target disk file (this is a workaround for fctnl()'s
+        amazing semantic). 
         """
+        
         if not self.__closed:
             self.flush()
             self.__closed = True
@@ -426,7 +429,7 @@ class RSIOBase(IO_BASE):
         this method : the ranges targetted by unlock() calls must be exactly the same
         as those previously locked.
         Also, trying to lock the same bytes several times will raise a 
-        RuntimeError, even if the sharing mode is not the same (no atomic lock 
+        RuntimeError, even if the sharing mode is not the same (no **atomic** lock 
         upgrade/downgrade is available in kernels, anyway).
         
         This way, rsfile locks act both as inter-process and intra-process locks. 
@@ -506,10 +509,10 @@ class RSIOBase(IO_BASE):
         a part of a locked area, or to unlock with only one call
         two consecutive ranges.
         
-        This function should usually be implicitly called thanks to a context manager
+        This function will usually be implicitly called thanks to a context manager
         returned by :meth:`lock_file`. But as stated above, don't use it if you plan 
         to close the file immediately - the closing system will handle the unlocking
-        in a safer manner. 
+        in a more efficient and safer manner. 
         """
         self._unsupported("unlock_file")
         
@@ -527,6 +530,7 @@ if USE_ABC:
 
 '''
 
+## REIMPLEMENTATIONS OF OTHER STANDARD STREAMS - UNUSED AT THE MOMENT ##
 
 
 

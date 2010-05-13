@@ -49,14 +49,13 @@ io.IOBase abstract class, with the new methods and semantics described below in 
     
     
     
-    
 
-New raw streams
+New Raw Streams
 ---------------------
 
 .. module:: rsfile
 
-The replacement for io.FileIO streams has a quite different constructor, 
+The replacement for **io.FileIO** has a quite different constructor, 
 giving a far broader range of possible semantics, as well as some new attributes.
 
 .. autoclass:: RSFileIO

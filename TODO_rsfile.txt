@@ -5,6 +5,19 @@
 *Test on all python implementations, versions, on all platforms etc.
 
 
+TODO - TEST SEMAPHORE INHERITANCE !!!!!
+
+RsFile.umask
+Sets the permission mask used when creating a new inode, and returns the previous mask. On unix platforms, the umask is inherited from the parent process, and features all the flags describe in the stat module ; on windows it is zero on startup, and only the "user write" flag is taken into account, to switch between read-only and normal file.
+
+TODO:
+HOW TO disable the effects of the umask on *nix???
+DEAL WITH THE STICKY BIT !!! 
+Or make win32 like unix, by offering folder permissions and changing file deletion with readonly files!!!!!
+
+y A T IL DIFFERENT ENTRE FLOCK5° ET PUIS O_SCLOCK de BSD ????
+
+HOW TO KNOW THE COUNT OF OPEN FILES FOR CURRENT PROCESS ??
 *Make inheritable streams picklable for multiprocessing use, along with their semaphores -> long and hard, delayed
 
 *Design a strong exception hierarchy for IO/OS errors - if it is really possible from native error codes -> delayed

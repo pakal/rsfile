@@ -1,5 +1,5 @@
 
-Overview of file I/O notions and gotchas
+Overview of File I/O Concepts and Gotchas
 ==========================================
 
 
@@ -26,22 +26,23 @@ File metadata
 Disk file
     This is the set of physical disk blocks on which your file (both metadata and data) 
     is eventually stored. This is also the only place where data can really be considered as persistent. 
-    Data is saved into the disk file far less often than we might expect - on laptops 
-    particularly, disks can be left asleep for dozens of minutes in order to preserve energy.
+    The logical representation of a disk file is its filesystem **inode**.
 
 Open file object
     This kernel-level object represents an open stream to a file. As such, it 
     contains references to the target disk file, as well as transient state information relative 
-    to the open stream (current file pointer, miscellaneous caching and locking information...)
+    to the open stream (current file offset, miscellaneous caching and locking information...).
+    In the case of stream inheritance, or other stream duplciation mechanisms, a single file object 
+    can end up being shared by several processes.
 
-Open file descriptor 
-    This type (called C file descriptor on posix systems, file handle on win32 platforms)
+File descriptor 
+    This type (called C file descriptor on Posix systems, file handle on win32 platforms)
     mostly acts as a "pointer" to an open file object. It is typically an integer used as an index in
     a per-process open file table. Several open file references can target the same open file objects, 
-    via inheritance (when forking) or dedicated duplication functions (dup() on posix, DuplicateHandle() on win32). 
+    via inheritance (when forking) or dedicated duplication functions (dup() on posix, DuplicateHandle() on win32).
+    Synchronization systems may then be required to avoid race conditions around the common file offset.
     On some platforms, open file references have specific attributes (like permissions, locks, inheritability options...), 
-    but the rest of their "state" is the one of the open file they represent (eg. duplicated file descriptors 
-    share the same file pointer)  
+    and the rest of their "state" is the one of the open file they represent.
 
 Buffering and caching
     They both consist in keeping data into an intermediate storage (most of the time, main memory), between a data
@@ -60,106 +61,36 @@ Buffering and caching
 
 
 
-The delights of cascading buffering and caching
--------------------------------------------------
-
-In a simplistic world, issuing a ``myfile.write("hello")`` would simply write the string "hello" 
-to the open file *myfile*. Programmers quickly learn that for performance reasons, it can't be so simple.
-But are they really aware of *how much* it is not that straightforward ? Actually, data we read from or 
-write to files go through many more levels of buffering/caching than we might think, so here is an overview of
-the main steps involved.
-    
-
-Application-level buffering
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-This is the buffering we find in C libraries (inside FILE* objects, cf setvbuf()), 
-in python file objects (via the *buffering* parameter), and more generally any IO library 
-written in a given language. 
-
-It usually consists of read-ahead buffering (to improve reading performance, allow character encoding 
-operations, and line ending detection) and write buffering (to decrease the number of write system calls - 
-this buffer can be manually emptied with a flush()). A seek() on a stream typically resets these buffers.
-
-Kernel-level caching
-^^^^^^^^^^^^^^^^^^^^^^
-
-Contrary to common beliefs, if you open a file, issue read/write operations on it, and close 
-it (with an implicit flush), this doesn't implicate that your modifications have been saved to disk. 
-Most likely, they have just been acknowledged by a cache located in the kernel, and will be written 
-to oxyde later, along with other changes, by a lazy writer (eg. *pdflush* on linux).
-
-Since that kernel caching is fully transparent to applications (no desynchronization should occur between
-what different processes see of a file), it usually doesn't matter. But in case of crash, data which 
-hasn't yet been written to oxyde will be lost - which can be quite embarrassing (goodbye to the 3 paragraphs
-you've just written) or more than embarrassing (bank files management, database applications...).
-
-That's why operating system offer ways of flushing that kernel cache, to ensure that data gets 
-properly written to the device before starting other operations. Such a flush can be manually triggered
-(posix fsync() call, win32 FlushFileBuffers()...) or enforced for each write on a given open file 
-(O_SYNC/FILE_WRITE_THROUGH opening flags). 
-
-Note that several variants of that kernel cache flush exist (dsync, rsync, datasync semantics...),
-eg. to also enforce flushing of read buffers, or to bypass the flushing of metadata, but the main
-point of concern is, anyway, the the file data itself gets properly pushed to oxyde when you command it. 
-
-Then a problem you might encounter at that level, is that on some platforms, sync-like calls actually do not wait
-for the write operation to complete, they just plan write operations and immediately return (Posix1-2001 doesn't 
-require more). Fortunately, most recent kernels seem to wait for the synchronization to be over, before returning
-to the application. But this won't completely save you, because of the next caching level...
+Stream levels
+------------------
 
 
-Internal disk cache
-^^^^^^^^^^^^^^^^^^^^^^
+Depending on platforms and APIs used, the stream's settings (access permissions, file locks...) are carried 
+by file descriptors or by open file objects. In such conditions, obtaining a safe and cross-platform behaviour 
+requires some precautions :
 
-For performance reasons, most hard disk have an internal "disk cache"
-enabled by default, which doesn't necessarily get flushed by sync calls. 
+- Considering, as much as possible *file descriptor -> open file object* couples as inseparable entities. 
+  This implies avoiding descriptor duplications, and only sharing streams via their top-most level, i.e python I/O 
+  stream objects.
+- Carefully crafting the code, when sharing low level structures is unavoidable, for examples in stream inheritance 
+  operations. Lots of functions and flags are dedicated to customizing stream features in such cases, and RsFile 
+  handles them for you.
 
-Needless to say that your data is not much more likely to survive to a crash, if it's in the disk 
-cache rather than in the kernel one (although sophisticated disks are sometimes backed by batteries 
-to deal with this case, and let the device automatically purge itself before falling out of energy).
-So here is an overview of the "disk cache" affair.
+That being said, experienced developers shall still be allowed to retrieve native handles, and
+play with lowel level IO routines as they wish - we're all consentent adults, remember ? 
+So RsFile offers access to low level streams via :meth:`rsfile.fileno` and :meth:`rsfile.handle` methods,
+and low level routines may be reached by miscellaneous means (rsbackends module contains the most common ones
+as ctypes or cython bridges).
 
-Disks and operating system easily lie about their real synchronization state. That's why, if you have 
-very important data to protect, your best chance is to disable all disk caching features,
-through hardware configuration  utilities, (``hdparm -W 0``, windows hardware condiguration panels 
-etc.). But such tweaks can heavily hinder performance, and they depend a lot on your 
-hardware - IDE and SCSI disks, for example, can have very different options, and more or less 
-deceiving behaviours. Luckily, your data won't always be sensitive enough to require such 
-extreme measures.
-
-If your data is stored on remote shares (samba, nfs...), then chances are big 
-that your sync calls won't make it to the oxyde, and only a careful study of 
-involved hardware/OS/applications may give you some certainties in this case 
-(a good old "unplug the cable violently and check the result" might also help).
-
-Windows
-    The win32 FlushFileBuffers call usually implies both kernel cache and disk 
-    cache flushing, as well on local storages as on remote ntfs filesystems. But this only works 
-    if the disk hasn't been configured with option "Turn off Windows write-cache buffer flushing".
-
-Unix-like systems:
-    As well in Posix norms as in the Single Unix Specification, nothing requires that fsync() calls 
-    will care about disk cache. But in practice:
-    
-    - Mac OS X users : lucky you, Apple has introduced a new fcntl flag (F_FULLSYNC) to enforce 
-      full synchronization on a file descriptor.
-    - Linux users: it seems that latest kernel versions (2.6.33 and above) have been patched to ensure full sync. 
-      But that patch may still have to find its way to your favorite distribution.
-    - Other unix-like platforms : Your mileage may vary... read the sweet manuals, as we say.
-
-
-RsFile's flushing system
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-RsFile attempts to do its best with the constraints listed above: it offers a :meth:`rsfile.flush()` method 
-(simple application-buffer flushing), as well as a :meth:`rsfile.sync()` method, which handles the kernel-cache
-flushing. You can provide hints to the latter, to ignore metadata synchronization or enforce disk cache 
-flushing, but RsFile won't do more than your OS can afford (and it won't tweak your hardware settings for you, either).
+- :meth:`rsfile.fileno` returns a C/Posix compatible file descriptor (win32 emulates them with more or less success).
+- :meth:`rsfile.handle` returns a more platform-specific file handle, if any (a HANDLE integer on win32, 
+  on unix platforms this methdo acts the same as :meth:`rsfile.fileno`.
+  
 
 
 
-The marvels of stream inheritance
-------------------------------------
+Stream inheritance
+---------------------------
 
 Inheritance of file objects between parent and child processes isn't a simplistic subject, 
 especially if you want to play with different stream types (FILE*, ostream, filenos...) and process 
@@ -211,8 +142,8 @@ or issue an exec() immediately after forking to clean the process' data (that's 
 
     
     
-The exhilaration of stream locking
-----------------------------------------
+Stream locking
+------------------------
 
 Stream locking is a particularly acute issue in file I/O, since several threads
 may often want to write to the same file streams (eg. standard output streams redirected to a file),
@@ -264,139 +195,270 @@ Thus, if this instance gets inherited as a whole (eg. via multiprocessing module
 share a handle to the same open file object **and** a handle to the same semaphore, allowing for a quite easy 
 synchronisation between their respective access. 
 
+This synchronization is particularly interesting in this case of parent-child stream sharing, since the file 
+pointer (contained in the unique open file object) is common to all related processes. So without synchronization, not
+only may related process corrupt each other writes, but they also may read/write/truncate files at the wrong offset.
+
+
+Inter-process locking
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Here begins the hard core part. In a dream world, a process having sufficient privileges would simply lock a file for reading
+and writing, perform its I/O operations on it, and then release the locks. But it can't be so simple: as we've seen, a "file"
+is actually made of lots of stream levels, each having different features depending on the platform, and lots of points have 
+to be decided, like the extent of the ownership of the lock (is it per-process, per-thread, per file descriptor, per open file object ?),
+the level of enforcement of the locking, or its reentrancy.
+
+The marvellous thing is, kernel programmers have managed to disagree on about any of these points.
+So let's have a brief overview of lock
+families available to us.
+
+
+
+Common features
+#################
+    
+- All following locking systems allow both shared (for read-only operations) and exclusive (for writing operation) locks.
+
+- They are never based on thread identity (only process and data structures are taken into account).
+
+- Except in emulation cases (eg. when flock() locks are simple wrappers around fcntl() ones, like on freebsd), 
+  different types of locks are not supposed to be compatible. At best they'll ignore each other, at worst 
+  (like when they're used together in the same process) they may interfere and cause some trouble.
+
+
+
+Win32 LockFile()
+#################
+
+
+**This is a mandatory, per-handle, non reentrant lock, allowing byte range locking.**
+
+- Once a file area is locked through a handle, no handle, in this process or another one, can access 
+  this area in a way incompatible with the lock type (shared or exclusive). This also means that a handle can't be used
+  to write to an area that it has locked as "shared".
+   
+- Forbidden read/write operations will fail immediately, incompatible locking attempts through other handles/processes 
+  will block (unless a "non-blocking" flag is set), and trying to lock several times the same bytes with the same handle
+  will result in a deadlock.
+  
+- There is no merging/splitting of locked ranges: unlocking calls must provide as arguments a byte range identical 
+  to one of those previously locked.
+
+- Remaining locks are removed automatically by the system (but possibly after some delay) when a handle is closed or the 
+  process is shut down.
+
+- Remote windows shares (like Samba) shoudl behave the same way as local disks, regarding file locks.
+
+
+
+Unix Flock()
+#################
+
+**These is an advisory, per-open-file, reentrant lock, only dealing with the whole file (no bytes range locking).** 
+
+- All handles pointing to the open file object on which the flock() call was issued, have ownership on the lock. 
+  This means that different file descriptors in the same process, as well as different file descriptors inherited between
+  processes, can have access to a locked file simultaneously. That's not very good news.
+
+- Locking a file several times simply updates the type of locking (exclusive or shared).
+  However, this operation is not guaranteed to be atomic (other processes might take ownership of the bytes range 
+  during upgrade/downgrade). Note that in any case, a sigle unlocking call will suffice to undo all previous locking calls.
+
+- As of today (May 2010), NFS shares do not support such locks, and probably never will.
+
+.. warning::
+  On several platforms, these locks are actually emulated via fcntl() locks, so they don't follow this semantic but
+  the one described below.
 
 
 
 
-Locking Recursivity :
+Unix Fcntl() 
+################
 
-But the process-level lock cannot be recursive on all platforms.
-FALSE
- That's why, by default, the process holding it (whathever particular thread issued the acquisition call) 
- will raise a RuntimeError if it tries to lock some bytes several times without releasing it inbetween. Also, 
-However, it is possible to disabled this "cross-platform uniformity" by setting to "False" the registry option XXXX.
-Advantages
-- you gain performance by removing the overhead of this checking on posix platforms (windows ones tooo??? 
-what happens exactly if we double lock???)
-- you can benefit from posix's advanced locking features ( merging or separation of locked chunks 
-This might be interesting in two particular cases
-- your application will only run in posix system, and you 
-/FALSE
+.. note::
+    This lock is also known as Posix lock.
+    
+    On recent platforms, **SystemV lockf()** locks are actually just wrappers around fcntl() locks, so we won't study here their initial semantic.
 
+**This is an advisory, per-process, rentrant lock, allowing byte range locking.**
 
-Common locking
+- Write or read operations which don't use fcntl locks will not be hindered by these locks, 
+  unless mandatory locking has been activated on this particular filesystem and file node (but you had 
+  better `avoid mandatory locking <http://www.mjmwired.net/kernel/Documentation/filesystems/mandatory-locking.txt>`_).
+ 
+- Inside a process, it makes no difference whether a file/range has been locked via a specific handle or open file object: 
+  fcntl locks concern the disk file, and belong to the whole process.
+    
+- Byte range locking is very flexible
+    - Consecutive areas can be freed in a single unlock() call (byte range merging)
+    - It is possible to release only part of a byte range (byte range splitting)
+    - Locking the same bytes several times simply updates their locking mode (exclusive or shared). Like for flock(),
+      this operation is not guaranteed to be atomic, and locked bytes will only have to be released once.
+  
+- Such locks are **never** shared with child processes, even those born from a simple fork() without exec(). 
 
+- These locks are (theoretically) supported by recent enough NFS servers (> NFS v4).
 
-Depending on platforms and APIs used, the stream's settings (access permissions, file locks...) are carried by descriptors or by open file objects. In such conditions, obtaining a safe and cross-platform behaviour requires some precautions :
-- considering, as much as possible "file descriptor -> open file object" couples as inseparable entities. This implies "XXXXXXXXdéconsiller"descriptor duplications, and only sharing streams via their top-most level, i.e python I/O stream objects.
-- carefully crafting the code, when sharing low level structures is unavoidable, for examples in stream inhéritance operations. Lots of functions and flags are dedicated to customizing stream feaures at this moment, even though it's not always possible to prevent race conditions in such situations.
-
-That said, experienced developers shall still be allowed retrieve native open file references, and
-play with lowel level IO routines as they wish - we're all consentent adults, remember ?
-
-
-
-# ADD TO RS STREAM PYDOC
-fileno()
-handle()
-These methods give access to low level types underlying the RsFile streams. 
-fileno() returns a C/Posix compatible file descriptor (actually, an integer action as index in the process file descriptor 
-table - where 0, 1 and 2 are standard streams).
-handle() returns a more platform-specific file handle, if any (on win32, a handle integer or a thin wrapper around it).
-Note that if the requested object doesn't exist on the execution platform, an IOError ???? is raised.
+All these features could make of fntcl() a very good backend to build a cross-platform API, but unfortunately they're 
+a major gotcha we have to deal with, first... 
 
 
 
-TODO - TEST SEMAPHORE INHERITANCE !!!!!
+The curse of fcntl locks
+############################
 
 
-win32:
-LockFile:
-This is a mandatory, per-handle, non reentrant lock, allowing byte range locking.
-More precisely
-    -once a file area is locked through a handle, no other handle, in this process or another one, can access 
-    this area in a way incompatible to the lock type (shared or exclusive). Forbidden read/write operations will 
-    fail immediately, incompatible locking attempts through other handles/processes will block, and trying to lock 
-    the bytes already locked through the same handle will block too ???
-    There is no merging/cutting of locked ranges. Unlocking calls must provide as arguments a byte range identical 
-    to one of those previously locked.
-Locks are removed automatically by the system (but possibly after some delay) when the handle is closed or the 
-process is shut down.
+There is a really impressive flaw in Posix fcntl lock specifications : when any file descriptor to a disk file is closed,
+all the locks owned by the process on that file is lost. 
 
-Unix:
--fcntl locks, 
-This is an advisory, per-process, rentrant lock, allowing byte range locking
-    - Write or read operations which take no account of file locking will not be hindered by these locks, unless mandatory locking has been activated on this particular file (SEE DOCS°
-    - Inside a process, it makes no difference whether a file/range has been locked via a specific handle or open file object : the lock belongs to the whole process ; 
-    - Byte range locking is very flexible : consecutive areas can be freed in a single unlock() call, it is possible to release only part of a byte range, and locking the same bytes several times simply updates their locking mode (exclusive or shared) on demand. 
-Note that you needn't unlock a byte range as many  times as it was locked - only the last lock operation is "active"
-Note - Changing the locking method of a byte range is not atomic - bytes are releases and then locked again, which makes that another process might take ownership in the meantime.
-rename lock_chunk -lock_range !!!!
-    - Locks are NEVER shared with child processes, even those born from a simple fork() without exec(). 
-    - fcntl locks are (theoretically) supported by recent enough (>4.???) NFS servers
--flock locks:
-These are advisory, per-open-file, non reentrant?? locks, dealing only with the whole file. 
-    -All handles pointing to the open file table entry on which the flock() call was issued, "own" this lock. It means that different handles in the same process, 
+Beware : we said "any" file descriptor, not the file descriptor which was used to obtain locks, or one of the file 
+descriptors pointing to the same open file table entry. So if, while you're peacefully playing with your locks 
+around some important file (eg. /etc/passwd), one of the numerous libraries used in your project silently reads this file
+with a temporary stream, you'll lose all your locks without even knowing it.
 
-The "flock" affair.
-At first, a very interesting alternative to fcntl:
-    - locking per-file-table-entry instead of per-process, allowing more isolation inside a process
-    -no loss of locks in case of file desciptor closing
-But
-    -no NFS support
-    -no byte range locking
-    -dulicated/inherited file descriptors share their locks with original  ones
-    -on several platforms, flock locks are actually emulated by fcntl(), and thus don't respect their theoretical semantic
-Conclusion : not worth the hassle
+It's still unclear why Posix people specified it that way. Rumors affirm that they actually let a drunk monkey contribute
+to the draft, and later on they inadvertently let the fruits of this funny experiment find their way to final specs;
+others affirm that one of their workshops was unfortunately close from an oenologia session. Anyway, we have to live
+with this fact : the only unix locks able to work over NFS and to lock byte ranges, are also the only locks in 
+the world able to discreetly run away as soon as they''re disturbed by third-party libraries. Impressive, isn't it?
 
+ 
+The Zen of RsFile Locking
+##################################
 
-Warning - the danger with this system, is that your process could run out of available file handles, if it continuely opens and locks the same file(s) without ever letting the possibility to release them - i.e by constantly keeping at least some bytes locked.
-Blatantly, if your application behaves that way, it creates some kind of denial-of-service against any other process which would want to lock the whole file, so it could be the sign that other means of protection (file permissions, immediate deletion of the filesystem entry...) would be more appropriate for your needs than record locking. 
-But if you reaallly need to constantly lock parts of the file (eg. for a shared database file), then you shall
-- reuse the same file descriptors whenever possible
-- plan "zero lock" moments to allow the garbage collection of an inode's zombie file descriptors
-- let the closing operation of a file descriptor atomically release the locks still kept, instead of manually unlocking them just before closing the file. This helps garbage collection, by ensuring that no new lock is taken in the short time between the unlocking operation and the closing of the descriptor itself.
+So how does RsFile do, to get a decent cross-platform API from all this ?
 
+It actually relies on LockFile() and Fcntl() locks, which give us bytes range locking, remote filesystem locking, 
+and prevent the sharing of file locks by several processes (even related to each other).
+ 
+An internal registry is then used to normalize the behaviour of file locks:
+- locks are attached to a specific file descriptor, not just to the whole process.
+- merging/splitting bytes range locks, or using lock reantrancy, are prevented
 
-RsFile.umask
-Sets the permission mask used when creating a new inode, and returns the previous mask. On unix platforms, the umask is inherited from the parent process, and features all the flags describe in the stat module ; on windows it is zero on startup, and only the "user write" flag is taken into account, to switch between read-only and normal file.
+Finally, file closing operations have been modified to work around the fcntl() flaws: when
+a stream is closed, RsFile will delay the real closing of native files descriptors as long as the process keeps
+some locks on the same disk file.
 
-TODO:
-HOW TO disable the effects of the umask on *nix???
-DEAL WITH THE STICKY BIT !!! 
-Or make win32 like unix, by offering folder permissions and changing file deletion with readonly files!!!!!
-
-RsFile.close_handle
-Closes the native handle, and performs any cleaning operation required by the RsFile system (currently : nothing).
-The handle might not be closed immediately.
-
-RsFile.close_fileno
-Closes the C file descriptor according to the mechanisms of the RsFile system. Currently, it prevents the loss of fcntl locks on unix platfotms, by placing the file descriptor in the garbage collection system (note that this file descriptor might not be closed immediately, thus)
-
-HOW TO KNOW THE COUNT OF OPEN FILES FOR CURRENT PROCESS ??
-
-Warning : the sharing of open file table entries by several handles (via handle duplication, inheritance or unix message passing) is a dangerous sport, since in this case they all share the same file pointer, which opens the doors to memorable race conditions (EVEN WHEN LOCKING??). As long as these handles are in the same process, basic mutexes can suffice to sort it out, but in the interprocess case, it is necessary to agree on a shared lock, which is slightly harder
-
-===> enforce no reentrancy even in win32 ! ! else deadlocks may occur !!! Raise rruntime error when locking twice !!
-
-DONNER POSSIBILITE DE RECREER FILE OBJECT A PARTIR D'UN MUTEX ou SEMAPHORE AUSSI !!! IPC 
--> done
-
-VERIFIER : est-ce que les handles sont systemwide ou processwide
-
-DO NOT raise errors when auto unlocking file on close
-
-y A T IL DIFFERENT ENTRE FLOCK5° ET PUIS O_SCLOCK de BSD ????
-
-
-There is a catastrophic flaw in fcntl lock specifications : when any file descriptor to a disk file is closed, all the locks owned by the process on that file is lost. Beware : we said "any" file descriptor, not the file descriptor which was used to obtain locks, or one of the file descriptors pointing to the same open file table entry. So if, while you're peacefully playing with your locks around some important file (sey, /etc/passwd), one of the numerous libraries used of your project
-
-
-It's still unclear why Posix people specified it that way. Rumors affirm that they actually let a monkey write the fcntl part, and later on they un***(inadvertance) let the fruits of this funny experiment go with final specs ; others affirm that one of the workgroups was unfortunately close from an oenologia session. Anyway, we have to live with this fact : the only unix locks able to work over NFS and to lock byte ranges, are also the only locks in the world able to discreetly run away as soon as they''re disturbed by third-party libraries. Impressive, isn't it?
+.. warning::
+    The danger with this system, is that your process could run out of available file file descriptors, if it continuely 
+    opens and locks the same file without ever letting the possibility to release these handle (i.e by constantly keeping at 
+    least some bytes locked on this file).
+    
+    Anyway, if your application behaves that way, it also creates some kind of denial-of-service against any other process 
+    which would want to lock the whole file, so it could be the sign that other means of protection (file permissions, 
+    immediate deletion of the filesystem entry...) would be more appropriate for your needs than bytes range locking. 
+    
+    But if you reaallly need to constantly lock parts of the file (eg. for a shared database file), then you shall:
+    
+    - reuse the same file descriptors whenever possible
+    - plan "zero lock" moments to allow the garbage collection of an inode's zombie file descriptors
+    - let the closing operation of a file descriptor atomically release the locks still kept, 
+      instead of manually unlocking them just before closing the file. This helps file descriptor 
+      garbage collection, by ensuring that no new lock is taken in the short time between the unlocking 
+      operation and the closing of the descriptor itself.
 
 
 
 
+Cascading buffering and caching
+------------------------------------
+
+In a simplistic world, issuing a ``myfile.write("hello")`` would simply write the string "hello" 
+to the open file *myfile*. Programmers quickly learn that for performance reasons, it can't be so simple.
+But are they really aware of *how much* it is not that straightforward ? Actually, data we read from or 
+write to files go through many more levels of buffering/caching than we might think, so here is an overview of
+the main steps involved.
+    
+
+Application-level buffering
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+This is the buffering we find in C libraries (inside FILE* objects, cf setvbuf()), 
+in python file objects (via the *buffering* parameter), and more generally any IO library 
+written in a given language. 
+
+It usually consists of read-ahead buffering (to improve reading performance, allow character encoding 
+operations, and line ending detection) and write buffering (to decrease the number of write system calls - 
+this buffer can be manually emptied with a flush()). A seek() on a stream typically resets these buffers.
+
+Kernel-level caching
+^^^^^^^^^^^^^^^^^^^^^^
+
+Contrary to common beliefs, if you open a file, issue read/write operations on it, and close 
+it (with an implicit flush), this doesn't implicate that your modifications have been saved to disk. 
+Most likely, they have just been acknowledged by a cache located in the kernel, and will be written 
+to oxyde later, along with other changes, by a lazy writer (eg. *pdflush* on linux). On laptops in
+particular, disks can be left asleep for dozens of minutes in order to preserve energy - your data will
+then remain in memory for all that time.
+    
+Since that kernel caching is fully transparent to applications (no desynchronization should occur between
+what different processes see of a file), it usually doesn't matter. But in case of crash, data which 
+hasn't yet been written to oxyde will be lost - which can be quite embarrassing (goodbye to the 3 paragraphs
+you've just written) or more than embarrassing (bank files management, database applications...).
+
+That's why operating system offer ways of flushing that kernel cache, to ensure that data gets 
+properly written to the device before starting other operations. Such a flush can be manually triggered
+(posix fsync() call, win32 FlushFileBuffers()...) or enforced for each write on a given open file 
+(O_SYNC/FILE_WRITE_THROUGH opening flags). 
+
+Note that several variants of that kernel cache flush exist (dsync, rsync, datasync semantics...),
+eg. to also enforce flushing of read buffers, or to bypass the flushing of metadata, but the main
+point of concern is, anyway, the the file data itself gets properly pushed to oxyde when you command it. 
+
+Then a problem you might encounter at that level, is that on some platforms, sync-like calls actually do not wait
+for the write operation to complete, they just plan write operations and immediately return (Posix1-2001 doesn't 
+require more). Fortunately, most recent kernels seem to wait for the synchronization to be over, before returning
+to the application. But this won't completely save you, because of the next caching level...
+
+
+Internal disk cache
+^^^^^^^^^^^^^^^^^^^^^^
+
+For performance reasons, most hard disk have an internal "disk cache"
+enabled by default, which doesn't necessarily get flushed by sync calls. 
+
+Needless to say that your data is not much more likely to survive to a crash, if it's in the disk 
+cache rather than in the kernel one (although sophisticated disks are sometimes backed by batteries 
+to deal with this case, and let the device automatically purge itself before falling out of energy).
+So here is an overview of the "disk cache" affair.
+
+Disks and operating system easily lie about their real synchronization state. That's why, if you have 
+very important data to protect, your best chance is to disable all disk caching features,
+through hardware configuration  utilities, (``hdparm -W 0``, windows hardware condiguration panels 
+etc.). But such tweaks can heavily hinder performance, and they depend a lot on your 
+hardware - IDE and SCSI disks, for example, can have very different options, and more or less 
+deceiving behaviours. Luckily, your data won't always be sensitive enough to require such 
+extreme measures.
+
+If your data is stored on remote shares (samba, nfs...), then chances are big 
+that your sync calls won't make it to the oxyde, and only a careful study of 
+involved hardware/OS/applications may give you some certainties in this case 
+(a good old "unplug the cable violently and check the result" might also help).
+
+Windows
+    The win32 FlushFileBuffers call usually implies both kernel cache and disk 
+    cache flushing, as well on local storages as on remote filesystems. But this only works 
+    if the disk hasn't been configured with option "Turn off Windows write-cache buffer flushing".
+
+Unix-like systems:
+    As well in Posix norms as in the Single Unix Specification, nothing requires that fsync() calls 
+    will care about disk cache. But in practice:
+    
+    - Mac OS X users : lucky you, Apple has introduced a new fcntl flag (F_FULLSYNC) to enforce 
+      full synchronization on a file descriptor.
+    - Linux users: it seems that latest kernel versions (2.6.33 and above) have been patched to ensure full sync. 
+      But that patch may still have to find its way to your favorite distribution.
+    - Other unix-like platforms : Your mileage may vary... read the sweet manuals, as we say.
+
+
+RsFile synchronization system
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+RsFile attempts to do its best with the constraints listed above: it offers a :meth:`rsfile.flush()` method 
+(simple application-buffer flushing), as well as a :meth:`rsfile.sync()` method, which handles the kernel-cache
+flushing. You can provide hints to the latter, to ignore metadata synchronization or enforce disk cache 
+flushing, but RsFile won't do more than your OS can afford (and it won't tweak your hardware settings for you, either).
 
 
 

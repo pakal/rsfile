@@ -1,7 +1,6 @@
 
-RsFile package v1.0 Beta1
-==========================
-
+RsFile package v1.0 
+======================
 
 
 RsFile aims at providing python with a cross-platform, reliable, and comprehensive file 
@@ -14,7 +13,7 @@ they sometimes rely on castrated implementations, like windows' libc compatibili
 
 That's why RsFile offers more than a simple interfacing/adaptation layer : it 
 also wraps native file objects (like win32 "Handles"), to ensure a maximal flexibility 
-for the API.
+of the API.
 
 The main idea behind the design of the API, is that "cross-platform" doesn't mean 
 "lowest denominator", and that "high level" doesn't mean "poor". That's why, even though 
@@ -29,10 +28,12 @@ It mainly relies on stdlib modules and ctypes extensions (on windows, if pywin32
 
 The 1.x series will remain in pure python, but future versions might run under cython, for performance considerations.
 
+
+
 .. toctree::
 	:maxdepth: 2
    
 	rsopen.rst
-	rsfileio.rst
+	rsfile_streams.rst
 	utilities_options.rst	
 	native_io_concepts.rst

@@ -5,15 +5,17 @@ Handy Options and Utilities
 .. module:: rsfile
 
 
-.. rubric::
-	**RSFile Options**
+RSFile Options
+-------------------
 	
 .. autofunction:: set_rsfile_options
 
 .. autofunction:: get_rsfile_options
 
-.. rubric::
-	**RSFile Utilities**
+
+
+RSFile Utilities
+------------------
 	
 .. autofunction:: read_from_file
 
