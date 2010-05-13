@@ -47,7 +47,7 @@ io.IOBase abstract class, with the new methods and semantics described below in 
     
 
     
-    
+ 
     
 
 New Raw Streams
@@ -57,6 +57,10 @@ New Raw Streams
 
 The replacement for **io.FileIO** has a quite different constructor, 
 giving a far broader range of possible semantics, as well as some new attributes.
+
+Note that the "share-delete" semantic has been on enforced on win32 as on unix, which means
+that files opened with this library can still be moved/deleted in the filesystem while they're open.
+However, on win32 it may result in "stale files", which are not really deleted until the last handle to them is closed.
 
 .. autoclass:: RSFileIO
 	

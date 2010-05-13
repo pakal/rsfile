@@ -1,5 +1,7 @@
 
 
+# TODO : test against trunk test suite !!!!!!!!!!!!!!!
+
 * DOES IO STREAM INHERITANCE WORK VIA PICKLE / MULTITHREADING ???????????
 
 *Test on all python implementations, versions, on all platforms etc.
@@ -10,117 +12,47 @@ TODO - TEST SEMAPHORE INHERITANCE !!!!!
 RsFile.umask
 Sets the permission mask used when creating a new inode, and returns the previous mask. On unix platforms, the umask is inherited from the parent process, and features all the flags describe in the stat module ; on windows it is zero on startup, and only the "user write" flag is taken into account, to switch between read-only and normal file.
 
-TODO:
-HOW TO disable the effects of the umask on *nix???
-DEAL WITH THE STICKY BIT !!! 
-Or make win32 like unix, by offering folder permissions and changing file deletion with readonly files!!!!!
 
-y A T IL DIFFERENT ENTRE FLOCK5° ET PUIS O_SCLOCK de BSD ????
+       
+OPTIMISER READALL() avec join()
+Regler problemes de buffering -> raw stream
 
-HOW TO KNOW THE COUNT OF OPEN FILES FOR CURRENT PROCESS ??
+En particulier dans read_from_file : readall() or read(None) ???
+ 
+
+
+## INCLUDE _PYIO with rsfile, for older versions of python !!!
+
+
+# re test that buffers don't mess with file size !!!
+
+check __getattr__ and __setattr__ of threadsafe wrapper !
+
+#TODO py2.7 the file object will now set the filename attribute on the IOError exception when trying to open a 
+directory on POSIX platforms. (Noted by Jan Kaliszewski; issue 4764.)
+
+#TODO - The io.FileIO class now raises an OSError when passed an invalid file descriptor. (Implemented by Benjamin Peterson; issue 4991.)
+#---> valueerror on negative FD, and oserror on fstat-EBADF
+
+# Todo : check that current buffer class work well when seeking (pos, seek_cur) ! (buggy in 2.6.1)
+
+# Todo - discuss the use of name, mode, closefd etc. as attributes of raw streams only ????
+
+# TODO - discuss threads in multiprocessing when forking - why not spawn like win32 ??
+
+
+
+
+
+
+*Add support for sparse files on ntfs (FSCTL_SET_ZERO_DATA, DeviceIoControl(FSCTL_SET_SPARSE))? -> maybe useless, delayed
+
+*How to know the count of open files for current process ? -> useless
+
 *Make inheritable streams picklable for multiprocessing use, along with their semaphores -> long and hard, delayed
 
 *Design a strong exception hierarchy for IO/OS errors - if it is really possible from native error codes -> delayed
 
 *Create a global option registry to activate debugging systems (open handle counting, deadlock detection...) -> delayed
 
-*Test the behaviour of open() with broken symlinks, and how must-exist and must-not-exist deal with that 
--> no problem, idem as normal files : the target is created in "w" mode, not in "r" mode !!
 
-
-# test that buffers don't mess with file size !!!
-
-check __getattr__ and __setattr__ of threadsafe wrapper !
-
-
-# # # TODO list # # #
-
-"""
-
-TODO : test if this is true, or if only dup2() descriptors have this effect :
-Locks are associated with processes. A process can only have one kind of lock set for each byte of a given file. 
-When any file descriptor for that file is closed by the process, all of the locks that process holds on that file 
-are released, even if the locks were made using other descriptors that remain open. Likewise, locks are released when 
-a process exits, and are not inherited by child processes created using fork (see Creating a Process). 
-"""
-# WARNING - shall we not modify close() of buffered streams to let exceptions propagate !!
-
-# A inclure dans la doc : atomic operations = bad idea... delete on close too..
-
-#TODO py2.7 the file object will now set the filename attribute on the IOError exception when trying to open a directory on POSIX platforms. (Noted by Jan Kaliszewski; issue 4764.)
-#TODO - The io.FileIO class now raises an OSError when passed an invalid file descriptor. (Implemented by Benjamin Peterson; issue 4991.)
-#---> valueerror on negative FD, and oserror on fstat-EBADF
-
-# TODO - warn in doc about the fact that writing on read-locked portion by current process fails on win32, NOT unix
-
-# Todo : check that current buffer class work well when seeking (pos, seek_cur) ! (buggy in 2.6.1)
-# -> Could you construct a test case? (it's even better if you fix the offending code as well of course)
-
-# exception io.UnsupportedOperation - An exception inheriting IOError and ValueError that is raised when an unsupported operation is called on a stream.
-
-# Todo : in doc : tell that errors are left explicit when closing streams, eg. if flush fails !!!! (buggy in current io)
-
-# Todo - discuss the use of name, mode, closefd etc. as attributes of raw streams only ????
-
-# Todo - advocate thread-safe interface, globalized check_closed() checking, and public interface only win32 error converter !!! @_win32_error_converter not on private methods !!
-## exception BlockingIOError - to implement
-
-# file handle duplication or inheritance: warn about the file pointer sensitivity, which may cause big troubles if you don't lock files !!! 
-#-> use interprocess mutex ! patch atfork()
-
-
-# poursuiver discussion bug - multiprocessing module ne met pas en garde contre multithreading et thread-safety des synchronization primitives !
-# TODO - discuss threads in multiprocessing when forking - why not spawn like win32 ??
-
-"""
-EN FAIT, DANS WINDOWS AUSSI LES HANDLES SONT DANS TABLE "per process"
-
-TODO ADD :
-       O_CLOEXEC (Since Linux 2.6.23)
-              Enable the close-on-exec flag for the new file descriptor.  Specifying
-              this flag permits a program to avoid additional fcntl(2) F_SETFD
-              operations to set the FD_CLOEXEC flag.  Additionally, use of this flag
-              is essential in some multithreaded programs since using a separate
-              fcntl(2) F_SETFD operation to set the FD_CLOEXEC flag does not suffice
-              to avoid race conditions where one thread opens a file descriptor at
-              the same time as another thread does a fork(2) plus execve(2).
-
-    IMPORTANT
-    The pthread_atfork() function shall declare fork handlers to be called before and after fork(), in the context of the thread that called fork(). The prepare fork handler shall be called before fork() processing commences. The parent fork handle shall be called after fork() processing completes in the parent process. The child fork handler shall be called after fork() processing completes in the child process. If no handling is desired at one or more of these three points, the corresponding fork handler address(es) may be set to NULL.
-    The order of calls to pthread_atfork() is significant. The parent and child fork handlers shall be called in the order in which they were established by calls to pthread_atfork(). The prepare fork handlers shall be called in the opposite order.
-
-
-when truncating file which is not writable :
- # CPython actually raises "[Errno 13] Permission denied", but well... err 9 is fine too - PAKAL WTF ????
- Warning - the file pointer goes to the new file end ??? or not ???
-"""
-
-        
-
-OPTIMISER READALL() avec join()
-
-
-Report bug :
-The type of file object returned by the open() function depends 
-on the mode. When open() is used to open a file in a text mode ('w', 'r', 'wt', 'rt', etc.), 
-it returns a TextIOWrapper. When used to open a file in a binary mode, the 
-returned class varies: in read binary mode, it returns a BufferedReader; 
-in write binary and append binary modes, it returns a BufferedWriter, 
-and in read/write mode, it returns a BufferedRandom.
-===> FALSE? it can return a dangerous RawFileIO object !!!
-
-Regler problemes de buffering -> raw stream
-En particulier dans read_from_file : readall() or read(None) ???
-
-  	
-"""
-TODO : add support for sparse files on ntfs !!!
-See also FSCTL_SET_ZERO_DATA Control Code
-The bug requests that sparse files be created by default at least by RandomAccessFile.  
-It is probably inappropriate to do this for all files, but adding an API to File (or a new constructor) 
-to explicitly request creation of a sparse file is reasonable. RAF could be modified to always (or optionally)
- call that API.  Random access files are used by applications on many systems in a way where system support 
- for sparse files is of benefit.  Existing programs, such as data bases that are implemented in C often take advantage of this. 
-It should be possible to do so in Java as well on OSs that support this.  As noted in the description, we already support this for unix. 
-To support this on NTFS, will need to add a call to the win32 API DeviceIoControl with the FSCTL_SET_SPARSE flag after the file has been  created. 
-""" 

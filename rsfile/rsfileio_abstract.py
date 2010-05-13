@@ -89,7 +89,8 @@ class RSFileIOAbstract(io.RawIOBase):  # we're forced to use this name, because 
         
         - *must_create* (boolean): File opening fails if the file already exists.
           This is the same semantic as (O_CREATE | O_EXCL) flags, which can be used to
-          handle some security issues on unix filesystems.        
+          handle some security issues on unix filesystems. Note that O_EXCL is broken
+          on NFS shares with a linux kernel < 2.6.5, so race conditions may occur in this case.        
         - *must_not_create* (boolean): File creation fails if the file doesn't already exist. 
           This is then negation of the O_CREATE semantic, which is the default behaviour
           of file opening via RSFileIo (i.e, files are created if not existing, else they're 

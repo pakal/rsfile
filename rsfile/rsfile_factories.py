@@ -72,6 +72,8 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
     'T'       Stream is in Text mode (default)
     ========= ===============================================================
     
+    .. note:: 
+        The '+' flag doesn't work on NFS shares with a linux kernel < 2.6.5, race conditions may occur.
     
     ========= =====================
     Mode Equivalences

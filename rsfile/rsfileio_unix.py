@@ -74,8 +74,9 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
     @_unix_error_converter
     def _inner_create_streams(self, path, read, write, append, must_create, must_not_create, synchronized, inheritable, fileno, handle, permissions):
 
+        # Note : opening broken links works if we're in "w" mode, and raises error in "r" mode,
+        # like for normal unexisting files.
         
-        # TODO - For delete on close ->  unlink immediately 
         
         if handle is not None:
             self._fileno = self._handle = handle
@@ -116,14 +117,13 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
 
             self._fileno = self._handle = unix.open(strname, flags, permissions)
 
-            # under unix we must prevent the opening of directories !
+            # on unix we must prevent the opening of directories or pipes !
             if not stat.S_ISREG(unix.fstat(self._fileno).st_mode):
                 raise IOError(errno.EINVAL, "RSFile can only open regular files")     
 
             if not inheritable:
                 old_flags = unix.fcntl(self._fileno, unix.F_GETFD, 0);
-                if not (old_flags & unix.FD_CLOEXEC):
-                    #print "PREVENTING INHERITANCE !!!"
+                if not (old_flags & unix.FD_CLOEXEC): # we may use O_CLOEXEC instead (Since Linux 2.6.23)
                     unix.fcntl(self._fileno, unix.F_SETFD, old_flags | unix.FD_CLOEXEC);
                     
             self._lock_registry_inode = self._inner_uid()
