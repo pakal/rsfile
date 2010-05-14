@@ -1,10 +1,14 @@
 
 
+ADD MONKEYPATCH TO HANDY UTILITIES DOCUMENTATION !!!!
+
 # TODO : test against trunk test suite !!!!!!!!!!!!!!!
 
 * DOES IO STREAM INHERITANCE WORK VIA PICKLE / MULTITHREADING ???????????
 
 *Test on all python implementations, versions, on all platforms etc.
+
+PUT BACK  | win32.FILE_SHARE_DELETE in WIN32 !!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
 TODO - TEST SEMAPHORE INHERITANCE !!!!!

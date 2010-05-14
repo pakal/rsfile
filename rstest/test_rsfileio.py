@@ -1,6 +1,12 @@
 import sys
 import os
 import unittest
+#import io
+import _pyio as io
+sys.modules["io"] = io
+
+
+
 import time
 import itertools
 import threading
@@ -17,7 +23,8 @@ from UserList import UserList
 
 """ WARNING - HEAVY monkey-patching """
 
-import io
+
+
 import rsfile
 
 TESTFN = "@TESTING" # we used our own one, since the test_support version is broken
@@ -66,7 +73,32 @@ class TestRawFileViaWrapper(unittest.TestCase):
     def tearDown(self):
         _cleanup()
 
+    
+    
+    def test_garbage_collection(self):
+        # FileIO objects are collected, and collecting them flushes
+        # all data to disk.
         
+        # WARNING - cyclic garbage collection can't work with python objects having a __del__ method !
+        
+        import weakref 
+        
+        f = io.open(TESTFN, 'wb', buffering=0)
+        f.write(b"abcxxx")
+
+        wr = weakref.ref(f)
+        del f
+        
+        test_support.gc_collect()
+    
+        #print (gc.garbage) - in case of trouble
+        
+        self.assertTrue(wr() is None, wr)
+        with self.open(test_support.TESTFN, "rb") as f:
+            self.assertEqual(f.read(), b"abcxxx")
+            
+            
+    
     def testProperties(self):
         with io.open(TESTFN, 'wb', buffering=0) as f:
 
@@ -713,16 +745,43 @@ def test_main():
             
 if __name__ == '__main__':
     #test_original_io()
-    #### run_unittest(TestMiscStreams) 
+    #run_unittest(TestMiscStreams) 
+    
+    import test.test_support
+    test.test_support.TESTFN = "DUMMYFILE"
+    
+    class dummyklass(unittest.TestCase):
+        pass
+    dummyfunc = lambda *args, **kwargs: None 
+    
+    import test.test_io
+    test.test_io.CBufferedRandomTest = dummyklass
+    test.test_io.CBufferedReaderTest = dummyklass
+    test.test_io.CBufferedWriterTest = dummyklass
+    test.test_io.CBufferedRWPairTest = dummyklass
+    test.test_io.CIncrementalNewlineDecoderTest = dummyklass
+    test.test_io.CTextIOWrapperTest = dummyklass
+    test.test_io.CMiscIOTest = dummyklass
+    test.test_io.CIOTest = dummyklass
+     
+    test.test_io.TextIOWrapperTest.test_repr = dummyfunc
+    test.test_io.IOTest.test_garbage_collection = dummyfunc # cyclic GC can't work with python classes having __del__() method
+    test.test_io.test_main() 
+    #test.test_memoryio.test_main()
+    #test.test_file.test_main()
+    #test.test_bufio.test_main()
+    #test.test_fileio.test_main()
+    
     
     #_cleanup()
     #TestMiscStreams("testIOErrorOnClose").testIOErrorOnClose()
     #print "===OVER==="
 
-    import _utilities
-    backends = _utilities.launch_rsfile_tests_on_backends(test_main)
 
-    print "** RSFILEIO Test Suite has been run on backends %s **" % backends
+
+    #import _utilities
+    #backends = _utilities.launch_rsfile_tests_on_backends(test_main)
+    #print "** RSFILEIO Test Suite has been run on backends %s **" % backends
 
     
 

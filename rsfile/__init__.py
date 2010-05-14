@@ -4,7 +4,10 @@ from __future__ import with_statement
 
 import sys, os
 import functools
-import io
+
+
+#import io
+import _pyio as io # TODO REMOVE
 
 from rsfileio_abstract import RSFileIOAbstract
 

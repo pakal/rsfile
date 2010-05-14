@@ -1,7 +1,9 @@
 
 import sys, multiprocessing, threading, functools, collections
 
-import io
+# TODO REMOVE
+#import io
+import _pyio as io
 
 if sys.platform == 'win32':
     try:
@@ -49,7 +51,16 @@ class _buffer_forwarder_mixin(object):
         if not self.closed:
             self.flush() # we do NOT swallow exceptions !
             self.raw.close()
-                  
+    
+    def __repr__(self):
+        clsname = self.__class__.__name__
+        try:
+            name = self.name
+        except AttributeError:
+            return "<%s.%s>" % (__name__, clsname)
+        else:
+            return "<%s.%s name=%r>" % (__name__, clsname, name)
+                
     def __getattr__(self, name):
         # print "--> taking ", name, "in ", self
         raw = object.__getattribute__(self, "raw") # warning - avoid infinite recursion on getattr !
@@ -88,7 +99,16 @@ class _text_forwarder_mixin(object):
         if not self.closed:
             self.flush() # we do NOT swallow exceptions !
             self.buffer.close()
-            
+    
+    def __repr__(self):
+        clsname = self.__class__.__name__
+        try:
+            name = self.name
+        except AttributeError:
+            return "<%s.%s>" % (__name__, clsname)
+        else:
+            return "<%s.%s name=%r>" % (__name__, clsname, name)
+                        
     def __getattr__(self, name):
         # print "--> taking ", name, "in ", self
         buffer = object.__getattribute__(self, "buffer") # warning - avoid infinite recursion on getattr !
@@ -107,7 +127,7 @@ class RSBufferedWriter(_buffer_forwarder_mixin, io.BufferedWriter):
     pass
 
 # awkward structure to have all methods/inheritance-relations OK even when monkey patching
-class RSBufferedRandom(io.BufferedRandom, RSBufferedWriter, RSBufferedReader): 
+class RSBufferedRandom(io.BufferedRandom, RSBufferedWriter, RSBufferedReader):            #_buffer_forwarder_mixin, 
     pass
     
 class RSTextIOWrapper(_text_forwarder_mixin, io.TextIOWrapper):

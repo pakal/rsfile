@@ -2,16 +2,17 @@
 
 import sys, os, time, threading, multiprocessing, collections, functools
 from contextlib import contextmanager
-import io
 import rsfile_definitions as defs
 from rsfile_registries import IntraProcessLockRegistry, _default_rsfile_options
 
 
 
+# TODO REMOVE
+#import io
+import _pyio as io
 
 
-
-class RSFileIOAbstract(io.RawIOBase):  # we're forced to use this name, because of autodocumentation constraints...
+class RSFileIOAbstract(io.RawIOBase):
 
     
     
@@ -223,11 +224,27 @@ class RSFileIOAbstract(io.RawIOBase):  # we're forced to use this name, because 
                     self._inner_close_streams()
 
 
+    def __del__(self):
+        """Destructor.  Calls close()."""
+        # The try/except block is in case this is called at program
+        # exit time, when it's possible that globals have already been
+        # deleted, and then the close() call might fail.  Since
+        # there's nothing we can do about such failures and they annoy
+        # the end users, we suppress the traceback.
+        try:
+            self.close()
+        except:
+            pass
+
+
     def seekable(self):
+        self._checkClosed()
         return self._seekable
     def readable(self):
+        self._checkClosed()
         return self._readable
     def writable(self):
+        self._checkClosed()
         return self._writable
     
     

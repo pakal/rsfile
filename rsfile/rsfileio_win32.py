@@ -59,7 +59,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
             assert desiredAccess
             
             # we reproduce the Unix sharing behaviour : full sharing, and we can move/delete files while they're open
-            shareMode = win32.FILE_SHARE_READ | win32.FILE_SHARE_WRITE | win32.FILE_SHARE_DELETE
+            shareMode = win32.FILE_SHARE_READ | win32.FILE_SHARE_WRITE # | win32.FILE_SHARE_DELETE - TODO PUT IT BACK TODO WARNING !!!!!!!!!!!!!
 
             creationDisposition = 0
             if must_not_create:

@@ -337,28 +337,35 @@ An internal registry is then used to normalize the behaviour of file locks:
 - locks are attached to a specific file descriptor, not just to the whole process.
 - merging/splitting bytes range locks, or using lock reantrancy, are prevented
 
+
 Finally, file closing operations have been modified to work around the fcntl() flaws: when
 a stream is closed, RsFile will delay the real closing of native files descriptors as long as the process keeps
 some locks on the same disk file.
 
-.. warning::
-    The danger with this system, is that your process could run out of available file file descriptors, if it continuely 
-    opens and locks the same file without ever letting the possibility to release these handle (i.e by constantly keeping at 
-    least some bytes locked on this file).
-    
-    Anyway, if your application behaves that way, it also creates some kind of denial-of-service against any other process 
-    which would want to lock the whole file, so it could be the sign that other means of protection (file permissions, 
-    immediate deletion of the filesystem entry...) would be more appropriate for your needs than bytes range locking. 
-    
-    But if you reaallly need to constantly lock parts of the file (eg. for a shared database file), then you shall:
-    
-    - reuse the same file descriptors whenever possible
-    - plan "zero lock" moments to allow the garbage collection of an inode's zombie file descriptors
-    - let the closing operation of a file descriptor atomically release the locks still kept, 
-      instead of manually unlocking them just before closing the file. This helps file descriptor 
-      garbage collection, by ensuring that no new lock is taken in the short time between the unlocking 
-      operation and the closing of the descriptor itself.
+The danger with this workaround, is that your process could run out of available file file descriptors, if it continuely 
+opens and locks the same file without ever letting the possibility to release these handle (i.e by constantly keeping at 
+least some bytes locked on this file).
 
+Anyway, if your application behaves that way, it also creates some kind of denial-of-service against any other process 
+which would want to lock the whole file, so it could be the sign that other means of protection (file permissions, 
+immediate deletion of the filesystem entry...) would be more appropriate for your needs than bytes range locking. 
+
+But if you really need to constantly lock parts of the file (eg. for a shared database file), then you shall:
+
+- reuse the same file descriptors whenever possible
+- plan "zero lock" moments to allow the garbage collection of an inode's zombie file descriptors
+- let the closing operation of a file descriptor atomically release the locks still kept, 
+  instead of manually unlocking them just before closing the file. This helps file descriptor 
+  garbage collection, by preventing new locks to be taken in the short time between the unlocking 
+  operation and the closing of the file descriptor.
+
+
+.. warning::
+    This workaround provided will only work as long as accesses to a disk file are done through the RsFile
+    Api. Third-party libraries using other io modules, or low level routines (eg. in C extensions) may still
+    silently break your locks. Part of these dangers can be prevented by enforcing the use of RsFile for all 
+    python file operations (CF *handy utilities* section), but overriding the lowest level I/O routines, like libc's open(),
+    used by the process, would require a tremendous skills and work.
 
 
 
