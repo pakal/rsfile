@@ -20,8 +20,14 @@ from rsfile_utilities import *
 
 
  
-def monkey_patch_original_io_module(): 
+def monkey_patch_original_io_module(module=io): 
+    """
+    Replaces standard file streams of module *module* (FileIO, BufferedReader, BufferedWriter,
+    BufferedRandom, and TextIOWrapper), as well as its open() factory, by RsFile versions with compatible signatures.
     
+    By default *module* is the standard *io* module, but you may specify *_pyio* (the stdlib pure python version)
+    or other io implementations to be patched.
+    """
     
     # we replace the most basic file io type by a backward-compatible but enhanced version
     class RSFileIORawWrapper(RSFileIO):
@@ -36,12 +42,12 @@ def monkey_patch_original_io_module():
                 self.truncate(0) # Warning - this raw wrapper mimics basic rawFileIO, and doesn't use locking !!!!
     
     # Important Patching ! #
-    io.FileIO = RSFileIORawWrapper  
-    io.BufferedReader = RSBufferedReader
-    io.BufferedWriter = RSBufferedWriter
-    io.BufferedRandom = RSBufferedRandom
-    io.TextIOWrapper = RSTextIOWrapper
-    io.open = functools.partial(rsopen, handle=None, locking=False, timeout=0, thread_safe=False, mutex=None, permissions=0777) 
+    module.FileIO = RSFileIORawWrapper  
+    module.BufferedReader = RSBufferedReader
+    module.BufferedWriter = RSBufferedWriter
+    module.BufferedRandom = RSBufferedRandom
+    module.TextIOWrapper = RSTextIOWrapper
+    module.open = functools.partial(rsopen, handle=None, locking=False, timeout=0, thread_safe=False, mutex=None, permissions=0777) 
 
     
     """ # OLD, very magical monkey patching of buffer/text classes

@@ -100,6 +100,10 @@ class _text_forwarder_mixin(object):
             self.flush() # we do NOT swallow exceptions !
             self.buffer.close()
     
+    def readinto(self, buffer): # to please test suite...
+        self._checkClosed() 
+        raise TypeError("Text stream can't be read into buffer")
+        
     def __repr__(self):
         clsname = self.__class__.__name__
         try:

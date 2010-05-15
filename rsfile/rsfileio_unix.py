@@ -65,7 +65,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
                     try:
                         unix.close(fd) 
                     except EnvironmentError:
-                        pass
+                        pass # flushing was already done anyway
             return not res
     
         

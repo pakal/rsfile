@@ -33,17 +33,55 @@ TESTFN = "@TESTING" # we used our own one, since the test_support version is bro
 rsfile.monkey_patch_original_io_module()
 
 def test_original_io():
+    """
+    Beware ( We patch stdlib tests to remove C extension tests, or other tests that can't apply to our python implementation.
+    Original cmd : " python -m test.regrtest -uall -v test_fileio test_file test_io test_bufio test_memoryio test_largefile "
+    """
 
     import test.test_support, test.test_io, test.test_memoryio, test.test_file, test.test_bufio, test.test_fileio, test.test_largefile
-    """
-    test_support.use_resources = ["largefile"]  # -> decomment this to try 2Gb file operations !
-    test.test_largefile.test_main()
-    """
-    test.test_io.test_main()
-    test.test_memoryio.test_main()
-    test.test_file.test_main()
-    test.test_bufio.test_main()
+    
+    class dummyklass(unittest.TestCase):
+        pass
+    def dummyfunc(*args, **kwargs): 
+        print "<DUMMY>" 
+    
+    def clean_unlink(filename):
+        try:
+            os.rename(filename, filename+".tmp"+str(int(time.time()))) # to deal with stale win32 files due to SHARE_DELETE flag!
+            os.remove(filename) # on win32, file only remove when last handle is closed !
+        except:
+            pass
+    test.test_support.unlink = clean_unlink
+    
+    #test_support.use_resources = ["largefile"]# -> uncomment this to try 2Gb file operations long on win32) !
+    #test.test_largefile.test_main() # beware !
+    
+    test.test_io.CBufferedRandomTest = dummyklass
+    test.test_io.CBufferedReaderTest = dummyklass
+    test.test_io.CBufferedWriterTest = dummyklass
+    test.test_io.CBufferedRWPairTest = dummyklass
+    test.test_io.CIncrementalNewlineDecoderTest = dummyklass
+    test.test_io.CTextIOWrapperTest = dummyklass
+    test.test_io.CMiscIOTest = dummyklass
+    test.test_io.CIOTest = dummyklass
+    test.test_io.TextIOWrapperTest.test_repr = dummyfunc
+    test.test_io.IOTest.test_garbage_collection = dummyfunc # cyclic GC can't work with python classes having __del__() method
+    test.test_io.PyIOTest.test_garbage_collection = dummyfunc # idem
+    test.test_io.test_main() 
+    
     test.test_fileio.test_main()
+    
+    test.test_memoryio.CBytesIOTest = dummyklass
+    test.test_memoryio.CStringIOTest = dummyklass
+    test.test_memoryio.test_main()
+    
+    test.test_file.CAutoFileTests = dummyklass
+    test.test_file.test_main()
+    
+    test.test_bufio.test_main()
+
+    
+    
     
     
     # Custom launching :
@@ -94,7 +132,7 @@ class TestRawFileViaWrapper(unittest.TestCase):
         #print (gc.garbage) - in case of trouble
         
         self.assertTrue(wr() is None, wr)
-        with self.open(test_support.TESTFN, "rb") as f:
+        with io.open(TESTFN, "rb") as f:
             self.assertEqual(f.read(), b"abcxxx")
             
             
@@ -215,8 +253,7 @@ class TestRawFileViaWrapper(unittest.TestCase):
             a.close()
             
         self.assertEqual(string, "i"*nbytes+"j"*nbytes)
-
-
+            
 
 
 
@@ -287,7 +324,7 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
 
         try:
             f.close() # this is normally buggy since the fd was closed through copy2...
-        except IOError:
+        except EnvironmentError:
             pass
             
         # ------------
@@ -314,7 +351,7 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
 
         try:
             f.close() # this is normally buggy since the fd was closed through copy2...
-        except IOError:
+        except EnvironmentError:
             pass        
         
         # ------------
@@ -740,48 +777,21 @@ def test_main():
                 os.unlink(TESTFN)
             except OSError: 
                 pass
-            
+        
             
             
 if __name__ == '__main__':
     #test_original_io()
     #run_unittest(TestMiscStreams) 
-    
-    import test.test_support
-    test.test_support.TESTFN = "DUMMYFILE"
-    
-    class dummyklass(unittest.TestCase):
-        pass
-    dummyfunc = lambda *args, **kwargs: None 
-    
-    import test.test_io
-    test.test_io.CBufferedRandomTest = dummyklass
-    test.test_io.CBufferedReaderTest = dummyklass
-    test.test_io.CBufferedWriterTest = dummyklass
-    test.test_io.CBufferedRWPairTest = dummyklass
-    test.test_io.CIncrementalNewlineDecoderTest = dummyklass
-    test.test_io.CTextIOWrapperTest = dummyklass
-    test.test_io.CMiscIOTest = dummyklass
-    test.test_io.CIOTest = dummyklass
-     
-    test.test_io.TextIOWrapperTest.test_repr = dummyfunc
-    test.test_io.IOTest.test_garbage_collection = dummyfunc # cyclic GC can't work with python classes having __del__() method
-    test.test_io.test_main() 
-    #test.test_memoryio.test_main()
-    #test.test_file.test_main()
-    #test.test_bufio.test_main()
-    #test.test_fileio.test_main()
-    
+
     
     #_cleanup()
     #TestMiscStreams("testIOErrorOnClose").testIOErrorOnClose()
     #print "===OVER==="
 
-
-
-    #import _utilities
-    #backends = _utilities.launch_rsfile_tests_on_backends(test_main)
-    #print "** RSFILEIO Test Suite has been run on backends %s **" % backends
+    import _utilities
+    backends = _utilities.launch_rsfile_tests_on_backends(test_main)
+    print "** RSFILEIO Test Suite has been run on backends %s **" % backends
 
     
 

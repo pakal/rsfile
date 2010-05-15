@@ -59,7 +59,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
             assert desiredAccess
             
             # we reproduce the Unix sharing behaviour : full sharing, and we can move/delete files while they're open
-            shareMode = win32.FILE_SHARE_READ | win32.FILE_SHARE_WRITE # | win32.FILE_SHARE_DELETE - TODO PUT IT BACK TODO WARNING !!!!!!!!!!!!!
+            shareMode = win32.FILE_SHARE_READ | win32.FILE_SHARE_WRITE | win32.FILE_SHARE_DELETE  
 
             creationDisposition = 0
             if must_not_create:
@@ -105,8 +105,10 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
                 None # hTemplateFile  
                 )
                 
-            #print ">>>File creation arguments : ",args
+            
             handle = win32.CreateFile(*args)
+            #print ">>>File opened : ", path
+            
             self._handle = int(handle)
             if hasattr(handle, "Detach"): # pywin32
                 handle.Detach()
@@ -125,8 +127,10 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         This function may raise IOError !
         """
         
+        #print "<<<File closed : ", self._name
         if self._closefd: # always True except when wrapping external file descriptors
-            if self._origin == "fileno":
+            if self._fileno:
+                # WARNING - necessary to avoid leaks of C file descriptors !!!!!!!!!
                 os.close(self._fileno) # this closes the underlying native handle as well
             else:
                 win32.CloseHandle(self._handle)
