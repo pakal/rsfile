@@ -1,9 +1,7 @@
 
 import sys, multiprocessing, threading, functools, collections
 
-# TODO REMOVE
-#import io
-import _pyio as io
+import rsfile_definitions as defs
 
 if sys.platform == 'win32':
     try:
@@ -119,22 +117,25 @@ class _text_forwarder_mixin(object):
         return getattr(buffer, name)    
     
     
-    
+
     
     
 ### EXTENDED BUFFER AND TEXT STREAMS !!!!!!!!
 
-class RSBufferedReader(_buffer_forwarder_mixin, io.BufferedReader):
+class RSBufferedReader(_buffer_forwarder_mixin, defs.io_module.BufferedReader):
     pass
 
-class RSBufferedWriter(_buffer_forwarder_mixin, io.BufferedWriter):
+class RSBufferedWriter(_buffer_forwarder_mixin, defs.io_module.BufferedWriter):
     pass
+
+#class RSBufferedRandom(defs.io_module.BufferedRandom, _buffer_forwarder_mixin):  # future C extension version
+#    pass
 
 # awkward structure to have all methods/inheritance-relations OK even when monkey patching
-class RSBufferedRandom(io.BufferedRandom, RSBufferedWriter, RSBufferedReader):            #_buffer_forwarder_mixin, 
+class RSBufferedRandom(defs.io_module.BufferedRandom, RSBufferedWriter, RSBufferedReader):       
     pass
     
-class RSTextIOWrapper(_text_forwarder_mixin, io.TextIOWrapper):
+class RSTextIOWrapper(_text_forwarder_mixin, defs.io_module.TextIOWrapper):
     pass
 
 

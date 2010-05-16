@@ -10,11 +10,25 @@ import ctypes.wintypes as wintypes
 import raw_win32_ctypes as win32api
 from raw_win32_ctypes import GetLastError, OVERLAPPED, FILETIME, BY_HANDLE_FILE_INFORMATION, SECURITY_ATTRIBUTES
 
-from msvcrt import open_osfhandle as _open_osfhandle, get_osfhandle as _get_osfhandle # as long as they're supported by the stdlib, let's enjoy
 
 from raw_win32_defines import * 
+
+# as long as they're supported by the stdlib, let's enjoy these safer version !
+from msvcrt import open_osfhandle as _open_osfhandle, get_osfhandle as _get_osfhandle 
+
+
+
 INVALID_HANDLE_VALUE = wintypes.HANDLE(-1).value # for safety, convert to unsigned DWORD
 
+
+
+'''
+import __builtin__
+if hasattr(__builtin__, "memoryview"):
+    BUFFER_TYPES = (bytearray, memoryview)
+else:
+    BUFFER_TYPES = bytearray
+'''
 
 """
 QUESTION : can we use buffers via array.Array() ? We must NOT change size !!!
@@ -311,7 +325,7 @@ def SetFilePointer(handle, offset, moveMethod): # we match the naming of pywin32
     res = win32api.SetFilePointerEx(handle, offset, ctypes.byref(newPos), moveMethod)
     
     if not res:
-        raise ctypes.WinError() 
+        raise ctypes.WinError()
 
     return newPos.value
         
@@ -341,12 +355,21 @@ def WriteFile(handle, data, overlapped=None):
         data_to_write = data # casting will be implicit
     """
     
+    """
+    if isinstance(data, memoryview):
+        data_to_write = ctypes.create_string_buffer(len(data))
+        data_to_write.raw = data                                          
+        #address = ctypes.c_void_p(data.raw)
+    else:
+    """
     if isinstance(data, bytearray):
         data_to_write = ctypes.POINTER(ctypes.c_char).from_buffer(data) # NOT WORKING - TODO - WARNING
     else:
+        #data_to_write = ctypes.c_char_p(data)  # doesn't work...
         data_to_write = ctypes.create_string_buffer(data)
+
     address =  ctypes.addressof(data_to_write)
-    
+        
     bytes_written = wintypes.DWORD(0)
    
     # no need to use WriteFileEx here...
@@ -463,6 +486,25 @@ if (__name__ == "__main__"):
     
     handle = CreateFile(filename, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE, None, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0)
 
+    string = "hello"
+    
+
+    f = bytearray("hello")
+
+    res = WriteFile(handle, f)
+    print "WRITEFILE : ", res
+    assert 0 <= res[1] <= 5
+    
+    
+    """ 
+    h = memoryview(string)
+    
+    res = WriteFile(handle, h)
+    print "WRITEFILE : ", res
+    assert 0 <= res[1] <= 5
+    """
+    
+    
     res = SetFilePointer(handle, 10, FILE_BEGIN)
 
     assert res == 10

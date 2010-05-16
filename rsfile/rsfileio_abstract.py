@@ -7,12 +7,8 @@ from rsfile_registries import IntraProcessLockRegistry, _default_rsfile_options
 
 
 
-# TODO REMOVE
-#import io
-import _pyio as io
 
-
-class RSFileIOAbstract(io.RawIOBase):
+class RSFileIOAbstract(defs.io_module.RawIOBase):
 
     
     
@@ -151,8 +147,7 @@ class RSFileIOAbstract(io.RawIOBase):
 
         if not closefd and not (fileno or handle):
             raise ValueError("Cannot use closefd=False without providing a descriptor to wrap.")
-                
-
+        
         # Inner lock used when several field operations are involved, eg. when truncating with zero-fill
         # The rule is : public methods must protect themselves, whereas inner ones are clueless 
         # about multithreading and other concurrency issues ?????
@@ -174,9 +169,13 @@ class RSFileIOAbstract(io.RawIOBase):
             self._name = path
             self._origin = "path"
         elif fileno is not None:
+            if int(fileno) < 0:
+                raise ValueError("A fileno to be wrapped can't be negative.")
             self._name = fileno
             self._origin = "fileno"
         elif handle is not None:
+            if int(handle) < 0:
+                raise ValueError("A handle to be wrapped can't be negative.")
             self._name = handle
             self._origin = "handle"
      
@@ -211,7 +210,7 @@ class RSFileIOAbstract(io.RawIOBase):
 
             if not self.closed:
                 
-                io.RawIOBase.close(self) # we first mark the stream as closed... it flushes, also.
+                defs.io_module.RawIOBase.close(self) # we first mark the stream as closed... it flushes, also.
 
                 # Unlock-On-Close and fcntl() safety mechanisms
                 with IntraProcessLockRegistry.mutex:
@@ -314,15 +313,18 @@ class RSFileIOAbstract(io.RawIOBase):
 
     def tell(self):
         self._checkClosed()
-        return self._inner_tell()
+        res = self._inner_tell()
+        return res
 
     def seek(self, offset, whence=os.SEEK_SET):
         self._checkClosed()
         
+        #print "raw seek called to offset ", offset, " - ", whence, "with size", self._inner_size()
         if not isinstance(offset, (int, long)):
             raise TypeError("Expecting an integer as argument for seek")
-        return self._inner_seek(offset, whence)
-
+        res = self._inner_seek(offset, whence)
+        
+        return res
         
 
     def readall(self):
@@ -366,7 +368,6 @@ class RSFileIOAbstract(io.RawIOBase):
         Returns number of bytes read (0 for EOF), or None if the object
         is set not to block as has no data to read.
         """
-        
         self._checkClosed()
         self._checkReadable()
         return self._inner_readinto(buffer)
@@ -381,16 +382,22 @@ class RSFileIOAbstract(io.RawIOBase):
         
         self._checkClosed()
         self._checkWritable()
-        
+
+        if defs.HAS_MEMORYVIEW and isinstance(buffer, memoryview):
+            buffer = buffer.tobytes() # TO BE IMPROVED - try to avoid copies !!
+                 
         if not isinstance(buffer, (bytes, bytearray)):
             pass # WARNING - todo - fix stlib test suite first !!! raise TypeError("Only buffer-like objects can be written to raw files, not %s objects" % type(buffer))
-                
+        
         res = self._inner_write(buffer)
         #assert res == len(buffer), str(res, len(buffer)) # NOOO - we might have less than that actually if disk full !
         
         if not res and len(buffer): 
-            # weird, no error detected but no byets written...
+            # weird, no error detected but no bytes written...
             raise IOError("Unknown error, no bytes could be written to the device.")
+        
+        if res <0 or res > len(buffer):
+            raise RuntimeError("Madness - %d bytes written instead of max %d for string '%s'" %(res, len(buffer), buffer.tobytes()))
         
         return res
 
@@ -422,10 +429,10 @@ class RSFileIOAbstract(io.RawIOBase):
                     old_pos = self._inner_tell()
                     self._inner_seek(current_size, os.SEEK_SET)
                     bytes_to_write = size - current_size
-                    (q, r) = divmod(bytes_to_write, io.DEFAULT_BUFFER_SIZE)
+                    (q, r) = divmod(bytes_to_write, defs.DEFAULT_BUFFER_SIZE)
 
                     for _ in range(q):
-                        padding = '\0'*io.DEFAULT_BUFFER_SIZE
+                        padding = '\0'*defs.DEFAULT_BUFFER_SIZE
                         self._inner_write(padding)
                     self._inner_write('\0'*r)
                     self._inner_seek(old_pos) #important
@@ -652,6 +659,6 @@ class RSFileIOAbstract(io.RawIOBase):
     def _inner_file_unlock(self, length, abs_offset):
         self._unsupported("file_unlock")
 
-io.RawIOBase.register(RSFileIOAbstract)
+defs.io_module.RawIOBase.register(RSFileIOAbstract)
 
         

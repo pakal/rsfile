@@ -1,17 +1,25 @@
 # -*- coding: utf-8 -*-
 
-
 from __future__ import with_statement
 
+#import io
+import os, sys
+import _pyio as io
+sys.modules["io"] = io
 
-import sys, os, unittest, tempfile, threading, multiprocessing, Queue , random, string, time, traceback
+
+
+
+
+import unittest, tempfile, threading, multiprocessing, Queue , random, string, time, traceback
 
 import _workerProcess
 
 
 """ WARNING - HEAVY monkey-patching """
 
-import io
+
+
 import rsfile
 
 rsfile.monkey_patch_original_io_module()

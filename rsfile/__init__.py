@@ -6,9 +6,6 @@ import sys, os
 import functools
 
 
-#import io
-import _pyio as io # TODO REMOVE
-
 from rsfileio_abstract import RSFileIOAbstract
 
 from rsfile_definitions import * # constants, base types and exceptions
@@ -20,14 +17,22 @@ from rsfile_utilities import *
 
 
  
-def monkey_patch_original_io_module(module=io): 
+def monkey_patch_original_io_module(module=None): 
     """
     Replaces standard file streams of module *module* (FileIO, BufferedReader, BufferedWriter,
     BufferedRandom, and TextIOWrapper), as well as its open() factory, by RsFile versions with compatible signatures.
     
     By default *module* is the standard *io* module, but you may specify *_pyio* (the stdlib pure python version)
-    or other io implementations to be patched.
+    or another io implementations to be patched.
     """
+    
+    if module is None:
+        import io
+        module = io
+    
+    if not hasattr(module, "UnsupportedOperation"):
+        module.UnsupportedOperation = io_module.UnsupportedOperation # old io hasn't it
+        
     
     # we replace the most basic file io type by a backward-compatible but enhanced version
     class RSFileIORawWrapper(RSFileIO):
@@ -35,7 +40,11 @@ def monkey_patch_original_io_module(module=io):
         Interface to rsFile accepting the limited "fopen()" modes (no file locking, no O_EXCL|O_CREAT semantic...)
         """
         def __init__(self, name, mode="r", closefd=True):
+            
             (raw_kwargs, extended_kwargs) = parse_standard_args(name, mode, None, None, closefd)
+            if extended_kwargs["text"]:
+                raise ValueError("Raw stream can't be created in text mode")
+            
             RSFileIO.__init__(self, **raw_kwargs)
             if extended_kwargs["truncate"]:
                 # HERE, ERROR IF FILE NOT WRITABLE !!!! PAKAL

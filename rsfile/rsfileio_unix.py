@@ -80,7 +80,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         
         if handle is not None:
             self._fileno = self._handle = handle
-            
+        
         elif fileno is not None:
             self._fileno = self._handle = fileno
         

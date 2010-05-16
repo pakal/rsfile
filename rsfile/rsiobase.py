@@ -18,8 +18,8 @@ try:
 except ImportError:
     from dummy_thread import allocate_lock as Lock
 
-import io
-from rsfile_definitions import SEEK_SET, SEEK_CUR, SEEK_END
+
+from rsfile_definitions import SEEK_SET, SEEK_CUR, SEEK_END, io_module
 
 
 __metaclass__ = type
@@ -32,17 +32,17 @@ DEFAULT_BUFFER_SIZE = 8 * 1024  # bytes
 # defined in io.py. We don't use real inheritance though, because we don't
 # want to inherit the C implementations.
 
-from io import BlockingIOError, UnsupportedOperation, OpenWrapper   # useless ?
+from io import BlockingIOError, UnsupportedOperation   # useless ?
 
-if hasattr(io.IOBase, "register"):
+if hasattr(io_module.IOBase, "register"):
     USE_ABC = True # python >= 2.7 ?
     IO_BASE = object
     RAW_BASE = object
     BUFFER_BASE = object
 else:
-    IO_BASE = io.IOBase
-    RAW_BASE = io.RawIOBase
-    BUFFER_BASE = io.BufferedIOBase
+    IO_BASE = io_module.IOBase
+    RAW_BASE = io_module.RawIOBase
+    BUFFER_BASE = io_module.BufferedIOBase
 
 
 
@@ -521,7 +521,7 @@ class RSIOBase(IO_BASE):
         
      
 if USE_ABC:
-    io.IOBase.register(RSIOBase)
+    io_module.IOBase.register(RSIOBase)
 
 
 

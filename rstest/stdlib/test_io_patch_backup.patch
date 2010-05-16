@@ -1,0 +1,65 @@
+Index: test_io.py
+===================================================================
+--- test_io.py	(revision 81173)
++++ test_io.py	(working copy)
+@@ -250,9 +250,11 @@
+         self.assertEqual(f.write(b"h"), 1)
+         self.assertEqual(f.seek(-1, 2), 13)
+         self.assertEqual(f.tell(), 13)
+-
++        self.assertEqual(f.write(b"hij"), 3)
++        self.assertEqual(f.seek(0,1), 16)
++        self.assertEqual(f.tell(), 16)
+         self.assertEqual(f.truncate(12), 12)
+-        self.assertEqual(f.tell(), 13)
++        self.assertEqual(f.tell(), 16)
+         self.assertRaises(TypeError, f.seek, 0.0)
+ 
+     def read_ops(self, f, buffered=False):
+@@ -275,6 +277,10 @@
+         self.assertEqual(f.seek(-6, 1), 5)
+         self.assertEqual(f.read(5), b" worl")
+         self.assertEqual(f.tell(), 10)
++        f.seek(0)
++        f.read(2)
++        f.seek(0, 1)
++        self.assertEqual(f.tell(), 2)
+         self.assertRaises(TypeError, f.seek, 0.0)
+         if buffered:
+             f.seek(0)
+@@ -338,7 +344,15 @@
+             self.assertEqual(f.writable(), False)
+             self.assertEqual(f.seekable(), True)
+             self.read_ops(f, True)
+-
++        with self.open(support.TESTFN, "r+b") as f:
++            self.assertEqual(f.readable(), True)
++            self.assertEqual(f.writable(), True)
++            self.assertEqual(f.seekable(), True)
++            self.write_ops(f)
++            f.seek(0)
++            self.read_ops(f, True)
++            
++            
+     def test_readline(self):
+         with self.open(support.TESTFN, "wb") as f:
+             f.write(b"abc\ndef\nxyzzy\nfoo\x00bar\nanother line")
+@@ -647,7 +661,7 @@
+             self.assertTrue(s.endswith(" ignored"), s)
+ 
+     def test_repr(self):
+-        raw = self.MockRawIO()
++        raw = self.MockRawIO() 
+         b = self.tp(raw)
+         clsname = "%s.%s" % (self.tp.__module__, self.tp.__name__)
+         self.assertEqual(repr(b), "<%s>" % clsname)
+@@ -2376,6 +2390,9 @@
+             self.assertRaises(ValueError, f.__iter__)
+             if hasattr(f, "peek"):
+                 self.assertRaises(ValueError, f.peek, 1)
++                
++            #print ("Calling read via %r" % f.read)
++            #f.read() # crash ??
+             self.assertRaises(ValueError, f.read)
+             if hasattr(f, "read1"):
+                 self.assertRaises(ValueError, f.read1, 1024)

@@ -4,6 +4,7 @@ import rsfile_definitions as defs
 from rsfile_streams import *
 
     
+    
 def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newline=None, fileno=None, handle=None, closefd=True, 
             locking=True, timeout=None, thread_safe=True, mutex=None, permissions=0777):
     
@@ -192,7 +193,10 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
 def parse_standard_args(name, mode, fileno, handle, closefd): # warning - name can be a fileno here ...
     
     modes = set(mode)
-    if modes - set("arwb+tU") or len(mode) > len(modes):
+    if not mode or modes - set("arwb+tU") or len(mode) > len(modes):
+        raise ValueError("invalid mode: %r" % mode)
+    
+    if "r" in modes and "U" in modes:
         raise ValueError("invalid mode: %r" % mode)
     
     # raw analysis
@@ -200,6 +204,8 @@ def parse_standard_args(name, mode, fileno, handle, closefd): # warning - name c
     writing_flag = "w" in modes
     appending_flag = "a" in modes
     updating_flag = "+" in modes
+    
+    
     
     truncate = writing_flag
     binary = "b" in modes
@@ -287,13 +293,6 @@ def parse_advanced_args(path, mode, fileno, handle, closefd):
                       text=text)
                       
     return (raw_kwargs, extended_kwargs)
-
-
-
-
-
-    
-
 
 
 

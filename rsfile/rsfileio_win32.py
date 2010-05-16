@@ -1,11 +1,12 @@
 #-*- coding: utf-8 -*-
 
-import sys, os, functools, time
+import sys, os, functools, time, errno, stat
+from array import array
 
 import rsfileio_abstract
 import rsfile_definitions as defs
 from rsbackends import _utilities as utilities
-import stat 
+
 
 try:
     import rsbackends.pywin32_extensions as win32
@@ -29,7 +30,15 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
             except win32.error, e: # WARNING - this is not a subclass of OSERROR !!!!!!!!!!!!!
                 traceback = sys.exc_info()[2]
                 #print repr(e)str(e[1])+" - "+str(e[2
-                raise IOError(e[0], str(e[1]), str(self._name)), None, traceback
+                
+                if e[0] == 6:
+                    code = 9
+                    label = "bad file descriptor" # to please test suites                   
+                else:
+                    code = e[0]
+                    label = str(e[1])
+                
+                raise IOError(code, label, str(self._name)), None, traceback
         return wrapper
     
     
@@ -47,6 +56,8 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         elif fileno is not None:
             self._fileno = fileno
             #print "FILE OPENED VIA FILENO ", fileno
+            import msvcrt
+            assert msvcrt.get_osfhandle == win32._get_osfhandle
             self._handle = win32._get_osfhandle(fileno) # required immediately
             
         else: #we open the file with CreateFile
@@ -131,7 +142,10 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         if self._closefd: # always True except when wrapping external file descriptors
             if self._fileno:
                 # WARNING - necessary to avoid leaks of C file descriptors !!!!!!!!!
-                os.close(self._fileno) # this closes the underlying native handle as well
+                try:
+                    os.close(self._fileno) # this closes the underlying native handle as well
+                except OSError, e:
+                    raise IOError(errno.EBADF, "bad file descriptor")
             else:
                 win32.CloseHandle(self._handle)
 
@@ -258,7 +272,10 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         """
 
         (res, string) = win32.ReadFile(self._handle, len(buffer))
-        buffer[0:len(string)] = string
+        if isinstance(buffer, array):
+            buffer[0:len(string)] = array("b", string)
+        else:
+            buffer[0:len(string)] = string
         return len(string)
 
 

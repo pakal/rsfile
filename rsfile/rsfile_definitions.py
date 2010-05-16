@@ -1,11 +1,28 @@
 #-*- coding: utf-8 -*-
 
+import sys
 from os import SEEK_SET, SEEK_CUR, SEEK_END
 
 
 SEEK_VALUES = (SEEK_SET, SEEK_CUR, SEEK_END)
 
-DEFAULT_BUFFER_SIZE = 8 * 1024  # bytes
+DEFAULT_BUFFER_SIZE = 8 * 1024  # in bytes
+
+import __builtin__
+HAS_MEMORYVIEW = hasattr(__builtin__, "memoryview")
+
+
+if sys.version_info[:2] >= (2,7):
+    import _pyio as io_module  # real io module doesn't work atm because buffer reset is not implemented !!! seek() doesn't always reset !!!
+else:
+    import io # we must patch older io modules (eg py2.6)
+    io.SEEK_SET = SEEK_SET
+    io.SEEK_CUR = SEEK_CUR
+    io.SEEK_END = SEEK_END
+    import rsfile.stdlib._pyio as io_module # old stdlib io modules are buggy...
+
+BlockingIOError = io_module.BlockingIOError
+UnsupportedOperation = io_module.UnsupportedOperation
 
 
 

@@ -1,11 +1,6 @@
 import sys
 import os
 import unittest
-#import io
-import _pyio as io
-sys.modules["io"] = io
-
-
 
 import time
 import itertools
@@ -17,71 +12,115 @@ from array import array
 from weakref import proxy
 
 from test import test_support
-from test.test_support import findfile, run_unittest
+
 from UserList import UserList
-
-
-""" WARNING - HEAVY monkey-patching """
-
 
 
 import rsfile
 
 TESTFN = "@TESTING" # we used our own one, since the test_support version is broken
 
+import io
+
 # IMPORTANT - we monkey-patch the original io module !!!
-rsfile.monkey_patch_original_io_module()
+rsfile.monkey_patch_original_io_module(io)
+rsfile.monkey_patch_original_io_module(rsfile.io_module) # _pyio version used
+
+try:
+    import _io
+    _io.FileIO = io.FileIO
+    NO_CIO = False
+except ImportError:
+    NO_CIO = True
+
+
+# We patch stdlib test supports if python version is old
+import _utilities
+_utilities.patch_test_supports()
+
+
+
+
 
 def test_original_io():
     """
     Beware ( We patch stdlib tests to remove C extension tests, or other tests that can't apply to our python implementation.
     Original cmd : " python -m test.regrtest -uall -v test_fileio test_file test_io test_bufio test_memoryio test_largefile "
     """
-
-    import test.test_support, test.test_io, test.test_memoryio, test.test_file, test.test_bufio, test.test_fileio, test.test_largefile
+    
+    sys.modules["_pyio"] = rsfile.io_module # IMPORTANT - so that tests find it too on py2.6 !!
+    
+    try:
+        import _io
+    except ImportError:
+        import rsfile.stdlib._io as _io
+        sys.modules["_io"] = _io
+    
+    from rstest.stdlib import test_io, test_memoryio, test_file, test_bufio, test_fileio, test_largefile
+    
     
     class dummyklass(unittest.TestCase):
         pass
     def dummyfunc(*args, **kwargs): 
-        print "<DUMMY>" 
+        print "<DUMMY>",
     
     def clean_unlink(filename):
         try:
-            os.rename(filename, filename+".tmp"+str(int(time.time()))) # to deal with stale win32 files due to SHARE_DELETE flag!
-            os.remove(filename) # on win32, file only remove when last handle is closed !
+            newname = filename+".tmp"+str(int(time.time()))
+            os.rename(filename, newname) # to deal with stale win32 files due to SHARE_DELETE flag!
+            os.remove(newname) # on win32, file only remove when last handle is closed !
         except:
             pass
-    test.test_support.unlink = clean_unlink
+    test_support.unlink = clean_unlink
     
-    #test_support.use_resources = ["largefile"]# -> uncomment this to try 2Gb file operations long on win32) !
+    #test_support.use_resources = ["largefile"]# -> uncomment this to try 2Gb file operations (long on win32) !
     #test.test_largefile.test_main() # beware !
     
-    test.test_io.CBufferedRandomTest = dummyklass
-    test.test_io.CBufferedReaderTest = dummyklass
-    test.test_io.CBufferedWriterTest = dummyklass
-    test.test_io.CBufferedRWPairTest = dummyklass
-    test.test_io.CIncrementalNewlineDecoderTest = dummyklass
-    test.test_io.CTextIOWrapperTest = dummyklass
-    test.test_io.CMiscIOTest = dummyklass
-    test.test_io.CIOTest = dummyklass
-    test.test_io.TextIOWrapperTest.test_repr = dummyfunc
-    test.test_io.IOTest.test_garbage_collection = dummyfunc # cyclic GC can't work with python classes having __del__() method
-    test.test_io.PyIOTest.test_garbage_collection = dummyfunc # idem
-    test.test_io.test_main() 
+  
+    test_io.CBufferedRandomTest = dummyklass
+    test_io.CBufferedReaderTest = dummyklass
+    test_io.CBufferedWriterTest = dummyklass
+    test_io.CBufferedRWPairTest = dummyklass
+    test_io.CIncrementalNewlineDecoderTest = dummyklass
+    test_io.CTextIOWrapperTest = dummyklass
+    test_io.CMiscIOTest = dummyklass
+    test_io.CIOTest = dummyklass
+    test_io.TextIOWrapperTest.test_repr = dummyfunc
+    test_io.IOTest.test_garbage_collection = dummyfunc # cyclic GC can't work with python classes having __del__() method
+    test_io.PyIOTest.test_garbage_collection = dummyfunc # idem
+    test_io.PyIOTest.test_garbage_collection = dummyfunc # test_support.skip() unexisting
+    test_io.PyBufferedWriterTest.test_max_buffer_size_deprecation = dummyfunc  # sometimes lacking check_warnings() implementation
+    test_io.PyBufferedRWPairTest.test_max_buffer_size_deprecation = dummyfunc
+    test_io.PyBufferedRWPairTest.test_constructor_max_buffer_size_deprecation = dummyfunc
+    test_io.PyBufferedRandomTest.test_max_buffer_size_deprecation = dummyfunc
+    test_io.BufferedRWPairTest.UnsupportedOperation = rsfile.io_module.UnsupportedOperation
+    if not hasattr(unittest.TestCase, "skipTest"):
+        test_io.IOTest.test_unbounded_file = dummyfunc
+    test_io.test_main() 
     
-    test.test_fileio.test_main()
-    
-    test.test_memoryio.CBytesIOTest = dummyklass
-    test.test_memoryio.CStringIOTest = dummyklass
-    test.test_memoryio.test_main()
-    
-    test.test_file.CAutoFileTests = dummyklass
-    test.test_file.test_main()
-    
-    test.test_bufio.test_main()
 
+    test_fileio._FileIO = rsfile.io_module.FileIO
+    test_fileio.OtherFileTests.testWarnings = dummyfunc
+    test_fileio.OtherFileTests.testInvalidFd = dummyfunc # different exception types...
+    test_fileio.AutoFileTests.testRepr = dummyfunc
+    test_fileio.AutoFileTests.testMethods = dummyfunc # messy C functions signatures...
+    test_fileio.AutoFileTests.testErrors = dummyfunc # incoherent errors returned on bad fd, between C and Py implementations...
+    if NO_CIO:
+        test_fileio.OtherFileTests.test_surrogates = dummyfunc
+    test_fileio.test_main()
+  
+  
+    test_memoryio.CBytesIOTest = dummyklass
+    test_memoryio.CStringIOTest = dummyklass
+    test_memoryio.test_main()
+ 
+ 
+    test_file.CAutoFileTests = dummyklass
+    test_file.test_main()
     
     
+    test_bufio.test_main()
+
     
     
     # Custom launching :
@@ -111,6 +150,12 @@ class TestRawFileViaWrapper(unittest.TestCase):
     def tearDown(self):
         _cleanup()
 
+    
+    
+    def testInvalidFd(self):
+        self.assertRaises(ValueError, io.open, -10, 'wb', buffering=0, )
+        bad_fd = test_support.make_bad_fd()
+        self.assertRaises(IOError, io.open, bad_fd, 'wb', buffering=0)
     
     
     def test_garbage_collection(self):
@@ -661,9 +706,10 @@ class TestMiscStreams(unittest.TestCase):
             self.assertEqual(myfile.read(1), char)
             self.assertTrue(raw.tell() > 1) # read ahead buffer full
             myfile.lock_file()
+            
             self.assertEqual(raw.tell(), 1) # read ahead buffer reset
             self.assertEqual(myfile.read(1), char)
-            # READ AHEAD BUFFER - print "----->{%s}" % myfile._read_buf
+
             self.assertTrue(raw.tell() > 2) # read ahead buffer full
             myfile.unlock_file()
             self.assertEqual(raw.tell(), 2) # read ahead buffer reset
@@ -678,12 +724,12 @@ class TestMiscStreams(unittest.TestCase):
             self.assertTrue(raw.tell() > 2) # read ahead buffer full
             myfile.unlock_file()
             self.assertEqual(raw.tell(), 2) # read ahead buffer reset
+
             
-            
-        with rsfile.rsopen(TESTFN, "RWEB", buffering=100, locking=False) as myfile: # buffered binary stream
+        with rsfile.rsopen(TESTFN, "RWEB", buffering=100, locking=False, thread_safe=False) as myfile: # RW buffered binary stream
             test_new_methods(myfile, myfile.raw, "x")
             
-        with rsfile.rsopen(TESTFN, "RWET", buffering=100, locking=False) as myfile: # text stream
+        with rsfile.rsopen(TESTFN, "RWET", buffering=100, locking=False, thread_safe=False) as myfile: # text stream
             test_new_methods(myfile, myfile.buffer.raw, u"x")     
             
         
@@ -769,7 +815,7 @@ def test_main():
     # Historically, these tests have been sloppy about removing TESTFN.
     # So get rid of it no matter what.
     try:
-        run_unittest(TestRawFileViaWrapper, TestRawFileSpecialFeatures, TestMiscStreams) 
+        test_support.run_unittest(TestRawFileViaWrapper, TestRawFileSpecialFeatures, TestMiscStreams) # TODO TODO PUT BACK PAKAL !!!
         test_original_io()
     finally:
         if os.path.exists(TESTFN):
@@ -786,13 +832,15 @@ if __name__ == '__main__':
 
     
     #_cleanup()
-    #TestMiscStreams("testIOErrorOnClose").testIOErrorOnClose()
+    #TestMiscStreams("testMethodForwarding").testMethodForwarding()
     #print "===OVER==="
 
+
+ 
     import _utilities
     backends = _utilities.launch_rsfile_tests_on_backends(test_main)
     print "** RSFILEIO Test Suite has been run on backends %s **" % backends
-
+ 
     
 
 

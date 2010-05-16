@@ -1,5 +1,7 @@
 
 
+# IMPORTANT - sort out issues with bytes, bytearray, memoryview etc !!
+
 ADD MONKEYPATCH TO HANDY UTILITIES DOCUMENTATION !!!!
 
 # TODO : test against trunk test suite !!!!!!!!!!!!!!!
@@ -10,6 +12,8 @@ ADD MONKEYPATCH TO HANDY UTILITIES DOCUMENTATION !!!!
 
 PUT BACK  | win32.FILE_SHARE_DELETE in WIN32 !!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+
+TODO - submit bug : no way to reset() C extension buffers !! 
 
 TODO - TEST SEMAPHORE INHERITANCE !!!!!
 
