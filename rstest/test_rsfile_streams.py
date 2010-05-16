@@ -1,3 +1,4 @@
+
 import sys
 import os
 import unittest
@@ -73,10 +74,14 @@ def test_original_io():
             pass
     test_support.unlink = clean_unlink
     
-    #test_support.use_resources = ["largefile"]# -> uncomment this to try 2Gb file operations (long on win32) !
-    #test.test_largefile.test_main() # beware !
+    # Warning - HEAVY
+    test_support.use_resources = ["largefile"]# -> uncomment this to try 2Gb file operations (long on win32) !
     
-  
+    if not hasattr(unittest.TestCase, "skipTest"):
+        test_largefile.LargeFileTest.test_seekable = dummyfunc
+    test_largefile.test_main() # beware !
+    
+    
     test_io.CBufferedRandomTest = dummyklass
     test_io.CBufferedReaderTest = dummyklass
     test_io.CBufferedWriterTest = dummyklass
@@ -108,8 +113,9 @@ def test_original_io():
     if NO_CIO:
         test_fileio.OtherFileTests.test_surrogates = dummyfunc
     test_fileio.test_main()
-  
-  
+
+    
+    test_memoryio.CStringIOPickleTest = dummyklass
     test_memoryio.CBytesIOTest = dummyklass
     test_memoryio.CStringIOTest = dummyklass
     test_memoryio.test_main()

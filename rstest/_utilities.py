@@ -46,6 +46,7 @@ def launch_rsfile_tests_on_backends(test_main):
 def patch_test_supports():
     
     import unittest
+    from unittest import TestCase
     from test import test_support
     import functools, contextlib
         
@@ -86,6 +87,13 @@ def patch_test_supports():
             return decorator
         unittest.skipUnless = skipUnless
 
+    if not hasattr(TestCase, "assertIsNone"):
+        def assertIsNone(self, obj, msg=None):
+            """Same as self.assertTrue(obj is None), with a nicer default message."""
+            if obj is not None:
+                standardMsg = '%s is not None' % (repr(obj),)
+                self.fail(standardMsg)
+        TestCase.assertIsNone = assertIsNone
 
     try:
         import test.script_helper

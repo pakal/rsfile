@@ -2,15 +2,8 @@
 
 from __future__ import with_statement
 
-#import io
+
 import os, sys
-import _pyio as io
-sys.modules["io"] = io
-
-
-
-
-
 import unittest, tempfile, threading, multiprocessing, Queue , random, string, time, traceback
 
 import _workerProcess
@@ -18,9 +11,8 @@ import _workerProcess
 
 """ WARNING - HEAVY monkey-patching """
 
-
-
 import rsfile
+import io
 
 rsfile.monkey_patch_original_io_module()
 
