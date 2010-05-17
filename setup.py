@@ -15,7 +15,7 @@ setup(name='RsFile',
       author='Pascal Chambon',
       author_email='pythoniks@gmail.com',
       url='http://bitbucket.org/pchambon/python-rock-solid-tools/',
-      packages=['rsfile', 'rsbackends'],
+      packages=['rsfile', 'rsbackends', "rstest"],
       cmdclass = {'build_py':build_py},
      )
 

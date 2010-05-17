@@ -1,3 +1,4 @@
+from rstest import _utilities
 
 import sys
 import os
@@ -75,11 +76,11 @@ def test_original_io():
     test_support.unlink = clean_unlink
     
     # Warning - HEAVY
-    test_support.use_resources = ["largefile"]# -> uncomment this to try 2Gb file operations (long on win32) !
+    #test_support.use_resources = ["largefile"]# -> uncomment this to try 2Gb file operations (long on win32) !
     
     if not hasattr(unittest.TestCase, "skipTest"):
         test_largefile.LargeFileTest.test_seekable = dummyfunc
-    test_largefile.test_main() # beware !
+    #test_largefile.test_main() # beware !
     
     
     test_io.CBufferedRandomTest = dummyklass
@@ -101,6 +102,9 @@ def test_original_io():
     test_io.BufferedRWPairTest.UnsupportedOperation = rsfile.io_module.UnsupportedOperation
     if not hasattr(unittest.TestCase, "skipTest"):
         test_io.IOTest.test_unbounded_file = dummyfunc
+    if _utilities.KWARGS_PB:
+        test_io.MiscIOTest.test_io_after_close = dummyfunc
+            
     test_io.test_main() 
     
 

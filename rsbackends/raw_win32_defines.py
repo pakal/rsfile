@@ -19,7 +19,7 @@ g_rgSCardT0Pci = (SCARD_IO_REQUEST).in_dll(_libraries['winscard'], 'g_rgSCardT0P
 g_rgSCardT1Pci = (SCARD_IO_REQUEST).in_dll(_libraries['winscard'], 'g_rgSCardT1Pci')
 g_rgSCardRawPci = (SCARD_IO_REQUEST).in_dll(_libraries['winscard'], 'g_rgSCardRawPci')
 _pctype = (POINTER(c_ushort)).in_dll(_libraries['msvcrt'], '_pctype')
-_wctype = (c_ushort * 0).in_dll(_libraries['msvcrt'], '_wctype')
+
 wctype_t = c_ushort
 _pwctype = (POINTER(wctype_t)).in_dll(_libraries['msvcrt'], '_pwctype')
 __mb_cur_max = (c_int).in_dll(_libraries['msvcrt'], '__mb_cur_max')
@@ -26227,7 +26227,7 @@ __all__ = ['NCRYPT_IMPL_HARDWARE_RNG_FLAG', 'NRC_CMDCAN',
            'szOID_PKIX_KP_IPSEC_TUNNEL', 'DISCHARGE_POLICY_LOW',
            'URLACTION_SHELL_ENHANCED_DRAGDROP_SECURITY',
            'CRYPT_VERIFY_CONTEXT_SIGNATURE', 'MM_JOY2BUTTONDOWN',
-           'MDM_ANALOG_RLP_ON', '_wctype',
+           'MDM_ANALOG_RLP_ON',
            'MCIERR_MISSING_STRING_ARGUMENT', 'NTE_DOUBLE_ENCRYPT',
            'SB_CTL', 'ERROR_EAS_DIDNT_FIT', 'EMR_POLYTEXTOUTW',
            'ERROR_BAD_RECOVERY_POLICY', 'SPI_SETDROPSHADOW',

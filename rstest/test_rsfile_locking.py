@@ -438,7 +438,7 @@ class TestSafeFile(unittest.TestCase):
                 self.assertTrue(2 < time_spent < 8, "Timespent is %f"%time_spent)
             elif process_name == process3.name :
                 self.assertEqual(locking_is_successful, True)
-                self.assertTrue( 7 < time_spent < 13, "Timespent is %f"%time_spent)   
+                self.assertTrue( 4 < time_spent < 13, "Timespent is %f"%time_spent)   
             elif process_name == process4.name :
                 self.assertEqual(locking_is_successful, True)
                 self.assertTrue(time_spent < 2, "Timespent is %f"%time_spent)

@@ -3,8 +3,13 @@ import win32con, win32api, win32file, pywintypes
 from win32con import *
 from win32api import *
 from win32file import *
-from win32file import _open_osfhandle, _get_osfhandle
+
 from pywintypes import *
+
+# USE THESE ONES ! They're safe concerning bad file descriptors !
+from msvcrt import open_osfhandle as _open_osfhandle, get_osfhandle as _get_osfhandle 
+
+
 
 import _utilities
 

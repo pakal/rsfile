@@ -1,5 +1,6 @@
 
 
+from __future__ import unicode_literals # useful to test for py2.6 bug
 
 
 import os, sys
@@ -8,27 +9,40 @@ import subprocess
 
 
 
+# Python 2.6 old versions have a bug with unicode_literals #
+def func(**kwargs):
+    pass
+try:
+    func(**{"hello":3})
+except TypeError:
+    KWARGS_PB = True
+else:
+    KWARGS_PB = False
+
+
 def launch_rsfile_tests_on_backends(test_main):
     backends = []
     
     if sys.platform == 'win32':
         import rsfile.rsfileio_win32 as rsfileio_win32
-               
+        
+          
         try:
             import rsbackends.pywin32_extensions as win32
         except ImportError:
             pass
         else:
+            print "<Launching test on pywin32 extensions backend !>"
             rsfileio_win32.win3 = win32
             test_main()
             backends.append("pywin32_extensions")
-
         
         try:
             import rsbackends.pywin32_ctypes as win32
         except ImportError:
             pass
         else:
+            print "<Launching test on win32 ctypes backend !>"
             rsfileio_win32.win3 = win32
             test_main()
             backends.append("pywin32_ctypes")

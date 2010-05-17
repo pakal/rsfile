@@ -11,7 +11,7 @@ In case we also need to regenerate the xml file :
 
 
 
-
+# Warning : remove msvcrt._wctype reference from generated files, as some win32 don't have it !
 
 
 symbol_list = """
