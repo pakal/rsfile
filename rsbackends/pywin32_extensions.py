@@ -11,7 +11,7 @@ from msvcrt import open_osfhandle as _open_osfhandle, get_osfhandle as _get_osfh
 
 
 
-import _utilities
+from rsbackends import _utilities 
 
 # we override buggy pywin32 functions
 

@@ -1,4 +1,8 @@
+#-*- coding: utf-8 -*-
+from __future__ import with_statement
+
 from rstest import _utilities
+from rstest import _workerProcess
 
 import sys
 import os
@@ -9,7 +13,7 @@ import itertools
 import threading
 import random
 import multiprocessing, subprocess
-import _workerProcess
+
 from array import array
 from weakref import proxy
 
@@ -37,7 +41,6 @@ except ImportError:
 
 
 # We patch stdlib test supports if python version is old
-import _utilities
 _utilities.patch_test_supports()
 
 
@@ -846,8 +849,6 @@ if __name__ == '__main__':
     #print "===OVER==="
 
 
- 
-    import _utilities
     backends = _utilities.launch_rsfile_tests_on_backends(test_main)
     print "** RSFILEIO Test Suite has been run on backends %s **" % backends
  

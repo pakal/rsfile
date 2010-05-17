@@ -1,4 +1,5 @@
 #-*- coding: utf-8 -*-
+from __future__ import with_statement
 
 import sys
 from os import SEEK_SET, SEEK_CUR, SEEK_END
@@ -8,8 +9,11 @@ SEEK_VALUES = (SEEK_SET, SEEK_CUR, SEEK_END)
 
 DEFAULT_BUFFER_SIZE = 8 * 1024  # in bytes
 
-import __builtin__
-HAS_MEMORYVIEW = hasattr(__builtin__, "memoryview")
+try:
+    memoryview
+    HAS_MEMORYVIEW = True
+except NameError:
+    HAS_MEMORYVIEW = False
 
 
 if sys.version_info[:2] >= (2,7):

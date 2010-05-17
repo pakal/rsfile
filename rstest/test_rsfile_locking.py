@@ -1,12 +1,11 @@
-# -*- coding: utf-8 -*-
-
+#-*- coding: utf-8 -*-
 from __future__ import with_statement
 
 
 import os, sys
 import unittest, tempfile, threading, multiprocessing, Queue , random, string, time, traceback
 
-import _workerProcess
+from rstest import _workerProcess
 
 
 """ WARNING - HEAVY monkey-patching """
@@ -457,7 +456,7 @@ class TestSafeFile(unittest.TestCase):
 
 if __name__ == '__main__':
     
-    import _utilities
+    from . import _utilities 
     backends = _utilities.launch_rsfile_tests_on_backends(unittest.main)
 
     print "** RSFILE_LOCKING Test Suite has been run on backends %s **" % backends

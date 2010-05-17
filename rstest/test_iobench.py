@@ -4,7 +4,8 @@ import Cython
 import rsfile.rsfile_registries
 
 
-import sys, io, rsfile, iobench
+import sys, io, rsfile
+from . import iobench
 
 """
 print ">>> benchmarking stdlib io modules of %s, module %r <<<" % (sys.version_info, io)

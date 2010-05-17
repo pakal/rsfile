@@ -1,11 +1,14 @@
 #!/usr/bin/env python
+from __future__ import (print_function, unicode_literals)
 
 from distutils.core import setup
 
 try:
     from distutils.command.build_py import build_py_2to3 as build_py
+    print("Compiling Py2to3")
 except ImportError:
     from distutils.command.build_py import build_py
+    print("Normal compilation")
 
 
 

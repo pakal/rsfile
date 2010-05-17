@@ -1,7 +1,7 @@
 
 
 import sys, os
-import _utilities 
+from rsbackends import _utilities 
 
 
 import ctypes
@@ -21,14 +21,6 @@ from msvcrt import open_osfhandle as _open_osfhandle, get_osfhandle as _get_osfh
 INVALID_HANDLE_VALUE = wintypes.HANDLE(-1).value # for safety, convert to unsigned DWORD
 
 
-
-'''
-import __builtin__
-if hasattr(__builtin__, "memoryview"):
-    BUFFER_TYPES = (bytearray, memoryview)
-else:
-    BUFFER_TYPES = bytearray
-'''
 
 """
 QUESTION : can we use buffers via array.Array() ? We must NOT change size !!!

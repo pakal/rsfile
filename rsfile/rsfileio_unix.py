@@ -1,4 +1,5 @@
 #-*- coding: utf-8 -*-
+from __future__ import with_statement
 
 import sys, os, functools, errno, time, stat, threading
 import rsfileio_abstract

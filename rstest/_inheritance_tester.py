@@ -2,7 +2,7 @@
 import sys, os
 #print "we enter function with path : ", sys.path, " | ", sys.executable
 import time, random, string
-import _workerProcess
+from rstest import _workerProcess
 
 
 (read, write, append, fileno, handle) = sys.argv[1:]
