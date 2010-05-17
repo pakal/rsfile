@@ -17,7 +17,7 @@ import multiprocessing, subprocess
 from array import array
 from weakref import proxy
 
-from test import test_support
+
 
 from UserList import UserList
 
@@ -29,8 +29,11 @@ TESTFN = "@TESTING" # we used our own one, since the test_support version is bro
 import io
 
 # IMPORTANT - we monkey-patch the original io module !!!
-rsfile.monkey_patch_original_io_module(io)
-rsfile.monkey_patch_original_io_module(rsfile.io_module) # _pyio version used
+rsfile.monkey_patch_io_module(io)
+rsfile.monkey_patch_io_module(rsfile.io_module) # _pyio version used
+
+rsfile.monkey_patch_open_builtin()
+
 
 try:
     import _io
@@ -43,7 +46,7 @@ except ImportError:
 # We patch stdlib test supports if python version is old
 _utilities.patch_test_supports()
 
-
+from test import test_support # AFTER PATCHING TEST_SUPPORT !!
 
 
 
@@ -165,7 +168,7 @@ class TestRawFileViaWrapper(unittest.TestCase):
 
     
     
-    def testInvalidFd(self):
+    def ___testInvalidFd(self): # Pakal todo - put it back when msvcrt fixed in py trunk !
         self.assertRaises(ValueError, io.open, -10, 'wb', buffering=0, )
         bad_fd = test_support.make_bad_fd()
         self.assertRaises(IOError, io.open, bad_fd, 'wb', buffering=0)
@@ -641,25 +644,15 @@ class TestMiscStreams(unittest.TestCase):
     def tearDown(self):
         _cleanup()
     
-    def WIP_____testGlobalOptions(self):
-        
-        old_options = rsfile.get_rsfile_options()
-        
-        try:
-        
-            new_options = dict(enforced_locking_timeout_value=2, 
-                              default_spinlock_delay=1)
-           
-            rsfile.set_rsfile_options(**new_options)
-            self.assertEqual(rsfile.get_rsfile_options(), new_options)
-           
-            # we ignore locking options, which are tested in the "locking-related" unit-test
-            
-            # here, add tests for new option....
-                        
-        finally:
-            rsfile.set_rsfile_options(**old_options)
     
+    
+
+    def test_builtin_patching(self):
+        
+        with open(TESTFN, "wb", buffering=0) as f:
+            self.assertTrue(isinstance(f, rsfile.RSFileIO)) # no thread safe interface
+            
+        
     def testIOErrorOnClose(self):
         
         def assertCloseOK(stream):

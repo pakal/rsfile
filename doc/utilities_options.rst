@@ -13,10 +13,16 @@ RSFile Options
 .. autofunction:: get_rsfile_options
 
 
+.. _rsfile-utilities:
 
 RSFile Utilities
 ------------------
-	
+
+.. autofunction:: monkey_patch_io_module
+
+.. autofunction:: monkey_patch_open_builtin
+
+
 .. autofunction:: read_from_file
 
 .. autofunction:: write_to_file

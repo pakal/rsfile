@@ -61,7 +61,15 @@ def patch_test_supports():
     
     import unittest
     from unittest import TestCase
-    from test import test_support
+    
+    try:
+        from test import test_support
+    except ImportError: # 2to3 doesn't handle this case alas...
+        import test
+        from test import support as test_support
+        sys.modules["test.test_support"] = test_support
+        test.test_support = test_support
+        
     import functools, contextlib
         
     if not hasattr(test_support, "gc_collect"):

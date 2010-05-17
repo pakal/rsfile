@@ -13,7 +13,7 @@ from rstest import _workerProcess
 import rsfile
 import io
 
-rsfile.monkey_patch_original_io_module()
+rsfile.monkey_patch_io_module()
 
 RESULT_FILE = "@RESULTFILE"
 
@@ -25,7 +25,7 @@ RESULT_FILE = "@RESULTFILE"
 class ThreadWithExitCode(threading.Thread):
     def run(self):
         try:
-                threading.Thread.run(self)
+            threading.Thread.run(self)
         except Exception, e:
             print "THREAD %s TERMINATION ON ERROR" % threading.current_thread().name
             traceback.print_exc()

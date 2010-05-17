@@ -198,8 +198,6 @@ def parse_standard_args(name, mode, fileno, handle, closefd): # warning - name c
     if not mode or modes - set("arwb+tU") or len(mode) > len(modes):
         raise ValueError("invalid mode: %r" % mode)
     
-    if "r" in modes and "U" in modes:
-        raise ValueError("invalid mode: %r" % mode)
     
     # raw analysis
     reading_flag = "r" in modes or "U" in modes

@@ -363,10 +363,9 @@ But if you really need to constantly lock parts of the file (eg. for a shared da
 .. warning::
     This workaround provided will only work as long as accesses to a disk file are done through the RsFile
     Api. Third-party libraries using other io modules, or low level routines (eg. in C extensions) may still
-    silently break your locks. Part of these dangers can be prevented by enforcing the use of RsFile for all 
-    python file operations (CF *handy utilities* section), but overriding the lowest level I/O routines, like libc's open(),
+    silently break your locks. Part of these dangers can be prevented by enforcing the use of RsFile for normal 
+    python stream operations (CF :ref:`rsfile-utilities`), but overriding the lowest level I/O routines, like libc's open(),
     used by the process, would require a tremendous skills and work.
-
 
 
 Cascading buffering and caching

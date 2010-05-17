@@ -1,4 +1,10 @@
 
+FROM FUTURE IMPORT UNICODE LITERALS AND PRINT FUNCTION  PARTOUT !!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+C:\Users\Pakal\Desktop\RockSolidTools>C:\Users\Pakal\Desktop\SVN_py3k_branch\PCbuild\python.exe setup.py install
+
+C:\Users\Pakal\Desktop\SVN_py3k_branch\Lib\site-packages>..\..\PCbuild\python.exe rstest\test_rsfile_streams.py
 
 # IMPORTANT - sort out issues with bytes, bytearray, memoryview etc !!
 
