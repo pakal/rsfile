@@ -1,5 +1,7 @@
-# -*- coding: utf-8 -*-
+#-*- coding: utf-8 -*-
 from __future__ import with_statement
+from __future__ import print_function
+from __future__ import unicode_literals
 
 
 import sys, os, time, random, string, multiprocessing, threading
@@ -53,7 +55,7 @@ def _init_streams(multiprocessing_lock):
 def chunk_writer_reader(targetFileName, multiprocessing_lock, character, ioOffset=0, payLoad=10000, mustAlwaysSucceedLocking=False, lockingKwargs={}):
     _init_streams(multiprocessing_lock)
     
-    print "Process %s created with args "%(multiprocessing.current_process().name), locals()
+    print ("Process %s created with args "%(multiprocessing.current_process().name), locals())
 
     
     for i in range(random.randint(5,15)):
@@ -68,12 +70,12 @@ def chunk_writer_reader(targetFileName, multiprocessing_lock, character, ioOffse
                 kwargs = lockingKwargs
                 kwargs['shared'] = False
                 
-                print "Process %s (%s) wanna lock file with args "%(multiprocessing.current_process().name, threading.currentThread().name), kwargs
+                print ("Process %s (%s) wanna lock file with args "%(multiprocessing.current_process().name, threading.currentThread().name), kwargs)
                 
                 
                 with targetFile.lock_file(**kwargs):
                     
-                    print "Process %s (%s) has the lock ! "%(multiprocessing.current_process().name, threading.currentThread().name)
+                    print ("Process %s (%s) has the lock ! "%(multiprocessing.current_process().name, threading.currentThread().name))
                     
                     if(random.randint(0,1)):
                         targetFile.seek(ioOffset)
@@ -87,15 +89,15 @@ def chunk_writer_reader(targetFileName, multiprocessing_lock, character, ioOffse
                     
                     targetFile.seek(ioOffset)
 
-                    print "Process %s (%s) reads %s bytes at offset %s ***"%(multiprocessing.current_process().name, threading.currentThread().name, payLoad, targetFile.tell())                   
+                    print ("Process %s (%s) reads %s bytes at offset %s ***"%(multiprocessing.current_process().name, threading.currentThread().name, payLoad, targetFile.tell()) )                  
                     
                     data = targetFile.read(payLoad)
                      
                     if(data != character*payLoad):
-                        print "PROBLEM IN %s: " % multiprocessing.current_process().name, data, "            ><            ", character*payLoad
+                        print ("PROBLEM IN %s: " % multiprocessing.current_process().name, data, "            ><            ", character*payLoad)
                         sys.exit(8)
 
-                print "Process %s (%s) unlocks file"%(multiprocessing.current_process().name, threading.currentThread().name)
+                print ("Process %s (%s) unlocks file"%(multiprocessing.current_process().name, threading.currentThread().name))
                        
             except rsfile.LockingException:
                 if(mustAlwaysSucceedLocking):
@@ -105,7 +107,7 @@ def chunk_writer_reader(targetFileName, multiprocessing_lock, character, ioOffse
                     pass
     import rsfile.rsfile_registries as RG
     
-    print "Process %s (%s) <<<<exiting>>>> - lock is %s"%(multiprocessing.current_process().name, threading.currentThread().name, RG.IntraProcessLockRegistry.mutex)
+    print ("Process %s (%s) <<<<exiting>>>> - lock is %s"%(multiprocessing.current_process().name, threading.currentThread().name, RG.IntraProcessLockRegistry.mutex))
     sys.exit(0)
     
         
@@ -132,7 +134,7 @@ def chunk_reader(targetFileName, multiprocessing_lock, character=None, ioOffset=
                         
                         targetFile.seek(ioOffset)
                         
-                        print "{{{{ %s (%s) reads %s bytes at offset %s }}}}"%(multiprocessing.current_process().name, threading.currentThread().name, payLoad, targetFile.tell())
+                        print ("{{{{ %s (%s) reads %s bytes at offset %s }}}}"%(multiprocessing.current_process().name, threading.currentThread().name, payLoad, targetFile.tell()))
                         
                         data = targetFile.read(payLoad)
                         
@@ -188,7 +190,7 @@ def lock_tester(resultQueue, targetFileName, multiprocessing_lock, multiprocess,
                 
                 if isinstance(resultQueue, basestring):
                     with io.open(resultQueue, "ab", 0) as f:
-                        f.write("%s|%d|%f\n" % (myname, 1 if success else 0, total))
+                        f.write(b"%s|%d|%f\n" % (myname, 1 if success else 0, total))
                 else:
                     resultQueue.put((myname, success, total))
                     if hasattr(resultQueue, "close"):
@@ -215,7 +217,7 @@ def inheritance_tester(read, write, append, fileno=None, handle=None):
                 #sys.exit(88)                
                 
                 """
-                print >>sys.stderr, "Filling the file from workerprocess !"
+                print (>>sys.stderr, "Filling the file from workerprocess !")
                 f.write("sqsdsdqsdqklkjvlsdfqvudfbqudfhyqsudfbqudjkfhsdsdqb")
                 f.flush()
                 time.sleep(10)"""
@@ -239,7 +241,7 @@ def inheritance_tester(read, write, append, fileno=None, handle=None):
                 if write or append:
                     initial_size = f.size()
                     f.seek(0)
-                    f.write("abcdef")
+                    f.write(b"abcdef")
                     if append and f.size() != (initial_size+6):
                         raise IOError("Error when appending : current size %d != %d + 5" % (f.size(), initial_size))
                 else:

@@ -1,5 +1,8 @@
 #-*- coding: utf-8 -*-
 from __future__ import with_statement
+from __future__ import print_function
+from __future__ import unicode_literals
+
 
 from rstest import _utilities
 from rstest import _workerProcess
@@ -64,13 +67,18 @@ def test_original_io():
         import rsfile.stdlib._io as _io
         sys.modules["_io"] = _io
     
-    from rstest.stdlib import test_io, test_memoryio, test_file, test_bufio, test_fileio, test_largefile
+    try:
+        from test import test_io, test_memoryio, test_file, test_bufio, test_fileio, test_largefile
+        from test.test_largefile import LargeFileTest # excludes py26
+    except ImportError:
+        # backported versions
+        from rstest.stdlib import test_io, test_memoryio, test_file, test_bufio, test_fileio, test_largefile
     
     
     class dummyklass(unittest.TestCase):
         pass
     def dummyfunc(*args, **kwargs): 
-        print "<DUMMY>",
+        print("<DUMMY>", end="")
     
     def clean_unlink(filename):
         try:
@@ -238,13 +246,13 @@ class TestRawFileViaWrapper(unittest.TestCase):
             nbytes = random.randint(0, 10000)
     
             self.assertEqual(f.tell(), 0)
-            x_written = f.write("x"*nbytes)
+            x_written = f.write(b"x"*nbytes)
     
             self.assertEqual(f.size(), x_written)
             self.assertEqual(f.tell(), x_written)
     
             f.seek(nbytes, os.SEEK_CUR)
-            y_written = f.write("y"*nbytes)
+            y_written = f.write(b"y"*nbytes)
     
             self.assertEqual(f.size(), x_written+nbytes+y_written)
             self.assertEqual(f.tell(), x_written+nbytes+y_written) 
@@ -259,9 +267,9 @@ class TestRawFileViaWrapper(unittest.TestCase):
         with io.open(TESTFN, "rb", buffering=0) as a:
             
             string = a.read(4*nbytes) 
-            self.assertEqual(a.read(10), "") # we should have read until EOF here, else pb !!
+            self.assertEqual(a.read(10), b"") # we should have read until EOF here, else pb !!
     
-            self.assertEqual(string, "x"*x_written+"\0"*nbytes+"y"*y_written)
+            self.assertEqual(string, b"x"*x_written+b"\0"*nbytes+b"y"*y_written)
 
 
     def testTruncation(self):        
@@ -269,7 +277,7 @@ class TestRawFileViaWrapper(unittest.TestCase):
                 
             nbytes = random.randint(0, 100) 
     
-            i_written = f.write("i"*nbytes)
+            i_written = f.write(b"i"*nbytes)
             pos = f.tell()
             self.assertEqual(pos, i_written) 
     
@@ -283,7 +291,7 @@ class TestRawFileViaWrapper(unittest.TestCase):
             self.assertEqual(f.size(), 10*nbytes) 
             self.assertEqual(f.tell(), pos) 
             
-            #print "WE AVE CHOSEN ", x_written+nbytes+y_written
+            #print ("WE AVE CHOSEN ", x_written+nbytes+y_written)
             # we try illegal, negative truncation
             self.assertRaises(IOError, f.truncate, -random.randint(1, 10))
             self.assertEqual(f.size(), 10*nbytes) 
@@ -293,18 +301,18 @@ class TestRawFileViaWrapper(unittest.TestCase):
         with io.open(TESTFN, "rb", buffering=0) as a:
             
             string = a.read(20*nbytes)
-            self.assertEqual(a.read(10), "") # we should have read until EOF here, else pb !!
+            self.assertEqual(a.read(10), b"") # we should have read until EOF here, else pb !!
 
-            self.assertEqual(string, "i"*i_written+"\0"*(10*nbytes-i_written))
+            self.assertEqual(string, b"i"*i_written+b"\0"*(10*nbytes-i_written))
 
     def testAppending(self):
             
         with io.open(TESTFN, 'ab', buffering=0) as f:
                 
             nbytes = random.randint(0, 100) 
-            f.write("i"*nbytes)
+            f.write(b"i"*nbytes)
             f.seek(0)
-            f.write("j"*nbytes)
+            f.write(b"j"*nbytes)
             
             self.assertEqual(f.tell(), 2*nbytes)
             
@@ -313,7 +321,7 @@ class TestRawFileViaWrapper(unittest.TestCase):
             string = a.read(3*nbytes)
             a.close()
             
-        self.assertEqual(string, "i"*nbytes+"j"*nbytes)
+        self.assertEqual(string, b"i"*nbytes+b"j"*nbytes)
             
 
 
@@ -334,7 +342,7 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
             self.assertTrue(dev)
             self.assertTrue(inode)
             
-            f.write("hhhh") 
+            f.write(b"hhhh") 
             
             time.sleep(2) 
         
@@ -349,39 +357,39 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
             self.assertEqual(int(stream.times().modification_time), int(os.fstat(stream.fileno()).st_mtime))
         
         """ TO DEBUG NATIVE FILETIME INFO
-        print "---"
-        print time()
-        print strftime("%a, %d %b %Y %H:%M:%S +0000", localtime(time()))
-        print strftime("%a, %d %b %Y %H:%M:%S +0000", localtime(os.fstat(f.fileno()).st_atime))
-        print strftime("%a, %d %b %Y %H:%M:%S +0000", localtime(f.times().access_time))
-        print "====="
-        print "---"
-        print int(f.times().access_time)
-        print int(os.fstat(f.fileno()).st_atime)
-        print "---"
-        print int(f.times().modification_time)
-        print int(os.fstat(f.fileno()).st_mtime)
+        print ("---")
+        print (time())
+        print (strftime("%a, %d %b %Y %H:%M:%S +0000", localtime(time())))
+        print (strftime("%a, %d %b %Y %H:%M:%S +0000", localtime(os.fstat(f.fileno()).st_atime)))
+        print (strftime("%a, %d %b %Y %H:%M:%S +0000", localtime(f.times().access_time)))
+        print ("=====")
+        print ("---")
+        print (int(f.times().access_time))
+        print (int(os.fstat(f.fileno()).st_atime))
+        print ("---")
+        print (int(f.times().modification_time))
+        print (int(os.fstat(f.fileno()).st_mtime))
         """
         
     def testCloseFd(self):
         
         f = io.open(TESTFN, 'wb', buffering=0) # low-level default python open()
-        f.write("aaa")
+        f.write(b"aaa")
 
         copy1 = io.open(f.fileno(), 'ab', buffering=0, closefd=False)
-        copy1.write("bbb")
+        copy1.write(b"bbb")
 
         copy2 = io.open(f.fileno(), 'ab', buffering=0, closefd=True)
-        copy2.write("ccc")
+        copy2.write(b"ccc")
 
         with open(TESTFN, "rb") as reader:
-            self.assertEqual(reader.read(), "aaabbbccc")
+            self.assertEqual(reader.read(), b"aaabbbccc")
 
         copy1.close()
-        f.write("---")
+        f.write(b"---")
 
         copy2.close()
-        self.assertRaises(IOError, f.write, "---")
+        self.assertRaises(IOError, f.write, b"---")
 
         try:
             f.close() # this is normally buggy since the fd was closed through copy2...
@@ -391,24 +399,24 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
         # ------------
         
         f = io.open(TESTFN, 'wb', buffering=0) # low-level default python open()
-        f.write("aaa")
+        f.write(b"aaa")
 
         copy1 = io.open(mode='AB', buffering=0, fileno=f.fileno(), closefd=False)
         self.assertEqual(copy1.origin, "fileno")
-        copy1.write("bbb")
+        copy1.write(b"bbb")
 
         copy2 = io.open(mode='AB', buffering=0, fileno=f.fileno(), closefd=True)
         self.assertEqual(copy2.origin, "fileno")
-        copy2.write("ccc")
+        copy2.write(b"ccc")
 
         with open(TESTFN, "rb") as reader:
-            self.assertEqual(reader.read(), "aaabbbccc")
+            self.assertEqual(reader.read(), b"aaabbbccc")
 
         copy1.close()
-        f.write("---")
+        f.write(b"---")
 
         copy2.close()
-        self.assertRaises(IOError, f.write, "---")
+        self.assertRaises(IOError, f.write, b"---")
 
         try:
             f.close() # this is normally buggy since the fd was closed through copy2...
@@ -418,25 +426,24 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
         # ------------
             
         f = io.open(TESTFN, 'wb', buffering = 0) # low-level version
-        f.write("aaa")
-
+        f.write(b"aaa")
 
         copy1 = io.open(mode='AB', buffering=0, handle=f.handle(), closefd=False) # We trick the functools.partial object there...
         self.assertEqual(copy1.origin, "handle")
-        copy1.write("bbb")
+        copy1.write(b"bbb")
 
         copy2 = io.open(mode='AB', buffering=0, handle=f.handle(), closefd=True) # We trick the functools.partial object there...
         self.assertEqual(copy2.origin, "handle")
-        copy2.write("ccc")
+        copy2.write(b"ccc")
 
         with open(TESTFN, "rb") as reader:
-            self.assertEqual(reader.read(), "aaabbbccc")
+            self.assertEqual(reader.read(), b"aaabbbccc")
 
         copy1.close()
-        f.write("---")
+        f.write(b"---")
 
         copy2.close()
-        self.assertRaises(IOError, f.write, "---")
+        self.assertRaises(IOError, f.write, b"---")
         
         
         try:
@@ -457,7 +464,7 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
                      )  
 
         with io.open(TESTFN, "wb") as f:
-            f.write("-----")
+            f.write(b"-----")
 
 
         f = rsfile.RSFileIO(**kargs)
@@ -532,13 +539,13 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
             self.assertEqual(f.writable(), True)
             self.assertEqual(f._append, True)
             self.assertEqual(f.size(), 0)
-            f.write("abcde")          
+            f.write(b"abcde")          
 
         with rsfile.rsopen(TESTFN, "RAEB", buffering=0) as f:
             #PAKAL TO REPUT self.assertEqual(f.size(), 0)
-            f.write("abcdef")
+            f.write(b"abcdef")
             f.seek(0)
-            f.write("abcdef")
+            f.write(b"abcdef")
             self.assertEqual(f.size(), 12)
             self.assertEqual(f.tell(), 12)
 
@@ -566,10 +573,10 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
         permutations = [(a,b,c) for a in bools for b in bools for c in bools if (a or b or c)]
         
         for (inheritance, EXPECTED_RETURN_CODE) in [(True, 4), (False, 5)]: 
-            #print "STATUS : ", (inheritance, EXPECTED_RETURN_CODE)
+            #print ("STATUS : ", (inheritance, EXPECTED_RETURN_CODE))
             for perm in permutations:
                 (read, write, append) = perm
-                #print "->", perm
+                #print ("->", perm)
                 
                 kwargs = dict(read=read, write=write, append=append)
                 
@@ -577,7 +584,7 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
                 if os.path.exists(TESTFN):
                     os.remove(TESTFN)
                 with io.open(TESTFN, "wb", 0) as temp:
-                    temp.write("ABCDEFG")
+                    temp.write(b"ABCDEFG")
                     
                 
                 with rsfile.RSFileIO(TESTFN, inheritable=inheritance, **kwargs) as myfile:
@@ -619,7 +626,7 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
                      must_not_create=False, must_create=False, # only used on file opening
                      synchronized=True)
          
-        string = "abcdefghijklmnopqrstuvwxyz"*1014*1024
+        string = b"abcdefghijklmnopqrstuvwxyz"*1014*1024
         f = rsfile.RSFileIO(**kargs)  
         self.assertEqual(f._synchronized, True)
         res = f.write(string)   
@@ -733,10 +740,10 @@ class TestMiscStreams(unittest.TestCase):
 
             
         with rsfile.rsopen(TESTFN, "RWEB", buffering=100, locking=False, thread_safe=False) as myfile: # RW buffered binary stream
-            test_new_methods(myfile, myfile.raw, "x")
+            test_new_methods(myfile, myfile.raw, b"x")
             
         with rsfile.rsopen(TESTFN, "RWET", buffering=100, locking=False, thread_safe=False) as myfile: # text stream
-            test_new_methods(myfile, myfile.buffer.raw, u"x")     
+            test_new_methods(myfile, myfile.buffer.raw, "x")     
             
         
         
@@ -774,44 +781,44 @@ class TestMiscStreams(unittest.TestCase):
     
         with rsfile.rsopen(TESTFN, "RWB", buffering=0, thread_safe=True) as f:
             self.assertTrue(isinstance(f, rsfile.RSThreadSafeWrapper))
-            f.write("abc")
+            f.write(b"abc")
         with rsfile.rsopen(TESTFN, "RWB", buffering=0, thread_safe=False) as f:
             self.assertTrue(isinstance(f, io.RawIOBase))        
-            f.write("abc")
+            f.write(b"abc")
             
         with rsfile.rsopen(TESTFN, "RWB") as f:
             self.assertTrue(isinstance(f, rsfile.RSThreadSafeWrapper))
-            f.write("abc")
+            f.write(b"abc")
         with rsfile.rsopen(TESTFN, "RWB", thread_safe=False) as f:
             self.assertTrue(isinstance(f, io.BufferedIOBase))   
-            f.write("abc")
+            f.write(b"abc")
             
         with rsfile.rsopen(TESTFN, "RWT",) as f:
             self.assertTrue(isinstance(f, rsfile.RSThreadSafeWrapper))
-            f.write(u"abc")
+            f.write("abc")
         with rsfile.rsopen(TESTFN, "RWT", thread_safe=False) as f:
             self.assertTrue(isinstance(f, io.TextIOBase))     
-            f.write(u"abc")    
+            f.write("abc")    
 
             
     def testStreamUtilities(self):
         
         # TODO IMPROVE THIS WITH OTHER ARGUMENTS
         
-        self.assertRaises(ValueError, rsfile.write_to_file, TESTFN, "abc", must_not_create=True, must_create=True)
-        self.assertRaises(IOError, rsfile.append_to_file, TESTFN, "abc", must_not_create=True)        
+        self.assertRaises(ValueError, rsfile.write_to_file, TESTFN, b"abc", must_not_create=True, must_create=True)
+        self.assertRaises(IOError, rsfile.append_to_file, TESTFN, b"abc", must_not_create=True)        
         
-        rsfile.write_to_file(TESTFN, "abcdef", sync=True, must_create=True)
-        rsfile.write_to_file(TESTFN, u"abcdef", sync=False, must_not_create=True) # we overwrite TESTFN with unicode data
+        rsfile.write_to_file(TESTFN, b"abcdef", sync=True, must_create=True)
+        rsfile.write_to_file(TESTFN, "abcdef", sync=False, must_not_create=True) # we overwrite TESTFN with unicode data
         
-        rsfile.append_to_file(TESTFN, u"ghijkl", sync=True, must_not_create=True)
-        rsfile.append_to_file(TESTFN, u"mnopqr", sync=True, must_not_create=False)
+        rsfile.append_to_file(TESTFN, "ghijkl", sync=True, must_not_create=True)
+        rsfile.append_to_file(TESTFN, "mnopqr", sync=True, must_not_create=False)
         
         mystr = rsfile.read_from_file(TESTFN, binary=True, buffering=0)
         mytext = rsfile.read_from_file(TESTFN, binary=False, buffering=5)
         
-        self.assertEqual(mytext, unicode(mystr))
-        self.assertEqual(mytext, u"abcdefghijklmnopqr")
+        self.assertEqual(mytext, mystr.decode("ascii"))
+        self.assertEqual(mytext, "abcdefghijklmnopqr")
         
 
  
@@ -839,11 +846,11 @@ if __name__ == '__main__':
     
     #_cleanup()
     #TestMiscStreams("testMethodForwarding").testMethodForwarding()
-    #print "===OVER==="
+    #print ("===OVER===")
 
 
     backends = _utilities.launch_rsfile_tests_on_backends(test_main)
-    print "** RSFILEIO Test Suite has been run on backends %s **" % backends
+    print ("** RSFILEIO Test Suite has been run on backends %s **" % backends)
  
     
 

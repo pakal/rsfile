@@ -15,6 +15,10 @@ module, as classes named *RSBufferedReader*, *RSBufferedWriter*, *RSBufferedRand
 *RSTextIOWrapper* and *RSThreadSafeWrapper*. They implement all methods from the original
 io.IOBase abstract class, with the new methods and semantics described below in their parent class *RSIOBase*.
 
+.. note:: 
+    RS Streams have a __getattr__ implementation allowing to access wrapped stream attributes from top level
+    streams. Thus, the attributes of RSFileIO listed below, *name, origin and mode*, also exist on buffered
+    and text streams from RSFile.
 
 .. autoclass:: RSIOBase
     

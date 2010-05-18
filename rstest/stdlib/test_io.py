@@ -38,7 +38,7 @@ import codecs
 import io  # C implementation of io
 import _pyio as pyio # Python implementation of io
 
-print (">>>>>>>>>>>>>>>>>>>>>> ", pyio)
+#print (">>>>>>>>>>>>>>>>>>>>>> ", pyio)
 
 try:
     import threading

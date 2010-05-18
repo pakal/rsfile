@@ -1,7 +1,10 @@
 #-*- coding: utf-8 -*-
 from __future__ import with_statement
+from __future__ import print_function
+from __future__ import unicode_literals
 
 import sys, os, time, threading, multiprocessing, collections, functools
+from array import array
 from contextlib import contextmanager
 import rsfile_definitions as defs
 from rsfile_registries import IntraProcessLockRegistry, _default_rsfile_options
@@ -133,11 +136,11 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
 
         # HERE WE CHECK EVERYTHING !!! PAKAL
         
-        if path is not None and not isinstance(path, basestring):
+        if path is not None and not isinstance(path, (bytes, unicode)):
             raise ValueError("If provided, path must be a string.")
                 
         if bool(path) + (fileno is not None) + (handle is not None) != 1: 
-            #print "##################", locals()
+            #print ("##################", locals())
             raise ValueError("File must provide path, fileno or handle value, and only one of these.")
             
         if not read and not write:
@@ -217,7 +220,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
                 with IntraProcessLockRegistry.mutex:
                     
                     for (handle, shared, start, end) in IntraProcessLockRegistry.remove_file_locks(self._lock_registry_inode, self._lock_registry_descriptor):
-                        #print ">>>>>>>> ", (handle, shared, start, end)
+                        #print (">>>>>>>> ", (handle, shared, start, end))
                         length = None if end is None else (end-start)
                         self._inner_file_unlock(length, start)
                     
@@ -251,9 +254,9 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
     
     # # # Read-only Attributes # # #
     
-    # Pakal - to be removed ????
-    @property # TODO - improve this
-    def mode(self): 
+
+    @property 
+    def mode(self):  # TODO - improve this
         """
         At the moment, this property behaves like its sibling from the stdlib io module, 
         i.e it computes and returns one of "rb", "wb" and "rb+" for binary streams, 
@@ -320,7 +323,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
     def seek(self, offset, whence=os.SEEK_SET):
         self._checkClosed()
         
-        #print "raw seek called to offset ", offset, " - ", whence, "with size", self._inner_size()
+        #print ("raw seek called to offset ", offset, " - ", whence, "with size", self._inner_size())
         if not isinstance(offset, (int, long)):
             raise TypeError("Expecting an integer as argument for seek")
         res = self._inner_seek(offset, whence)
@@ -363,6 +366,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         ## NOOOO <inherited> - read() uses readinto() to do its job !
         # PAKAL - TODO - allow overriding of an _inner_read method !!!!!!!!!!!!!!
     
+    
     def readinto(self, buffer):
         """Reads up to len(b) bytes into b.
 
@@ -384,9 +388,15 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         self._checkClosed()
         self._checkWritable()
 
+        if isinstance(buffer, unicode):
+            raise TypeError("can't write unicode to binary stream")
+        
         if defs.HAS_MEMORYVIEW and isinstance(buffer, memoryview):
             buffer = buffer.tobytes() # TO BE IMPROVED - try to avoid copies !!
-                 
+        elif isinstance(buffer, array):
+            buffer = buffer.tostring() # To be improved hell a lot...
+        
+        
         if not isinstance(buffer, (bytes, bytearray)):
             pass # WARNING - todo - fix stlib test suite first !!! raise TypeError("Only buffer-like objects can be written to raw files, not %s objects" % type(buffer))
         
@@ -398,8 +408,8 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
             raise IOError("Unknown error, no bytes could be written to the device.")
         
         if res <0 or res > len(buffer):
-            raise RuntimeError("Madness - %d bytes written instead of max %d for string '%s'" %(res, len(buffer), buffer.tobytes()))
-        
+            raise RuntimeError("Madness - %d bytes written instead of max %d for buffer '%r'" %(res, len(buffer), buffer))
+    
         return res
 
 
@@ -433,9 +443,9 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
                     (q, r) = divmod(bytes_to_write, defs.DEFAULT_BUFFER_SIZE)
 
                     for _ in range(q):
-                        padding = '\0'*defs.DEFAULT_BUFFER_SIZE
+                        padding = b'\0'*defs.DEFAULT_BUFFER_SIZE
                         self._inner_write(padding)
-                    self._inner_write('\0'*r)
+                    self._inner_write(b'\0'*r)
                     self._inner_seek(old_pos) #important
             return self.size()
 
@@ -568,7 +578,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
                     try:
                         
                         #import multiprocessing
-                        #print "---------->", multiprocessing.current_process().name, " LOCKED ", (length, abs_offset)
+                        #print ("---------->", multiprocessing.current_process().name, " LOCKED ", (length, abs_offset))
                         
                         self._inner_file_lock(length=length, abs_offset=abs_offset, blocking=low_level_blocking, shared=shared) 
                         
@@ -601,7 +611,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         
         
         #import multiprocessing
-        #print "---------->", multiprocessing.current_process().name, " UNLOCKED ", (unix.LOCK_UN, length, abs_offset, os.SEEK_SET)
+        #print ("---------->", multiprocessing.current_process().name, " UNLOCKED ", (unix.LOCK_UN, length, abs_offset, os.SEEK_SET))
         abs_offset = self._convert_relative_offset_to_absolute(offset, whence) 
         
         with IntraProcessLockRegistry.mutex: # IMPORTANT - keep the registry lock during the whole operation

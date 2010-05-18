@@ -2,6 +2,15 @@
 FROM FUTURE IMPORT UNICODE LITERALS AND PRINT FUNCTION  PARTOUT !!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
+SUBMIT PATCH test_fileio:
+    @ClosedFDRaises
+    def testErrnoOnClosedWrite(self, f):
+        f.write(b'a')
+
+SUBMIT patch _pyio - bytes(res) dans readall()
+
+
+
 C:\Users\Pakal\Desktop\RockSolidTools>C:\Users\Pakal\Desktop\SVN_py3k_branch\PCbuild\python.exe setup.py install
 
 C:\Users\Pakal\Desktop\SVN_py3k_branch\Lib\site-packages>..\..\PCbuild\python.exe rstest\test_rsfile_streams.py

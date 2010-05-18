@@ -1,5 +1,7 @@
 #-*- coding: utf-8 -*-
 from __future__ import with_statement
+from __future__ import print_function
+from __future__ import unicode_literals
 
 
 import os, sys
@@ -19,7 +21,8 @@ RESULT_FILE = "@RESULTFILE"
 
 
 
-
+def get_character():
+    return random.choice(string.ascii_lowercase).encode("ascii")   
 
 
 class ThreadWithExitCode(threading.Thread):
@@ -27,10 +30,10 @@ class ThreadWithExitCode(threading.Thread):
         try:
             threading.Thread.run(self)
         except Exception, e:
-            print "THREAD %s TERMINATION ON ERROR" % threading.current_thread().name
+            print ("THREAD %s TERMINATION ON ERROR" % threading.current_thread().name)
             traceback.print_exc()
             self.exitcode = 1
-        except SystemExit as e:
+        except SystemExit, e:
             self.exitcode = e.code
         else:
             self.exitcode = 0
@@ -64,7 +67,7 @@ class TestSafeFile(unittest.TestCase):
             try:
                 process.terminate()
             except AttributeError:
-                pass # rocess might actually be a thread...
+                pass # process might actually be a thread...
             
         if os.path.exists(RESULT_FILE):
             os.remove(RESULT_FILE)
@@ -78,11 +81,11 @@ class TestSafeFile(unittest.TestCase):
         
     def _start_and_check_subprocesses(self):
         
-        print "----Subprocesses Launch ----"  
+        print ("----Subprocesses Launch ----" ) 
         
         for process in self.processList:
-            print "Process '%s' starting..."%process.name
-            process.daemon = True # we don't want them to wander around after the tests are over...
+            print ("Process '%s' starting..."%process.name)
+            process.daemon = True 
             process.start()
 
             
@@ -91,7 +94,7 @@ class TestSafeFile(unittest.TestCase):
 
             self.assertEqual(process.exitcode, 0, "Process '%s' detected some synchronization inconsistency : retcode %d" % (process.name, process.exitcode))
             
-            print "Process '%s' exited successfully"%process.name
+            print ("Process '%s' exited successfully"%process.name)
     
     
     
@@ -146,7 +149,8 @@ class TestSafeFile(unittest.TestCase):
         
     
     def test_intra_process_locking(self):
-        """We check the behaviour of locks when opening several times the same file from within a process.
+        """
+        We check the behaviour of locks when opening several times the same file from within a process.
         """
 
         # the locking type must be compatible with the opening mode (enforced by some OSes)
@@ -221,7 +225,7 @@ class TestSafeFile(unittest.TestCase):
             
             if (True): #PAKAL -TODO -REPLACE THIS !!!  #random.randint(0,1)%2 == 0):
                 target = _workerProcess.chunk_writer_reader 
-                character = random.choice(string.ascii_lowercase)                
+                character = get_character()              
             else:
                 target = _workerProcess.chunk_reader
                 character = None
@@ -249,7 +253,7 @@ class TestSafeFile(unittest.TestCase):
         """Checks that lots of reader processes can lock the whole file concurrently, without problem.
         """        
         
-        character = random.choice(string.ascii_lowercase)
+        character = get_character()
         payLoad = 10000
         
         with open(self.dummyFileName,"wb") as targetFile:
@@ -283,7 +287,7 @@ class TestSafeFile(unittest.TestCase):
     def _test_file_chunks_locking(self, Executor, lock):
         """Several process lock and write/read different chunks"""
         
-        character = random.choice(string.ascii_lowercase)
+        character = get_character()
         chunkSize = 40
         chunkNumber = 20
         totalPayLoad = chunkNumber * chunkSize
@@ -291,7 +295,7 @@ class TestSafeFile(unittest.TestCase):
         
         with open(self.dummyFileName,"wb") as targetFile:
             targetFile.write(character*totalPayLoad)
-            print "====== ALL INITIALIZED TO %c =====" % character
+            print ("====== ALL INITIALIZED TO %s =====" % character.decode("ascii"))
         
         """ # TO REMOVE
         # we add a reader process first  
@@ -304,7 +308,7 @@ class TestSafeFile(unittest.TestCase):
         for i in range(self.SUBPROCESS_COUNT):
             
             target = _workerProcess.chunk_writer_reader 
-            character = random.choice(string.ascii_lowercase)   
+            character = get_character()  
             ioOffset =  random.randint(0, chunkNumber-2) * chunkSize + random.randint(0, chunkSize)
         
             lockingKwargs = {'offset':ioOffset, 'length':chunkSize, 'timeout':None}
@@ -312,7 +316,7 @@ class TestSafeFile(unittest.TestCase):
             kwargs = {'targetFileName':self.dummyFileName, 'multiprocessing_lock':lock, 'character':character, 'ioOffset':ioOffset, 
                       'payLoad':chunkSize, 'mustAlwaysSucceedLocking':True, 'lockingKwargs':lockingKwargs }
             
-            process = Executor(name="%s %d (%c)"%('ID', i, character), target=target, kwargs=kwargs) ##target.__name__
+            process = Executor(name="%s %d (%s)"%('ID', i, character.decode("ascii")), target=target, kwargs=kwargs) ##target.__name__
 
             self.processList.append(process)
  
@@ -333,7 +337,7 @@ class TestSafeFile(unittest.TestCase):
         Also ensures that locks are not inherited by subprocesses !
         """        
         
-        character = random.choice(string.ascii_lowercase)
+        character = get_character()
         payLoad = 1000
         lockedByteAbsoluteOffset = random.randint(1,payLoad-2) # we let room on each side to check for the proper delimitation of the locking 
         
@@ -398,8 +402,8 @@ class TestSafeFile(unittest.TestCase):
                 
                 
                 for process in self.processList:
-                    print "Process '%s' starting..."%process.name
-                    process.daemon = True # we don't want them to wander around after the tests are over...
+                    print ("Process '%s' starting..."%process.name)
+                    process.daemon = True
                     process.start()
             
                 
@@ -456,10 +460,10 @@ class TestSafeFile(unittest.TestCase):
 
 if __name__ == '__main__':
     
-    from . import _utilities 
+    from rstest import _utilities 
     backends = _utilities.launch_rsfile_tests_on_backends(unittest.main)
 
-    print "** RSFILE_LOCKING Test Suite has been run on backends %s **" % backends
+    print ("** RSFILE_LOCKING Test Suite has been run on backends %s **" % backends)
     
     #suite = unittest.defaultTestLoader.loadTestsFromName("__main__.TestSafeFile.test_intra_process_locking")
     #unittest.TextTestRunner(verbosity=2).run(suite)

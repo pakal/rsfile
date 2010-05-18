@@ -1,5 +1,7 @@
 #-*- coding: utf-8 -*-
 from __future__ import with_statement
+from __future__ import print_function
+from __future__ import unicode_literals
 
 import sys, multiprocessing, threading, functools, collections
 
@@ -60,10 +62,13 @@ class _buffer_forwarder_mixin(object):
             return "<%s.%s>" % (__name__, clsname)
         else:
             return "<%s.%s name=%r>" % (__name__, clsname, name)
-                
+    
+           
     def __getattr__(self, name):
-        # print "--> taking ", name, "in ", self
+        # print ("--> taking ", name, "in ", self)
         raw = object.__getattribute__(self, "raw") # warning - avoid infinite recursion on getattr !
+        if isinstance(raw, collections.Callable):
+            raise AttributeError("Attribute %s not found" % name) # we don't want to inherit methods this way !
         return getattr(raw, name)  
 
 
@@ -71,6 +76,8 @@ class _buffer_forwarder_mixin(object):
 class _text_forwarder_mixin(object):    
     
     def _reset_buffers(self):
+        # WARNING - this reset does NOT work with C io module, where seek() doesn't always reset buffers !!
+        # TODO - would flush() do it ??
         self.seek(self.tell()) # Pakal - todo - change when io module fixed !!!
         # # # # self.seek(0, os.SEEK_CUR) # we flush i/o buffers !
 
@@ -112,12 +119,15 @@ class _text_forwarder_mixin(object):
             return "<%s.%s>" % (__name__, clsname)
         else:
             return "<%s.%s name=%r>" % (__name__, clsname, name)
-                        
-    def __getattr__(self, name):
-        # print "--> taking ", name, "in ", self
-        buffer = object.__getattribute__(self, "buffer") # warning - avoid infinite recursion on getattr !
-        return getattr(buffer, name)    
     
+                 
+    def __getattr__(self, name):
+        # print ("--> taking ", name, "in ", self)
+        buffer = object.__getattribute__(self, "buffer") # warning - avoid infinite recursion on getattr !
+        if isinstance(buffer, collections.Callable):
+            raise AttributeError("Attribute %s not found" % name) # we don't want to inherit methods this way !
+        return getattr(buffer, name)    
+
     
 
     
@@ -166,7 +176,6 @@ class RSThreadSafeWrapper(object):
                 
     def _secure_call(self, name, *args, **kwargs):
         with self.mutex:
-            #print "protected!"
             return getattr(self.wrapped_stream, name)(*args, **kwargs)
     
     

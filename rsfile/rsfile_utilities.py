@@ -1,5 +1,7 @@
 #-*- coding: utf-8 -*-
 from __future__ import with_statement
+from __future__ import print_function
+from __future__ import unicode_literals
 
 from rsfile_factories import rsopen
 
@@ -99,16 +101,28 @@ def read_from_file(filename, binary=False, buffering=None, encoding=None, errors
     
     with rsopen(filename, mode=mode, buffering=buffering, encoding=encoding, errors=errors, 
                 newline=newline, locking=locking, timeout=timeout, thread_safe=False) as myfile:
-
+        
+        #print (">>>>>",myfile, mode) # PAKAL TODO REMOVE
+        
         data_blocks = []
         while True:
-            temp = myfile.readall() # Warning - change rsiopen so that we never get a raw file here !!!
+            temp = myfile.read() # Warning - change rsiopen so that we never get a raw file here !!!
             if not temp:
                 break
+            
+            '''
+            print(">>>>>>>>", myfile, myfile.readall)
+            if binary:
+                assert not isinstance(temp, unicode)
+            else:
+                assert isinstance(temp, unicode)
+            '''
             data_blocks.append(temp)
             
-        if binary: joiner = ""
-        else: joiner = u""   
+        if binary: 
+            joiner = b""
+        else: 
+            joiner = ""   
             
         return joiner.join(data_blocks)
     

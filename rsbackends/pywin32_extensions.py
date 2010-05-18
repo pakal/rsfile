@@ -1,3 +1,9 @@
+#-*- coding: utf-8 -*-
+from __future__ import with_statement
+from __future__ import print_function
+from __future__ import unicode_literals
+
+
 import win32con, win32api, win32file, pywintypes
 
 from win32con import *

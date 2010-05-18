@@ -23,14 +23,14 @@ def unsigned_to_signed(value, wordsize=32):
         return value	
 
 
-def pyint_to_double_dwords(long, dwordsize=32):
+def pyint_to_double_dwords(mylong, dwordsize=32):
         "Convert a positive long integer into a (low-order dword, high-order dword) 2's complement tuple."
 
-        if(long<0):
+        if(mylong<0):
                 raise ValueError("Positive argument required")
 
-        uloworder = long & (2**dwordsize-1)
-        uhighorder = (long >> dwordsize) & (2**dwordsize-1)
+        uloworder = mylong & (2**dwordsize-1)
+        uhighorder = (mylong >> dwordsize) & (2**dwordsize-1)
  
         return (uloworder, uhighorder)
 

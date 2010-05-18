@@ -1,6 +1,7 @@
-
-
-from __future__ import unicode_literals # useful to test for py2.6 bug
+#-*- coding: utf-8 -*-
+from __future__ import with_statement
+from __future__ import print_function
+from __future__ import unicode_literals
 
 
 import os, sys
@@ -32,7 +33,7 @@ def launch_rsfile_tests_on_backends(test_main):
         except ImportError:
             pass
         else:
-            print "<Launching test on pywin32 extensions backend !>"
+            print ("<Launching test on pywin32 extensions backend !>")
             rsfileio_win32.win3 = win32
             test_main()
             backends.append("pywin32_extensions")
@@ -42,7 +43,7 @@ def launch_rsfile_tests_on_backends(test_main):
         except ImportError:
             pass
         else:
-            print "<Launching test on win32 ctypes backend !>"
+            print ("<Launching test on win32 ctypes backend !>")
             rsfileio_win32.win3 = win32
             test_main()
             backends.append("pywin32_ctypes")

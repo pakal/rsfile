@@ -1,5 +1,7 @@
 #-*- coding: utf-8 -*-
 from __future__ import with_statement
+from __future__ import print_function
+from __future__ import unicode_literals
 
 import os, threading
 
@@ -116,7 +118,7 @@ class IntraProcessLockRegistryClass(object):
         
         new_end = (new_start+new_length) if new_length else None # None -> infinity
 
-        #print ">Thread %s handle %s TRYING TO TAKE lock with %s" % (threading.current_thread().name, new_handle, (new_shared, new_start, new_end))        
+        #print (">Thread %s handle %s TRYING TO TAKE lock with %s" % (threading.current_thread().name, new_handle, (new_shared, new_start, new_end)))        
 
         
         
@@ -139,7 +141,7 @@ class IntraProcessLockRegistryClass(object):
                     else:
                         return False
 
-        #print ">Thread %s handle %s takes lock with %s" % (threading.current_thread().name, new_handle, (new_shared, new_start, new_end))
+        #print (">Thread %s handle %s takes lock with %s" % (threading.current_thread().name, new_handle, (new_shared, new_start, new_end)))
         self._lock_registry[uid][1].append((new_handle, new_shared, new_start, new_end)) # we register as owner of this lock inside this process
         return True # no badly overlapping range was found
     
@@ -156,13 +158,13 @@ class IntraProcessLockRegistryClass(object):
         
         new_end = (new_start+new_length) if new_length else None # None -> infinity
 
-        #print "<Thread %s handle %s wants to remove lock with %s" % (threading.current_thread().name, new_handle, (new_start, new_end))
+        #print ("<Thread %s handle %s wants to remove lock with %s" % (threading.current_thread().name, new_handle, (new_start, new_end)))
 
         locks = self._lock_registry[uid][1]
         for index, (handle, shared, start, end) in enumerate(locks):
             if (handle == new_handle and start == new_start and end == new_end):
                 del locks[index]
-                #print "THREAD %s NOTIFYING %s" % ( threading.current_thread().name, uid)
+                #print ("THREAD %s NOTIFYING %s" % ( threading.current_thread().name, uid))
                 self._lock_registry[uid][0].notify_all() # we awake potential waiters - ALL of them
                 if not locks:
                     return True
@@ -186,13 +188,13 @@ class IntraProcessLockRegistryClass(object):
                 if res or not blocking:
                     break
                 else:
-                    #print "THREAD %s WAITING REGISTRY %s" % (threading.current_thread().name, uid)
+                    #print ("THREAD %s WAITING REGISTRY %s" % (threading.current_thread().name, uid))
                     self._lock_registry[uid][3] += 1
                     self._lock_registry[uid][0].wait(timeout) # we wait on the condition until locks get removed
                     self._lock_registry[uid][3] -= 1
-                    #print "THREAD %s LEAVING REGISTRY %s" % (threading.current_thread().name, uid)
+                    #print ("THREAD %s LEAVING REGISTRY %s" % (threading.current_thread().name, uid))
             
-            #print ">Thread %s handle %s RETURNING %s from register_file_lock" % (threading.current_thread().name, handle, res)
+            #print (">Thread %s handle %s RETURNING %s from register_file_lock" % (threading.current_thread().name, handle, res))
             return res
               
               
@@ -256,7 +258,7 @@ class IntraProcessLockRegistryClass(object):
             
             #self.datacount += 1 # TO REMOVE
             # Todo -> put debugging limits, configurable !
-            #print ">DATACOUNT : ", self.datacount
+            #print (">DATACOUNT : ", self.datacount)
             #if self.datacount > 50: # TODO - make it configurable
             #    raise RuntimeError("Lock Registry size exceeded")
             
@@ -271,10 +273,10 @@ class IntraProcessLockRegistryClass(object):
                 data = self._lock_registry[uid][2]
                 self._lock_registry[uid][2] = []
                 #self.datacount -= len(data) # TO REMOVE
-                #print "<DATACOUNT : ", self.datacount
+                #print("<DATACOUNT : ", self.datacount)
                 return data
             else:
-                #print "<DATACOUNT : ", self.datacount
+                #print("<DATACOUNT : ", self.datacount)
                 return []
                 
                 

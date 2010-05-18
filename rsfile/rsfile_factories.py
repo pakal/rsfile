@@ -1,5 +1,7 @@
 #-*- coding: utf-8 -*-
 from __future__ import with_statement
+from __future__ import print_function
+from __future__ import unicode_literals
 
 import os
 import rsfile_definitions as defs
@@ -179,7 +181,7 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
             return buffer
         
     text = RSTextIOWrapper(buffer, encoding, errors, newline, line_buffering)
-    text.mode = mode # Pakal - weird TODO change that ?!
+    text.mode = mode # TODO - shouldn't we change that weird artefact of the stdlib ?
     
     if thread_safe:
         return RSThreadSafeWrapper(text, mutex=mutex, interprocess=raw_kwargs["inheritable"])    

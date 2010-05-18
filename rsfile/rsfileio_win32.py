@@ -1,7 +1,9 @@
 #-*- coding: utf-8 -*-
 from __future__ import with_statement
+from __future__ import print_function
+from __future__ import unicode_literals
 
-import sys, os, functools, time, errno, stat
+import sys, os, functools, time, errno, stat, locale
 from array import array
 
 import rsfileio_abstract
@@ -15,6 +17,7 @@ except ImportError:
     import rsbackends.pywin32_ctypes as win32 
         
 
+WIN32_MSG_ENCODING = locale.getpreferredencoding()
 
 
 class RSFileIO(rsfileio_abstract.RSFileIOAbstract):        
@@ -32,21 +35,20 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
                 traceback = sys.exc_info()[2]
                 #print repr(e)str(e[1])+" - "+str(e[2
                 
-                if e[0] == 6:
-                    code = 9
-                    label = "bad file descriptor" # to please test suites                   
-                else:
-                    code = e[0]
-                    label = str(e[1])
+                # we must convert to unicode the local error message
                 
-                raise IOError(code, label, str(self._name)), None, traceback
+                if not isinstance(e.strerror, unicode):
+                    strerror = e.strerror.decode(WIN32_MSG_ENCODING, 'replace')
+                else:
+                    strerror = e.strerror
+                raise IOError, (e.errno, strerror, str(self._name)), traceback
         return wrapper
+    
     
     
     
     @_win32_error_converter        
     def _inner_create_streams(self, path, read, write, append, must_create, must_not_create, synchronized, inheritable, fileno, handle, permissions):
-
 
         
         # # # real opening of the file stream # # #
@@ -155,7 +157,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
     def _inner_reduce(self, size): # warning - no check is done !!! 
         old_pos = self._inner_tell()
         self.seek(size) 
-        #print "---> inner reduce to ", self.tell()
+        #print ("---> inner reduce to ", self.tell())
         win32.SetEndOfFile(self._handle) #WAAARNING - doesn't raise exceptions !!!!  
         self._inner_seek(old_pos)
     
@@ -272,12 +274,15 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
             -> in default implementation, no error is raised !!
         """
 
-        (res, string) = win32.ReadFile(self._handle, len(buffer))
+        (res, mybytes) = win32.ReadFile(self._handle, len(buffer))
         if isinstance(buffer, array):
-            buffer[0:len(string)] = array("b", string)
+            try:
+                buffer[0:len(mybytes)] = array(b"b", mybytes)
+            except TypeError:
+                buffer[0:len(mybytes)] = array("b", mybytes) # mess between oy2k and py3k...
         else:
-            buffer[0:len(string)] = string
-        return len(string)
+            buffer[0:len(mybytes)] = mybytes
+        return len(mybytes)
 
 
     @_win32_error_converter    

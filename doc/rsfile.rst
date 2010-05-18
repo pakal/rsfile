@@ -31,7 +31,7 @@ The 1.x series will remain in pure python, but future versions might run under c
 
 
 .. toctree::
-	:maxdepth: 2
+	:maxdepth: 3
    
 	rsopen.rst
 	rsfile_streams.rst

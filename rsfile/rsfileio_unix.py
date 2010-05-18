@@ -1,5 +1,7 @@
 #-*- coding: utf-8 -*-
 from __future__ import with_statement
+from __future__ import print_function
+from __future__ import unicode_literals
 
 import sys, os, functools, errno, time, stat, threading
 import rsfileio_abstract
@@ -254,25 +256,3 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
             
 
 
-
-
-
-
-
-
-""" TO BE DELETED 
-    @_unix_error_converter
-    def _inner_register_file_lock(self, length, abs_offset, blocking, shared):
-        return IntraProcessLockRegistry.register_file_lock(self._uid, self._fileno, length, abs_offset, blocking, shared)
-
-    @_unix_error_converter
-    def _inner_unregister_file_lock(self, length, abs_offset):
-        with IntraProcessLockRegistry.mutex:
-            IntraProcessLockRegistry.unregister_file_lock(self._uid, self._fileno, length, abs_offset)
-            self._purge_pending_related_file_descriptors()
-    
-    @_unix_error_converter
-    def _inner_clean_lock_registy(self, length, abs_offset):
-        IntraProcessLockRegistry.unregister_file_lock(self._uid, self._fileno, length, abs_offset)
-            self._purge_pending_related_file_descriptors()
-       """

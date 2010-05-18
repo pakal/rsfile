@@ -3,7 +3,7 @@
 Welcome to RockSolidTools' documentation!
 ==========================================
 
-This *mini-framework* aims at providing cross-platform (unix/linux/mac/windows) object-oriented APIs for widely needed functionalities
+This mini-framework aims at providing cross-platform (unix/linux/mac/windows) object-oriented APIs for widely needed functionalities
 like I/O streams, filesystem operations, inter-process communication, and generic transactional systems.
 
 The focus is set on security and code robustness more than on execution speed, on comprehensive testing and documentation
@@ -26,7 +26,7 @@ features).
 	**Browse the documentation:**
 
 .. toctree::
-	:maxdepth: 2
+	:maxdepth: 4
 	
 	rsfile.rst	
 

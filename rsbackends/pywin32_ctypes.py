@@ -1,4 +1,7 @@
-
+#-*- coding: utf-8 -*-
+from __future__ import with_statement
+from __future__ import print_function
+from __future__ import unicode_literals
 
 import sys, os
 from rsbackends import _utilities 
@@ -399,7 +402,7 @@ def ReadFile(handle, buffer_or_int, overlapped=None):
     
     if isinstance(buffer_or_int, bytearray):
         bytes_to_read = len(buffer_or_int)
-        target_buffer = ctypes.c_void_p.from_buffer(buffer)
+        target_buffer = ctypes.c_void_p.from_buffer(buffer_or_int)
     else:
         bytes_to_read = int(buffer_or_int)
         target_buffer = ctypes.create_string_buffer(bytes_to_read) # casting will be implicit
@@ -419,12 +422,14 @@ def ReadFile(handle, buffer_or_int, overlapped=None):
             raise ctypes.WinError(err) 
     else:
         err = 0
-        
+    
+    
         
     if overlapped :
         return (err, buffer(target_buffer))
     else:
-        return (err, target_buffer.raw[0:bytes_read.value])               
+        res = target_buffer.raw[0:bytes_read.value]
+        return (err, res)               
                           
 
 
@@ -484,7 +489,7 @@ if (__name__ == "__main__"):
     f = bytearray("hello")
 
     res = WriteFile(handle, f)
-    print "WRITEFILE : ", res
+    print ("WRITEFILE : ", res)
     assert 0 <= res[1] <= 5
     
     
@@ -521,12 +526,12 @@ if (__name__ == "__main__"):
     
     SetFilePointer(handle, -3, FILE_CURRENT)
 
-    assert ReadFile(handle, 3) == (0, "abc")
+    assert ReadFile(handle, 3) == (0, b"abc")
     # we shall test overlapped behaviour too...
        
     CloseHandle(handle)
     
-    print "OVER !"
+    print ("OVER !")
 
     #fd = open("AAAAA", "w")
     #handle = msvcrt.get_osfhandle(fd.fileno())

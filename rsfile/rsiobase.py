@@ -1,12 +1,15 @@
+#-*- coding: utf-8 -*-
+from __future__ import with_statement
+from __future__ import print_function
+from __future__ import unicode_literals
+
+
 
 ## THIS CLASS IS CURRENTLY ONLY USED FOR DOCUMENTATION PURPOSE ##
 
 ### Based on trunk _pyio version 77890 ! ###
 
 
-
-from __future__ import print_function
-from __future__ import unicode_literals
 
 import os
 import abc

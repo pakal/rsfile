@@ -75,7 +75,6 @@ class AutoFileTests(unittest.TestCase):
         self.f.write(b"hi\nbye\nabc")
         self.f.close()
         self.f = _FileIO(TESTFN, 'r')
-        print ">>>>>>>", _FileIO
         self.assertEqual(self.f.read(None), b"hi\nbye\nabc")
         self.f.seek(0)
         self.assertEqual(self.f.readline(None), b"hi\n")
@@ -175,7 +174,7 @@ class AutoFileTests(unittest.TestCase):
 
     @ClosedFDRaises
     def testErrnoOnClosedWrite(self, f):
-        f.write('a')
+        f.write(b'a')
 
     @ClosedFDRaises
     def testErrnoOnClosedSeek(self, f):
