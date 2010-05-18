@@ -15,7 +15,7 @@ from rsfile_factories import *
 def monkey_patch_io_module(module=None): 
     """
     Replaces standard file streams of module *module* (i.e classes FileIO, BufferedReader, BufferedWriter,
-    BufferedRandom, and TextIOWrapper), as well as its open() factory, by RsFile versions with compatible signatures.
+    BufferedRandom, and TextIOWrapper), as well as its open() factory, by RSFile versions with compatible signatures.
     
     By default *module* is the standard *io* module, but you may specify *_pyio* (the stdlib pure python version)
     or another io implementations to be patched.

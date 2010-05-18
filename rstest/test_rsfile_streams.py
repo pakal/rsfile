@@ -93,6 +93,7 @@ def test_original_io():
     #test_support.use_resources = ["largefile"]# -> uncomment this to try 2Gb file operations (long on win32) !
     
     if not hasattr(unittest.TestCase, "skipTest"):
+        # we can't just deactivate C tests, considered the way it's implemented...
         test_largefile.LargeFileTest.test_seekable = dummyfunc
     #test_largefile.test_main() # beware !
     

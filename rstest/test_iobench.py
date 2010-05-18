@@ -1,11 +1,11 @@
 
-import pyximport; pyximport.install()
-import Cython
-import rsfile.rsfile_registries
+#import pyximport; pyximport.install()
+#import Cython
+#import rsfile.rsfile_registries
 
 
 import sys, io, rsfile
-from . import iobench
+from rstest import iobench
 
 """
 print ">>> benchmarking stdlib io modules of %s, module %r <<<" % (sys.version_info, io)

@@ -9,7 +9,7 @@ in reading technical documentation.
 
 So for those interested, here is a summary of some (more or less happy) discoveries
 encountered, during this journey in what we may call "the I/O Hell", as well as some
-solutions which were chosen by RsFile.
+solutions which were chosen by RSFile.
 
 
 
@@ -73,12 +73,12 @@ requires some precautions :
   This implies avoiding descriptor duplications, and only sharing streams via their top-most level, i.e python I/O 
   stream objects.
 - Carefully crafting the code, when sharing low level structures is unavoidable, for examples in stream inheritance 
-  operations. Lots of functions and flags are dedicated to customizing stream features in such cases, and RsFile 
+  operations. Lots of functions and flags are dedicated to customizing stream features in such cases, and RSFile 
   handles them for you.
 
 That being said, experienced developers shall still be allowed to retrieve native handles, and
 play with lowel level IO routines as they wish - we're all consentent adults, remember ? 
-So RsFile offers access to low level streams via :meth:`rsfile.fileno` and :meth:`rsfile.handle` methods,
+So RSFile offers access to low level streams via :meth:`rsfile.fileno` and :meth:`rsfile.handle` methods,
 and low level routines may be reached by miscellaneous means (rsbackends module contains the most common ones
 as ctypes or cython bridges).
 
@@ -96,15 +96,15 @@ Inheritance of file objects between parent and child processes isn't a simplisti
 especially if you want to play with different stream types (FILE*, ostream, filenos...) and process 
 creation methods (spawn(), fork(), CreateProcess()), in several operating systems.
 
-In the case of RsFile however, in which native file handles are used on each platform, 
-a somehow unified behaviour can be obtained. By default, RsFile streams are NOT inheritable, 
+In the case of RSFile however, in which native file handles are used on each platform, 
+a somehow unified behaviour can be obtained. By default, RSFile streams are NOT inheritable, 
 but they can be made so at opening time.
 
 Then, to achieve inheritance, three operations must be done.
 
 - Creating stream(s) with an *inheritable* parameter set to True
 
-- Spawning a new process thanks to a "RsFile compatible" call.
+- Spawning a new process thanks to a "RSFile compatible" call.
 
     - On windows, the standard call "CreateProcess()" is fine.
     - On unix-like systems, a fork+exec is necessary: fork() alone doesn't do the whole job, as all 
@@ -154,7 +154,7 @@ the operating system, the fileystem used, the size of data written, the flags us
 Since furthermore such specification details are easily overlooked by kernel programmers, relying on them may 
 sound like a not-so-good idea.
 
-That's why RsFile offers several types of locks, to ensure your data won't get corrupted by simultaneous writes.
+That's why RSFile offers several types of locks, to ensure your data won't get corrupted by simultaneous writes.
 All these locks are recursive, i.e as *threading.RLock*, they allow the same client to acquire them several 
 times, and require to be released the same number of time as they've been acquired
 
@@ -173,7 +173,7 @@ embarrassing concerning thread-safety : in contemplation of the moment where it 
 "top-level" object, each stream type would be tempted to implement its own mutex system, which is both 
 error-prone and performance-hindering.
 
-To solve the problem, RsFile uses some kind of "thread-safe interface" pattern : each class 
+To solve the problem, RSFile uses some kind of "thread-safe interface" pattern : each class 
 inheriting IOBase shall implement its logic in a thread-unsafe way, and it's up to each factory 
 functions (like io.open()) to wrap the top-level object of the IO chain inside a "thread-safe 
 adapter", a transparent wrapper which simply ensures that only one thread at a time may access the 
@@ -188,7 +188,7 @@ Inter-related-processes locking
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The inheritability of system semaphores allows an interesting optimization: when a python stream is created 
-as *inheritable* and wrapped with a thread-safe interface, RsFile used an interprocess semaphore for the latter, 
+as *inheritable* and wrapped with a thread-safe interface, RSFile used an interprocess semaphore for the latter, 
 instead of a standard threading lock.
 
 Thus, if this instance gets inherited as a whole (eg. via multiprocessing module), parent and child processes will
@@ -325,10 +325,10 @@ with this fact : the only unix locks able to work over NFS and to lock byte rang
 the world able to discreetly run away as soon as they''re disturbed by third-party libraries. Impressive, isn't it?
 
  
-The Zen of RsFile Locking
+The Zen of RSFile Locking
 ##################################
 
-So how does RsFile do, to get a decent cross-platform API from all this ?
+So how does RSFile do, to get a decent cross-platform API from all this ?
 
 It actually relies on LockFile() and Fcntl() locks, which give us bytes range locking, remote filesystem locking, 
 and prevent the sharing of file locks by several processes (even related to each other).
@@ -339,7 +339,7 @@ An internal registry is then used to normalize the behaviour of file locks:
 
 
 Finally, file closing operations have been modified to work around the fcntl() flaws: when
-a stream is closed, RsFile will delay the real closing of native files descriptors as long as the process keeps
+a stream is closed, RSFile will delay the real closing of native files descriptors as long as the process keeps
 some locks on the same disk file.
 
 The danger with this workaround, is that your process could run out of available file file descriptors, if it continuely 
@@ -361,9 +361,9 @@ But if you really need to constantly lock parts of the file (eg. for a shared da
 
 
 .. warning::
-    This workaround provided will only work as long as accesses to a disk file are done through the RsFile
+    This workaround provided will only work as long as accesses to a disk file are done through the RSFile
     Api. Third-party libraries using other io modules, or low level routines (eg. in C extensions) may still
-    silently break your locks. Part of these dangers can be prevented by enforcing the use of RsFile for normal 
+    silently break your locks. Part of these dangers can be prevented by enforcing the use of RSFile for normal 
     python stream operations (CF :ref:`rsfile-utilities`), but overriding the lowest level I/O routines, like libc's open(),
     used by the process, would require a tremendous skills and work.
 
@@ -458,13 +458,13 @@ Unix-like systems:
     - Other unix-like platforms : Your mileage may vary... read the sweet manuals, as we say.
 
 
-RsFile synchronization system
+RSFile synchronization system
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-RsFile attempts to do its best with the constraints listed above: it offers a :meth:`rsfile.flush()` method 
+RSFile attempts to do its best with the constraints listed above: it offers a :meth:`rsfile.flush()` method 
 (simple application-buffer flushing), as well as a :meth:`rsfile.sync()` method, which handles the kernel-cache
 flushing. You can provide hints to the latter, to ignore metadata synchronization or enforce disk cache 
-flushing, but RsFile won't do more than your OS can afford (and it won't tweak your hardware settings for you, either).
+flushing, but RSFile won't do more than your OS can afford (and it won't tweak your hardware settings for you, either).
 
 
 

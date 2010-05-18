@@ -13,7 +13,7 @@ except ImportError:
 
 sys.argv.append("install")
 
-setup(name='RsFile',
+setup(name='RSFile',
       version='1.0',
       description='RockSolidTools File I/O Implementation',
       author='Pascal Chambon',
