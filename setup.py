@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-
+# cmd - python setup.py sdist --formats=gztar,zip bdist_wininst
 
 """RockSolidTools' file I/O implementation
 

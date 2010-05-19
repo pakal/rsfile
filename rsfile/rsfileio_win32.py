@@ -35,13 +35,19 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
                 traceback = sys.exc_info()[2]
                 #print repr(e)str(e[1])+" - "+str(e[2
                 
-                # we must convert to unicode the local error message
-                
-                if not isinstance(e.strerror, unicode):
-                    strerror = e.strerror.decode(WIN32_MSG_ENCODING, 'replace')
+                # pywin32's pywintypes.error instances have no errno
+                if hasattr(e, "errno"): 
+                    errno = e.errno
                 else:
+                    errno = utilities.winerror_to_errno(e.winerror)
+                
+                # we must convert to unicode the local error message           
+                if isinstance(e.strerror, unicode):
                     strerror = e.strerror
-                raise IOError, (e.errno, strerror, unicode(self._name)), traceback
+                else:
+                    strerror = e.strerror.decode(WIN32_MSG_ENCODING, 'replace')
+   
+                raise IOError, (errno, strerror, unicode(self._name)), traceback
         return wrapper
     
     
