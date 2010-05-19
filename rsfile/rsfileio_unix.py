@@ -3,7 +3,7 @@ from __future__ import with_statement
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import sys, os, functools, errno, time, stat, threading
+import sys, os, functools, errno, time, stat, threading, locale
 import rsfileio_abstract
 import rsfile_definitions as defs
 
@@ -17,7 +17,7 @@ except ImportError:
 
 
 
-
+UNIX_MSG_ENCODING = locale.getpreferredencoding()
 
 class RSFileIO(rsfileio_abstract.RSFileIOAbstract):      
 
@@ -48,8 +48,13 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
                     raise
                 else:
                     traceback = sys.exc_info()[2]
-                    #print repr(e)str(e[1])+" - "+str(e[2
-                    raise IOError(e[0], str(e[1]), str(self._name)), None, traceback
+                
+                if not isinstance(e.strerror, unicode):
+                    strerror = e.strerror.decode(UNIX_MSG_ENCODING, 'replace')
+                else:
+                    strerror = e.strerror
+
+                    raise IOError, (e.errno, strerror, unicode(self._name)), traceback
         return wrapper
     
     
@@ -65,10 +70,8 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
             if not res: # no more locks left for that uid
                 data_list = rsfileio_abstract.IntraProcessLockRegistry.remove_uid_data(self._uid)
                 for fd in data_list: # we close all pending file descriptors (which were left opened to prevent fcntl() lock autoremoving)
-                    try:
-                        unix.close(fd) 
-                    except EnvironmentError:
-                        pass # flushing was already done anyway
+                    unix.close(fd) 
+  
             return not res
     
         
@@ -121,8 +124,11 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
             self._fileno = self._handle = unix.open(strname, flags, permissions)
 
             # on unix we must prevent the opening of directories or pipes !
-            if not stat.S_ISREG(unix.fstat(self._fileno).st_mode):
-                raise IOError(errno.EINVAL, "RSFile can only open regular files")     
+            stats = unix.fstat(self._fileno).st_mode
+            if stat.S_ISDIR(stats):
+                raise IOError(errno.EISDIR, "RSFile can't open directories", self.name) 
+            if not stat.S_ISREG(stats):
+                raise IOError(errno.EINVAL, "RSFile can only open regular files", self.name)     
 
             if not inheritable:
                 old_flags = unix.fcntl(self._fileno, unix.F_GETFD, 0);
@@ -140,12 +146,11 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         Warning - unlink official stdlib modules, this function may raise IOError !
         """
         if self._closefd:
-            
             with rsfileio_abstract.IntraProcessLockRegistry.mutex:
                 rsfileio_abstract.IntraProcessLockRegistry.add_uid_data(self._uid, self._fileno) 
                 self._purge_pending_related_file_descriptors()
                 # we assume that there are chances for this to be the only handle pointing this precise file
-                rsfileio_abstract.IntraProcessLockRegistry.try_deleting_uid_entry(self._uid) 
+                rsfileio_abstract.IntraProcessLockRegistry.try_deleting_uid_entry(self._uid)
 
                          
 

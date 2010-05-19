@@ -78,7 +78,7 @@ def test_original_io():
     class dummyklass(unittest.TestCase):
         pass
     def dummyfunc(*args, **kwargs): 
-        print("<DUMMY>", end="")
+        print("<DUMMY>", end='')
     
     def clean_unlink(filename):
         try:
