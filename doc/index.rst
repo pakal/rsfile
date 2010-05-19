@@ -11,8 +11,8 @@ more than on code optimisation. However, on the long term cython augmentations m
 the slowness of these pure-python modules compared to stdlib C extensions.
 
 RockSolidTools currently features two packages : **rsbackends** (a set of bridges to
-native OS APIs - you shouldn't have to use it directly), and **rsfile** (a partial reimplementation of the standard io module, with advanced
-features). 
+native OS APIs - you shouldn't have to use it directly), and **rsfile** (a partial reimplementation 
+of the standard io module, with advanced features). 
 
 ..
     But below is an optimistic (megalomaniac?) dependency diagram of what RockSolidTools might 

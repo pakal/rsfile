@@ -4,7 +4,9 @@ RSFile package v1.0
 
 
 RSFile aims at providing python with a cross-platform, reliable, and comprehensive file 
-I/O API (that is, file stream manipulation, not filesystem operations like shutil does). 
+I/O API (that is, file stream manipulation, not filesystem operations like shutil does).
+Features include shared/exclusive file record locking, cache synchronization, advanced opening flags, 
+and handy stat getters (size, inode...). 
 
 Stdlib file stream APIs suffer indeed from their history and C/unix origins : 
 they are scattered all over lots of modules (os, stat, fnctl, tempfile...), 
@@ -28,7 +30,13 @@ It mainly relies on stdlib modules and ctypes extensions (on windows, if pywin32
 
 The 1.x series will remain in pure python, but future versions might run under cython, for performance considerations.
 
-
+.. warning::
+    The stdlib io module still suffer from it youth, so if you encounter problems with rsfile, consider upgrading 
+    to the latest stable version (or to the development one) of python. 
+    
+    Furthermore, python 2.6 had a problems with "from __future__ import unicode_literals", preventing
+    the use of the "\*\*kwargs" construct, which may prevent rsfile from working if your python version is not
+    up to date.
 
 .. toctree::
 	:maxdepth: 3

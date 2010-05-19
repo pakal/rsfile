@@ -41,7 +41,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
                     strerror = e.strerror.decode(WIN32_MSG_ENCODING, 'replace')
                 else:
                     strerror = e.strerror
-                raise IOError, (e.errno, strerror, str(self._name)), traceback
+                raise IOError, (e.errno, strerror, unicode(self._name)), traceback
         return wrapper
     
     
@@ -279,7 +279,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
             try:
                 buffer[0:len(mybytes)] = array(b"b", mybytes)
             except TypeError:
-                buffer[0:len(mybytes)] = array("b", mybytes) # mess between oy2k and py3k...
+                buffer[0:len(mybytes)] = array("b", mybytes) # mess between py2k and py3k...
         else:
             buffer[0:len(mybytes)] = mybytes
         return len(mybytes)

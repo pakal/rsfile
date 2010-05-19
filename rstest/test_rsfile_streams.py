@@ -119,7 +119,7 @@ def test_original_io():
         test_io.IOTest.test_unbounded_file = dummyfunc
     if _utilities.KWARGS_PB:
         test_io.MiscIOTest.test_io_after_close = dummyfunc
-            
+        
     test_io.test_main() 
     
 
@@ -131,6 +131,12 @@ def test_original_io():
     test_fileio.AutoFileTests.testErrors = dummyfunc # incoherent errors returned on bad fd, between C and Py implementations...
     if NO_CIO:
         test_fileio.OtherFileTests.test_surrogates = dummyfunc
+    
+    deco = test_fileio.AutoFileTests.__dict__["ClosedFDRaises"] # decorator must not become unbound method !
+    @deco
+    def bugfixed(self, f):
+        f.write(b'a') # in py27 trunk "binary" was lacking...
+    test_fileio.AutoFileTests.testErrnoOnClosedWrite = bugfixed
     test_fileio.test_main()
 
     
