@@ -458,11 +458,20 @@ class TestSafeFile(unittest.TestCase):
         self._test_whence_and_timeout(ThreadWithExitCode, self.multithreading_lock, Queue.Queue, multiprocess=False)       
                     
 
+def test_main():
+    try:
+        unittest.main()
+    except BaseException, e: # some kind of SystemExit exception gets raides by unittest.main()
+        print("CAUGHT EXCEPTION ", repr(e))
+        print("-----------------------------------------------------------------------")
+
+
 if __name__ == '__main__':
     
     from rstest import _utilities 
-    backends = _utilities.launch_rsfile_tests_on_backends(unittest.main)
 
+    backends = _utilities.launch_rsfile_tests_on_backends(test_main)
+  
     print ("** RSFILE_LOCKING Test Suite has been run on backends %s **" % backends)
     
     #suite = unittest.defaultTestLoader.loadTestsFromName("__main__.TestSafeFile.test_intra_process_locking")

@@ -159,7 +159,7 @@ All these locks are recursive, i.e as *threading.RLock*, they allow the same cli
 times, and require to be released the same number of time as they've been acquired
 
 
-Inter-thread locking
+Inter-threads locking
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Inside a process, the locking of file objects isn't much different from the locking of any
@@ -200,7 +200,7 @@ pointer (contained in the unique open file object) is common to all related proc
 only may related process corrupt each other writes, but they also may read/write/truncate files at the wrong offset.
 
 
-Inter-process locking
+Inter-processes locking
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Here begins the hard core part. In a dream world, a process having sufficient privileges would simply lock a file for reading
@@ -325,7 +325,7 @@ with this fact : the only unix locks able to work over NFS and to lock byte rang
 the world able to discreetly run away as soon as they''re disturbed by third-party libraries. Impressive, isn't it?
 
  
-The Zen of RSFile Locking
+Semantic RSFile Locking
 ##################################
 
 So how does RSFile do, to get a decent cross-platform API from all this ?
@@ -336,7 +336,6 @@ and prevent the sharing of file locks by several processes (even related to each
 An internal registry is then used to normalize the behaviour of file locks:
 - locks are attached to a specific file descriptor, not just to the whole process.
 - merging/splitting bytes range locks, or using lock reantrancy, are prevented
-
 
 Finally, file closing operations have been modified to work around the fcntl() flaws: when
 a stream is closed, RSFile will delay the real closing of native files descriptors as long as the process keeps

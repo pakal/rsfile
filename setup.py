@@ -1,13 +1,19 @@
 #!/usr/bin/env python
 
-# cmd - python setup.py sdist --formats=gztar,zip bdist_wininst
+# cmd:  python setup.py sdist --formats=gztar,zip  bdist_msi   
+
+# bdist_wininst - not interesting because no 2to3 conversion
+
 
 """RockSolidTools' file I/O implementation
 
-RSFile aims at providing python with a cross-platform, reliable, and comprehensive file 
+RSFile aims at providing python with a cross-platform, reliable, and comprehensive file
 I/O API (that is, file stream manipulation, not filesystem operations like shutil does).
-Features include shared/exclusive file record locking, cache synchronization, advanced opening flags, 
-and handy stat getters (size, inode...). 
+
+Features include shared/exclusive file record locking, cache synchronization, advanced opening flags,
+and handy stat getters (size, inode...).
+
+Tested on py2.6, py2.7, py3k, on win32 and unix-like systems. Should work with IronPython/Jython/PyPy too.
 """
 
 classifiers = """\
@@ -26,7 +32,7 @@ from distutils.core import setup
 
 
 
-doclines = __doc__.split("\n")
+doclines = [line.strip() for line in __doc__.split("\n")]
 
 
 import sys
@@ -50,7 +56,7 @@ setup(name='RSFile',
       platforms = ["any"],
       description = doclines[0],
       classifiers = filter(None, classifiers.split("\n")),
-      long_description = "\n".join(doclines[2:]),
+      long_description = " ".join(doclines[2:]),
       packages=("rsfile", "rsfile.stdlib", "rsbackends", "rstest", "rstest.stdlib"),
       cmdclass = {'build_py':build_py},
      )

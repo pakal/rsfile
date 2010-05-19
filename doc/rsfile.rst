@@ -31,12 +31,13 @@ It mainly relies on stdlib modules and ctypes extensions (on windows, if pywin32
 The 1.x series will remain in pure python, but future versions might run under cython, for performance considerations.
 
 .. warning::
-    The stdlib io module still suffer from it youth, so if you encounter problems with rsfile, consider upgrading 
-    to the latest stable version (or to the development one) of python. 
+    The stdlib io module is still slightly suffering from it youth, so if you encounter problems with 
+    RSFile (or, more likely, with running its test suite), consider upgrading to the latest stable version 
+    (or to the development one) of python. 
     
-    Furthermore, python 2.6 had a problems with "from __future__ import unicode_literals", preventing
-    the use of the "\*\*kwargs" construct, which may prevent rsfile from working if your python version is not
-    up to date.
+    Furthermore, early python 2.6 versions a problems with "from __future__ import unicode_literals", preventing
+    the use of the "\*\*kwargs" construct (and of rsfile) in some cases, with a weird error "*<funcname>() keyword 
+    arguments must be strings*". Just update your python distribution if this problem occurs.
 
 .. toctree::
 	:maxdepth: 3
