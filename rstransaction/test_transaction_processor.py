@@ -231,11 +231,54 @@ class testTransactionBase(unittest.TestCase):
         
         
         
+        
 class testInteractiveTransaction(unittest.TestCase):
     
     def setUp(self):
-        pass#self.interactive_transaction = TP.InteractiveTransaction()
-    
+     
+        self.DEPOT = DEPOT = []
+        
+        def transform(number):
+            assert isinstance(number, (int, long))
+            return (str(number), len(DEPOT)), {}
+        
+        def add_word(word, initial_size):
+            DEPOT.append(word)
+            return len(DEPOT)
+        
+        def add_word_random_fail(word, initial_size):
+            if not random.randint(0,2):
+                raise ValueError()
+            res = add_word(word, initial_size)
+            if not random.randint(0,2):
+                raise IOError()
+            return res
+                
+        def _remove_word(word, initial_size):
+            if len(DEPOT) == initial_size+1:
+                assert DEPOT[-1] == word
+                DEPOT.pop()
+            else:
+                assert len(DEPOT) == initial_size
+                pass # operation was interrupted before completing
+                
+        def rollback_word(was_interrupted, args, kwargs, result=None):
+            if not was_interrupted:
+                assert len(DEPOT) == result
+            _remove_word(*args, **kwargs)
+                        
+                        
+                    
+        self.registry = TP.transactionalActionRegistry()
+        
+        self.registry.register_action("action_success", TP.TransactionalActionAdapter(add_word, rollback_word, transform))
+        self.registry.register_action("action_bad_preprocess", TP.TransactionalActionAdapter(lambda x: "no problem too", lambda w,x,y,z: None, lambda: ((failure(),), {}))) 
+        self.registry.register_action("action_failure", TP.TransactionalActionAdapter(lambda x,y: failure(), lambda w,x,y,z: None))        
+        self.registry.register_action("action_failure_unfixable", TP.TransactionalActionAdapter(lambda x,y: failure(), lambda w,x,y,z: failure()))        
+
+
+        self.recorder = TP.ActionRecorderBase()
+        self.transaction_base = TP.TransactionBase(self.registry, self.recorder)
     
     def tearDown(self):        
         pass
@@ -243,6 +286,9 @@ class testInteractiveTransaction(unittest.TestCase):
     
     def _testWholeTransaction(self):
         pass
+    
+    
+
         
              
                 

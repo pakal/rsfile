@@ -65,6 +65,18 @@ directory on POSIX platforms. (Noted by Jan Kaliszewski; issue 4764.)
 
 
 
+Hello
+
+Kernel-level file locking is an extremly complex subject, since different types of locks have very different semantic, and the main lock of unix systems (fcntl) has horrible flaws.
+But I've just released a python library which deals with the issue in a very portable way. It can achieve shared/exclusive file record locking in a system-wide manner, and provides workaround for fcntl flaws.
+Enjoy RSFile - http://bitbucket.org/pchambon/python-rock-solid-tools/
+
+https://www.google.com/accounts/o8/id?id=aitoawnwjnuglfbcjpdjkxg5tqhza7b2uh2ipok
+
+The problem with the code above is that it requires pywin32, it doesn't provide shared/exclusive semantic nor file record locking, and it doesn't deal with the fcntl() flaw (i.e the loss of all locks on a given file when any descriptor to it is closed).
+I advise you to use the portable file stream I've created on a basis similar to your code, it offers file locking, disk cache synchonizatio and a whole bunch of cool features (advanced opening flags, stream inheritance management, fcntl workaround etc.)
+Besides, it works with py26, py27, py3K, and theoretically with other python implementations (ironpython, jython etc.)
+http://bitbucket.org/pchambon/python-rock-solid-tools/
 
 
 

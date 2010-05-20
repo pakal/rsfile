@@ -228,11 +228,11 @@ Common features
 
 
 
-Win32 LockFile()
+Win32 LockFile
 #################
 
 
-**This is a mandatory, per-handle, non reentrant lock, allowing byte range locking.**
+**Mandatory, per-handle, non reentrant lock, allowing byte range locking.**
 
 - Once a file area is locked through a handle, no handle, in this process or another one, can access 
   this area in a way incompatible with the lock type (shared or exclusive). This also means that a handle can't be used
@@ -252,10 +252,10 @@ Win32 LockFile()
 
 
 
-Unix Flock()
+Unix Flock
 #################
 
-**These is an advisory, per-open-file, reentrant lock, only dealing with the whole file (no bytes range locking).** 
+**Advisory, per-open-file, reentrant lock, only dealing with the whole file (no bytes range locking).** 
 
 - All handles pointing to the open file object on which the flock() call was issued, have ownership on the lock. 
   This means that different file descriptors in the same process, as well as different file descriptors inherited between
@@ -274,7 +274,7 @@ Unix Flock()
 
 
 
-Unix Fcntl() 
+Unix Fcntl
 ################
 
 .. note::
@@ -282,7 +282,7 @@ Unix Fcntl()
     
     On recent platforms, **SystemV lockf()** locks are actually just wrappers around fcntl() locks, so we won't study here their initial semantic.
 
-**This is an advisory, per-process, rentrant lock, allowing byte range locking.**
+**Advisory, per-process, rentrant lock, allowing byte range locking.**
 
 - Write or read operations which don't use fcntl locks will not be hindered by these locks, 
   unless mandatory locking has been activated on this particular filesystem and file node (but you had 
@@ -325,7 +325,7 @@ with this fact : the only unix locks able to work over NFS and to lock byte rang
 the world able to discreetly run away as soon as they''re disturbed by third-party libraries. Impressive, isn't it?
 
  
-Semantic RSFile Locking
+Semantic of RSFile Locking
 ##################################
 
 So how does RSFile do, to get a decent cross-platform API from all this ?
