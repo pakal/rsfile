@@ -224,6 +224,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
 
     @_unix_error_converter
     def _inner_write(self, bytes):
+        # 'append' is already handled at file opening
         return unix.write(self._fileno, bytes)
     
             

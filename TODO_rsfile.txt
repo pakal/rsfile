@@ -1,5 +1,7 @@
 
-FROM FUTURE IMPORT UNICODE LITERALS AND PRINT FUNCTION  PARTOUT !!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+# TODO - add tests for bytearray, bytes, array.array and memoryview writing/reading !!!!
+# IMPORTANT - sort out issues with bytes, bytearray, memoryview etc !!
 
 
 SUBMIT PATCH test_fileio:
@@ -7,62 +9,26 @@ SUBMIT PATCH test_fileio:
     def testErrnoOnClosedWrite(self, f):
         f.write(b'a')
 
-SUBMIT patch _pyio - bytes(res) dans readall()
-
-
 
 C:\Users\Pakal\Desktop\RockSolidTools>C:\Users\Pakal\Desktop\SVN_py3k_branch\PCbuild\python.exe setup.py install
-
 C:\Users\Pakal\Desktop\SVN_py3k_branch\Lib\site-packages>..\..\PCbuild\python.exe rstest\test_rsfile_streams.py
 
-# IMPORTANT - sort out issues with bytes, bytearray, memoryview etc !!
-
-ADD MONKEYPATCH TO HANDY UTILITIES DOCUMENTATION !!!!
-
-# TODO : test against trunk test suite !!!!!!!!!!!!!!!
 
 * DOES IO STREAM INHERITANCE WORK VIA PICKLE / MULTITHREADING ???????????
+TODO - TEST SEMAPHORE INHERITANCE !!!!!
 
 *Test on all python implementations, versions, on all platforms etc.
 
-PUT BACK  | win32.FILE_SHARE_DELETE in WIN32 !!!!!!!!!!!!!!!!!!!!!!!!!!!
+TODO - submit bug : no way to reset() C io extension buffers !! 
 
 
-TODO - submit bug : no way to reset() C extension buffers !! 
-
-TODO - TEST SEMAPHORE INHERITANCE !!!!!
-
-RsFile.umask
-Sets the permission mask used when creating a new inode, and returns the previous mask. On unix platforms, the umask is inherited from the parent process, and features all the flags describe in the stat module ; on windows it is zero on startup, and only the "user write" flag is taken into account, to switch between read-only and normal file.
-
-
-       
 OPTIMISER READALL() avec join()
-Regler problemes de buffering -> raw stream
-
-En particulier dans read_from_file : readall() or read(None) ???
- 
-
-
-## INCLUDE _PYIO with rsfile, for older versions of python !!!
-
-
-# re test that buffers don't mess with file size !!!
-
-check __getattr__ and __setattr__ of threadsafe wrapper !
 
 #TODO py2.7 the file object will now set the filename attribute on the IOError exception when trying to open a 
 directory on POSIX platforms. (Noted by Jan Kaliszewski; issue 4764.)
 
-#TODO - The io.FileIO class now raises an OSError when passed an invalid file descriptor. (Implemented by Benjamin Peterson; issue 4991.)
-#---> valueerror on negative FD, and oserror on fstat-EBADF
-
-# Todo : check that current buffer class work well when seeking (pos, seek_cur) ! (buggy in 2.6.1)
-
-# Todo - discuss the use of name, mode, closefd etc. as attributes of raw streams only ????
 
 # TODO - discuss threads in multiprocessing when forking - why not spawn like win32 ??
-
 
 
 

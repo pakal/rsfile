@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 
 import sys, os
 from rsbackends import _utilities 
-
+from array import array
 
 import ctypes
 import ctypes.wintypes as wintypes
@@ -339,29 +339,15 @@ def WriteFile(handle, data, overlapped=None):
     data can be a buffer (no copy takes place) or an immutable sequence of bytes (a copy occurs).
     """
     
-    
-    """
-    a = bytearray("12345")
-    
-    
-        print "ywooowhh"
-        # NOT WORKING : from_buffer(a) -> WindowsError: [Error 1784]
-    else:
-        data_to_write = data # casting will be implicit
-    """
-    
-    """
-    if isinstance(data, memoryview):
-        data_to_write = ctypes.create_string_buffer(len(data))
-        data_to_write.raw = data                                          
-        #address = ctypes.c_void_p(data.raw)
-    else:
-    """
     if isinstance(data, bytearray):
-        data_to_write = ctypes.POINTER(ctypes.c_char).from_buffer(data) # NOT WORKING - TODO - WARNING
-    else:
-        #data_to_write = ctypes.c_char_p(data)  # doesn't work...
-        data_to_write = ctypes.create_string_buffer(data)
+        data_to_write = ctypes.POINTER(ctypes.c_char).from_buffer(data) 
+    elif isinstance(data, memoryview):
+        data_to_write = ctypes.c_char_p(data.tobytes()) 
+    elif isinstance(data, array):
+        data_to_write = ctypes.POINTER(ctypes.c_char).from_buffer_copy(data)
+        # TO BE COMPARED WITH - ctypes.c_char_p(data.tostring()) 
+    else: # bytes 
+        data_to_write = ctypes.c_char_p(data) 
 
     address =  ctypes.addressof(data_to_write)
         
@@ -405,7 +391,8 @@ def ReadFile(handle, buffer_or_int, overlapped=None):
         target_buffer = ctypes.c_void_p.from_buffer(buffer_or_int)
     else:
         bytes_to_read = int(buffer_or_int)
-        target_buffer = ctypes.create_string_buffer(bytes_to_read) # casting will be implicit
+        target_buffer = ctypes.c_void_p.from_buffer(buffer_or_int)
+        #target_buffer = ctypes.create_string_buffer(bytes_to_read) # casting will be implicit
     
     bytes_read = wintypes.DWORD(0)
     
@@ -485,21 +472,37 @@ if (__name__ == "__main__"):
 
     string = "hello"
     
+    
 
-    f = bytearray("hello")
+    f = bytearray("hello", "ascii")
 
     res = WriteFile(handle, f)
-    print ("WRITEFILE : ", res)
+    print ("WRITE BYTEARRAY: ", res)
     assert 0 <= res[1] <= 5
     
     
-    """ 
+    string = b"hheyo"
+ 
+    res = WriteFile(handle, string)
+    print ("WRITE BYTES : ", res)
+    assert 0 <= res[1] <= 5    
+    
+    
+    g = array(b'b', b"vvvvv")
+    res = WriteFile(handle, g)
+    print ("WRITE ARRAY : ", res)
+    assert 0 <= res[1] <= 5       
+    
+
+
     h = memoryview(string)
     
     res = WriteFile(handle, h)
-    print "WRITEFILE : ", res
+    print ("WRITE MEMORYVIEW : ", res)
     assert 0 <= res[1] <= 5
-    """
+  
+    
+    
     
     
     res = SetFilePointer(handle, 10, FILE_BEGIN)
