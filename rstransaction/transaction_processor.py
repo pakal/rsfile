@@ -26,7 +26,18 @@ class TransactionRollbackFailure(TransactionFailure):
     pass
 
 
-
+'''
+@staticmethod
+def _pack_arguments(*args, **kwargs):
+    """
+    This static method simply returns its arguments as
+    a standard tuple (args, kwargs), with args being a list of positional 
+    arguments, and kwargs a dict of keyword arguments.
+    This might be of some use to easily pack the values to be returned 
+    by meth`preprocess_arguments`.
+    """
+    return (args, kwargs)
+'''
 
 
 
@@ -35,16 +46,9 @@ class TransactionalActionBase(object):
     """
     This abstract class defines the interface and semantic of "transactional action" objects.
     """
-    @staticmethod
-    def _pack_arguments(*args, **kwargs):
-        """
-        This static method simply returns its arguments as
-        a standard tuple (args, kwargs), with args being a list of positional 
-        arguments, and kwargs a dict of keyword arguments.
-        This might be of some use to easily pack the values to be returned 
-        by meth`preprocess_arguments`.
-        """
-        return (args, kwargs)
+    
+    
+
     
     def preprocess_arguments(self, *args, **kwargs):
         """
@@ -88,6 +92,8 @@ class TransactionalActionBase(object):
         raise NotImplementedError()
     
 
+_function_interrupted = object()
+
 class TransactionalActionAdapter(TransactionalActionBase):
     """
     This class provides a handy way of creating transactional action instances.
@@ -97,6 +103,8 @@ class TransactionalActionAdapter(TransactionalActionBase):
     The resulting object will behave like the instance of a subclass of :class:`TransactionalActionBase`,
     which would have overriden necessary methods.
     """
+    
+    
     
     def __init__(self, process_action, rollback_action, preprocess_arguments=None):
         
@@ -115,7 +123,8 @@ class TransactionalActionAdapter(TransactionalActionBase):
     def process_action(self, *args, **kwargs):
         return self._process_action(*args, **kwargs)
     
-    def rollback_action(self, was_interrupted, args, kwargs, result=None):
+    def rollback_action(self, was_interrupted, args, kwargs, result=_function_interrupted):
+        assert (was_interrupted and result is _function_interrupted) or (not was_interrupted and not result is _function_interrupted)
         return self._rollback_action(was_interrupted, args, kwargs, result)
 
 
@@ -357,7 +366,10 @@ class TransactionBase(object):
     
     
     def _rollback_to_last_consistent_state(self):
+        """
         
+        May raise TransactionRecordingFailure errors, or any exception raised by the rollback operation.
+        """
         
         try:
             need_unfinished_action_rollback = not self._action_recorder.is_empty() and not self._action_recorder.last_action_is_finished()
@@ -386,7 +398,7 @@ class TransactionBase(object):
 
     def _rollback_consistent_transaction(self, rollback_to_last_savepoint=False):
         """
-        Warning : if rollback_to_last_savepoint is True, the last savpoint itself is NOT removed !
+        Warning : if rollback_to_last_savepoint is True, the last savepoint itself is NOT removed !
         """
         assert self._action_recorder.is_empty() or self._action_recorder.last_action_is_finished()
         
@@ -405,13 +417,14 @@ class TransactionBase(object):
             except Exception, e: 
                 raise TransactionRecordingFailure(repr(e)), None, sys.exc_info()[2]    
             
-            action.rollback_action(was_interrupted=True, args=args, kwargs=kwargs, result=result) # we try to rollback the last finished action
+            action.rollback_action(was_interrupted=False, args=args, kwargs=kwargs, result=result) # we try to rollback the last finished action
     
             try:
                 self._action_recorder.rollback_finished_action()
             except Exception, e: 
                 raise TransactionRecordingFailure(repr(e)), None, sys.exc_info()[2]               
             
+            assert rollback_to_last_savepoint or self._action_recorder.is_empty()
             
     
     def _commit_consistent_transaction(self):
@@ -463,7 +476,6 @@ class InteractiveTransaction(TransactionBase):
 
     
     
-    
     def tx_process_action(self, name, *args, **kwargs):
         
         assert self._action_recorder.is_empty() or self._action_recorder.last_action_is_finished() # no unfinished action must be pending
@@ -478,12 +490,16 @@ class InteractiveTransaction(TransactionBase):
                 raise # we reraise the original exception
             except Exception, f:
                 #TODO - PY3K - real exception chaining required here !
-                raise TransactionRollbackFailure("%r raised during rollback attempt, after receiving %r" % (e,f)), None, sys.exc_info()[2] 
+                raise TransactionRollbackFailure, ("%r raised during rollback attempt, after receiving %r" % (f,e)), sys.exc_info()[2] 
                 
     def tx_rollback(self):
-        self._rollback_to_last_consistent_state() # in case the last action processing gave a TransactionRollbackFailure
-        self._rollback_consistent_transaction()
-        
+        try:
+            self._rollback_to_last_consistent_state() # in case the last action processing gave a TransactionRollbackFailure
+            self._rollback_consistent_transaction()  
+        except Exception, f:
+            #TODO - PY3K - real exception chaining required here !
+            raise TransactionRollbackFailure, ("%r raised during rollback attempt" % f), sys.exc_info()[2] 
+                
     def tx_commit(self):
         self._commit_consistent_transaction()
     
@@ -494,7 +510,7 @@ class InteractiveTransaction(TransactionBase):
         try:
             yield 
         except TransactionFailure:
-            raise # we must not try to handle this by ourselves...
+            raise # we must not try to handle this critical problem by ourselves...
         except Exception:
             self.tx_rollback_savepoint()
             raise
