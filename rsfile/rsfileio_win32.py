@@ -271,16 +271,20 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         return new_offset
 
 
-
+    @_win32_error_converter 
+    def _inner_read(self, n):
+        (res, mybytes) = win32.ReadFile(self._handle, n) # returns bytes
+        return mybytes
+    
+    
+    '''
     @_win32_error_converter
     def _inner_readinto(self, buffer):
         """ PAKAL - Warning - this method is currently inefficient since it converts C string into
             python str and then into bytearray, but this will be optimized later by rewriting in C module
-            Warning2 - what if buffer length is ZERO ? Shouldnt we make explicit the problem, that we are not at EOF but... ?
-            -> in default implementation, no error is raised !!
         """
 
-        (res, mybytes) = win32.ReadFile(self._handle, len(buffer))
+        (res, buffer) = win32.ReadFile(self._handle, buffer)
         if isinstance(buffer, array):
             try:
                 buffer[0:len(mybytes)] = array(b"b", mybytes)
@@ -289,7 +293,8 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         else:
             buffer[0:len(mybytes)] = mybytes
         return len(mybytes)
-
+    '''
+    
 
     @_win32_error_converter    
     def _inner_write(self, buffer):
@@ -305,7 +310,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         if cur_pos > self._inner_size(): # TODO - document this !!!
             self._inner_extend(cur_pos, zero_fill=True) # we extend the file with zeros until current file pointer position
 
-        (res, bytes_written) = win32.WriteFile(self._handle, bytes(buffer))
+        (res, bytes_written) = win32.WriteFile(self._handle, buffer)
         # nothing to do with res, for files, it seems
 
         # we let the file pointer where it is, even if we're in append mode (no come-back to previous reading position)

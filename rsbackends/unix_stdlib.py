@@ -112,6 +112,7 @@ def ltell(fd):
 
 
 
+
 def readinto(fd, buffer, count):
 
      #We mimic here the posix read() system call, which works with buffers.

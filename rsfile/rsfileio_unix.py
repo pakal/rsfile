@@ -216,12 +216,16 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
     def _inner_seek(self, offset, whence):
         return unix.lseek(self._fileno, offset, whence)
   
-            
+    @_unix_error_converter
+    def _inner_read(self, n):
+        return unix.read(self._fileno, n)
+    
+    '''      
     @_unix_error_converter
     def _inner_readinto(self, buffer):
-        count = unix.readinto(self._fileno, buffer, len(buffer))
-        return count
-
+        return unix.readinto(self._fileno, buffer, len(buffer))
+    '''
+    
     @_unix_error_converter
     def _inner_write(self, bytes):
         # 'append' is already handled at file opening

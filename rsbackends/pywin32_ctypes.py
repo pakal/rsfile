@@ -339,17 +339,24 @@ def WriteFile(handle, data, overlapped=None):
     data can be a buffer (no copy takes place) or an immutable sequence of bytes (a copy occurs).
     """
     
-    if isinstance(data, bytearray):
-        data_to_write = ctypes.POINTER(ctypes.c_char).from_buffer(data) 
+    if isinstance(data, bytearray): 
+        #data_to_write = ctypes.addressof(ctypes.POINTER(ctypes.c_char).from_buffer(data)) # erroneous
+        data_to_write = ctypes.create_string_buffer(bytes(data))
+    else: # bytes 
+        #data_to_write = ctypes.c_char_p(data) # doesn't work, buffer size too small problems...
+        data_to_write = ctypes.create_string_buffer(data)
+
+    
+    ''' Not required ATM
     elif isinstance(data, memoryview):
         data_to_write = ctypes.c_char_p(data.tobytes()) 
     elif isinstance(data, array):
         data_to_write = ctypes.POINTER(ctypes.c_char).from_buffer_copy(data)
         # TO BE COMPARED WITH - ctypes.c_char_p(data.tostring()) 
-    else: # bytes 
-        data_to_write = ctypes.c_char_p(data) 
-
-    address =  ctypes.addressof(data_to_write)
+    '''
+    
+    
+    address =  data_to_write #ctypes.addressof(data_to_write)
         
     bytes_written = wintypes.DWORD(0)
    
@@ -384,21 +391,29 @@ def FlushFileBuffers(handle):
 def ReadFile(handle, buffer_or_int, overlapped=None):
     # TODO - improve to work directly with ctypes array types !
     
-    assert overlapped or isinstance(buffer_or_int, int) # buffers can only be provided in overlapped mode
-    
-    if isinstance(buffer_or_int, bytearray):
-        bytes_to_read = len(buffer_or_int)
-        target_buffer = ctypes.c_void_p.from_buffer(buffer_or_int)
+    if isinstance(buffer_or_int, (int, long)):
+        bytes_to_read = buffer_or_int
+        target_buffer = ctypes.create_string_buffer(bytes_to_read)
     else:
-        bytes_to_read = int(buffer_or_int)
-        target_buffer = ctypes.c_void_p.from_buffer(buffer_or_int)
-        #target_buffer = ctypes.create_string_buffer(bytes_to_read) # casting will be implicit
+        bytes_to_read = len(buffer_or_int)
+    
+        if isinstance(buffer_or_int, bytearray):
+            target_buffer = ctypes.c_void_p.from_buffer(buffer_or_int) 
+            #target_buffer = ctypes.POINTER(ctypes.c_char).from_buffer(buffer_or_int) 
+        elif isinstance(buffer_or_int, array):
+            target_buffer = ctypes.c_void_p.from_buffer(buffer_or_int) 
+        else:
+            raise TypeError("Unsupported target buffer %r" % buffer_or_int)
     
     bytes_read = wintypes.DWORD(0)
     
-    # no need to use WriteFileEx here...
+    
+    address =  ctypes.addressof(target_buffer)
+    
+    # print (locals())
+    # no need to use ReadFileEx here...
     res = win32api.ReadFile(handle,
-                          target_buffer,
+                          address,
                           bytes_to_read,
                           ctypes.byref(bytes_read),
                           overlapped)
@@ -410,14 +425,14 @@ def ReadFile(handle, buffer_or_int, overlapped=None):
     else:
         err = 0
     
-    
         
     if overlapped :
-        return (err, buffer(target_buffer))
+        return (err, buffer(target_buffer))  # working, or not ?
+    elif isinstance(buffer_or_int, (int, long)):
+        return (err, target_buffer.raw[0:bytes_read.value])
     else:
-        res = target_buffer.raw[0:bytes_read.value]
-        return (err, res)               
-                          
+        return (err, buffer_or_int[0:bytes_read.value])                             
+
 
 
 def LockFileEx(handle, dwFlags, nbytesLow, nbytesHigh, overlapped):
@@ -474,15 +489,13 @@ if (__name__ == "__main__"):
     
     
 
-    f = bytearray("hello", "ascii")
-
+    f = bytearray("helloeveryone", "ascii")
     res = WriteFile(handle, f)
     print ("WRITE BYTEARRAY: ", res)
-    assert 0 <= res[1] <= 5
+    assert 0 <= res[1] <= len("helloeveryone")
     
     
     string = b"hheyo"
- 
     res = WriteFile(handle, string)
     print ("WRITE BYTES : ", res)
     assert 0 <= res[1] <= 5    
@@ -494,9 +507,7 @@ if (__name__ == "__main__"):
     assert 0 <= res[1] <= 5       
     
 
-
     h = memoryview(string)
-    
     res = WriteFile(handle, h)
     print ("WRITE MEMORYVIEW : ", res)
     assert 0 <= res[1] <= 5
@@ -516,20 +527,33 @@ if (__name__ == "__main__"):
     
     LockFileEx(handle, LOCKFILE_EXCLUSIVE_LOCK, 0xffffffff, 0xffffffff, OVERLAPPED())
     
-    
     UnlockFileEx(handle, 0xffffffff, 0xffffffff, OVERLAPPED())
 
     assert GetFileInformationByHandle(handle)
     
 
-    res =  WriteFile(handle, bytes("abc"))
-    assert res == (0, 3)
     
-   #assert WriteFile(handle, bytearray("abc")) == (0, 3)
-    
-    SetFilePointer(handle, -3, FILE_CURRENT)
+    SetFilePointer(handle, 0, FILE_BEGIN)
 
-    assert ReadFile(handle, 3) == (0, b"abc")
+    
+    res = ReadFile(handle, 3) 
+    print("Read number", repr(res[1]))
+    
+    f = bytearray("hello", "ascii")
+    res = ReadFile(handle, f) 
+    print("Readinto bytearray", repr(res[1]))
+    
+    g = array(b'b', b"vvvvv")
+    res = ReadFile(handle, g) 
+    print("Readinto array", repr(res[1]))
+        
+        
+    """
+    h = memoryview(string)
+    res = ReadFile(handle, h) 
+    print("Readinto memoryview", res) 
+    """
+    
     # we shall test overlapped behaviour too...
        
     CloseHandle(handle)
