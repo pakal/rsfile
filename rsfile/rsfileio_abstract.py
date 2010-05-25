@@ -337,14 +337,14 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         No limit is set on the amount of data read, so you might
         fill up your RAM with this method.
         
-        """ # Beware - TODO - TO BE OPTIMIZED AND SENT TO RSIOBASE !!!
-        res = bytearray()
+        """ 
+        chunks = []
         while True:
             data = self.read(defs.DEFAULT_BUFFER_SIZE)
             if not data:
                 break
-            res += data
-        return bytes(res)
+            chunks. append(data)
+        return b"".join(chunks)
     
             
     def read(self, n = -1): 
@@ -353,29 +353,37 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         Returns an empty bytes object on EOF, or None if the object is
         set not to block and has no data to read.
         """
-        # PAKAL - to be checked !!!!
-        if n is None:
-            n = -1
-        if n < 0:
-            return self.readall() # PAKAL - TODO - REMOVE THIS, we SAID ONE system call !!!!
-        b = bytearray(n.__index__())
-        n = self.readinto(b)
-        del b[n:]
-        return bytes(b)        
+        self._checkClosed()
+        self._checkReadable()
         
-        ## NOOOO <inherited> - read() uses readinto() to do its job !
-        # PAKAL - TODO - allow overriding of an _inner_read method !!!!!!!!!!!!!!
+        if n is None or n < 0:
+            return self.readall()
+        return self._inner_read(n)     
+
     
     
     def readinto(self, buffer):
         """Reads up to len(b) bytes into b.
 
-        Returns number of bytes read (0 for EOF), or None if the object
-        is set not to block as has no data to read.
+        Inefficient, as several copies can be required to obtain the result - use read() instead.
+    
+        Returns number of bytes read (0 for EOF).
         """
         self._checkClosed()
         self._checkReadable()
-        return self._inner_readinto(buffer)
+        
+        
+        mybytes = self._inner_read(len(buffer))
+        byteslen = len(mybytes)
+        
+        if isinstance(buffer, array):
+            typecode = b"b" if (sys.version_info[:2] < (3,0)) else "b" # typecode weirdness...
+            buffer[0:byteslen] = array(typecode, mybytes) 
+        else:
+            # for bytearray, memoryview...
+            buffer[0:byteslen] = mybytes
+        
+        return byteslen
 
 
     def write(self, buffer):
@@ -383,6 +391,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
 
         Returns the number of bytes written, which may be less than len(b).
         
+        Accepted buffer types are bytes, bytearray, array.array, and memoryview (the last two being inefficient to write).
         """
         
         self._checkClosed()
@@ -391,14 +400,12 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         if isinstance(buffer, unicode):
             raise TypeError("can't write unicode to binary stream")
         
+        
         if defs.HAS_MEMORYVIEW and isinstance(buffer, memoryview):
             buffer = buffer.tobytes() # TO BE IMPROVED - try to avoid copies !!
         elif isinstance(buffer, array):
             buffer = buffer.tostring() # To be improved hell a lot...
         
-        
-        if not isinstance(buffer, (bytes, bytearray)):
-            pass # WARNING - todo - fix stlib test suite first !!! raise TypeError("Only buffer-like objects can be written to raw files, not %s objects" % type(buffer))
         
         res = self._inner_write(buffer)
         #assert res == len(buffer), str(res, len(buffer)) # NOOO - we might have less than that actually if disk full !
@@ -657,6 +664,14 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
 
     def _inner_seek(self, offset, whence):
         self._unsupported("seek")
+
+    def _inner_read(self, n):
+        # n is necessarily a positive-or-zero integer
+        # default implementation : redirect to readinto()           
+        b = bytearray(n.__index__())
+        n = self._inner_readinto(b)
+        del b[n:]
+        return bytes(b) 
 
     def _inner_readinto(self, buffer):
         self._unsupported("readinto")

@@ -232,7 +232,7 @@ Win32 LockFile
 #################
 
 
-**Mandatory, per-handle, non reentrant lock, allowing byte range locking.**
+**Mandatory, per-handle, non reentrant lock, allowing bytes range locking.**
 
 - Once a file area is locked through a handle, no handle, in this process or another one, can access 
   this area in a way incompatible with the lock type (shared or exclusive). This also means that a handle can't be used
@@ -242,7 +242,7 @@ Win32 LockFile
   will block (unless a "non-blocking" flag is set), and trying to lock several times the same bytes with the same handle
   will result in a deadlock.
   
-- There is no merging/splitting of locked ranges: unlocking calls must provide as arguments a byte range identical 
+- There is no merging/splitting of locked ranges: unlocking calls must provide as arguments a bytes range identical 
   to one of those previously locked.
 
 - Remaining locks are removed automatically by the system (but possibly after some delay) when a handle is closed or the 
@@ -282,7 +282,7 @@ Unix Fcntl
     
     On recent platforms, **SystemV lockf()** locks are actually just wrappers around fcntl() locks, so we won't study here their initial semantic.
 
-**Advisory, per-process, rentrant lock, allowing byte range locking.**
+**Advisory, per-process, rentrant lock, allowing bytes range locking.**
 
 - Write or read operations which don't use fcntl locks will not be hindered by these locks, 
   unless mandatory locking has been activated on this particular filesystem and file node (but you had 
@@ -291,9 +291,9 @@ Unix Fcntl
 - Inside a process, it makes no difference whether a file/range has been locked via a specific handle or open file object: 
   fcntl locks concern the disk file, and belong to the whole process.
     
-- Byte range locking is very flexible
-    - Consecutive areas can be freed in a single unlock() call (byte range merging)
-    - It is possible to release only part of a byte range (byte range splitting)
+- bytes range locking is very flexible
+    - Consecutive areas can be freed in a single unlock() call (bytes range merging)
+    - It is possible to release only part of a bytes range (bytes range splitting)
     - Locking the same bytes several times simply updates their locking mode (exclusive or shared). Like for flock(),
       this operation is not guaranteed to be atomic, and locked bytes will only have to be released once.
   
@@ -321,7 +321,7 @@ with a temporary stream, you'll lose all your locks without even knowing it.
 It's still unclear why Posix people specified it that way. Rumors affirm that they actually let a drunk monkey contribute
 to the draft, and later on they inadvertently let the fruits of this funny experiment find their way to final specs;
 others affirm that one of their workshops was unfortunately close from an oenologia session. Anyway, we have to live
-with this fact : the only unix locks able to work over NFS and to lock byte ranges, are also the only locks in 
+with this fact : the only unix locks able to work over NFS and to lock bytes ranges, are also the only locks in 
 the world able to discreetly run away as soon as they''re disturbed by third-party libraries. Impressive, isn't it?
 
  
