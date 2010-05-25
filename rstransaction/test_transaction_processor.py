@@ -242,6 +242,9 @@ class testInteractiveTransaction(unittest.TestCase):
             assert isinstance(number, (int, long))
             return (str(number), len(DEPOT)), {}
         
+        def transform_fail(number):
+            raise ValueError("dummy preprocessing error")
+        
         def add_word(word, initial_size):
             DEPOT.append(word)
             return len(DEPOT)
@@ -262,31 +265,47 @@ class testInteractiveTransaction(unittest.TestCase):
                 assert len(DEPOT) == initial_size
                 pass # operation was interrupted before completing
                 
-        def rollback_word(was_interrupted, args, kwargs, result=None):
+        def rollback_word(args, kwargs, was_interrupted, result=None):
             if not was_interrupted:
                 assert len(DEPOT) == result
             _remove_word(*args, **kwargs)
                         
-                        
+        def rollback_word_fail(args, kwargs, was_interrupted, result=None):
+            raise RuntimeError("dummy impossible rollback")
+                            
                     
         self.registry = TP.transactionalActionRegistry()
         
-        self.registry.register_action("action_success", TP.TransactionalActionAdapter(add_word, rollback_word, transform))
-        self.registry.register_action("action_bad_preprocess", TP.TransactionalActionAdapter(lambda x: "no problem too", lambda w,x,y,z: None, lambda: ((failure(),), {}))) 
-        self.registry.register_action("action_failure", TP.TransactionalActionAdapter(lambda x,y: failure(), lambda w,x,y,z: None))        
-        self.registry.register_action("action_failure_unfixable", TP.TransactionalActionAdapter(lambda x,y: failure(), lambda w,x,y,z: failure()))        
+        
+        self.registry.register_action("action_success", 
+                                      TP.TransactionalActionAdapter(add_word, rollback_word, 
+                                                                    preprocess_arguments=transform))
+        
+        self.registry.register_action("action_bad_preprocess", 
+                                      TP.TransactionalActionAdapter(add_word, rollback_word, 
+                                                                    preprocess_arguments=transform_fail))
+                                      
+        self.registry.register_action("action_failure", 
+                                      TP.TransactionalActionAdapter(add_word_random_fail, rollback_word,
+                                                                    preprocess_arguments=transform))   
+             
+        self.registry.register_action("action_failure_unfixable", 
+                                      TP.TransactionalActionAdapter(add_word, rollback_word_fail,
+                                                                    preprocess_arguments=transform))        
 
 
         self.recorder = TP.ActionRecorderBase()
-        self.transaction_base = TP.TransactionBase(self.registry, self.recorder)
+        self.tp= TP.InteractiveTransaction(self.registry, self.recorder)
     
     def tearDown(self):        
         pass
     
     
     def _testWholeTransaction(self):
-        pass
+        
+        tp = self.tp  # interactive transaction processor
     
+        
     
 
         
