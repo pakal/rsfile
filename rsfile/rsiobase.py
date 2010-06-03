@@ -477,7 +477,7 @@ class RSIOBase(IO_BASE):
           Relative offset, starting at which bytes should be locked. 
           This position can be beyond the end of file.
         
-        - *offset* (SEEK_SET, SEEK_CUR or SEEK_END):
+        - *whence* (SEEK_SET, SEEK_CUR or SEEK_END):
           Whence is the same as in seek(), and specifies what the offset is 
           referring to(beginning, current position, or end of file).
                 

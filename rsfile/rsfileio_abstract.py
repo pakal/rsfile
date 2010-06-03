@@ -422,7 +422,10 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
 
     def truncate(self, size=None, zero_fill=True):
         """
-        Truncates the file to the given size (or the current position), without moving the file pointer.
+        Resizes the file to the given size (or the current position), without moving the file pointer. 
+        This resizing can extend or reduce the current file size. In case of extension, the content 
+        of the new file area depends on the platform (on most systems, additional bytes are zero-filled, 
+        on win32 they're undetermined). Returns the new file size.
         """
         
         with self._multi_syscall_lock: # to be removed, with threadsafe interface ???
