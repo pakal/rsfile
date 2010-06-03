@@ -77,7 +77,7 @@ class TransactionalActionBase(object):
         raise NotImplementedError()
     
     @staticmethod
-    def rollback_action(was_interrupted, args, kwargs, result=None):
+    def rollback_action(args, kwargs, was_interrupted, result=None):
         """
         This static method shall determine and undo all the changes made by a previous
         :meth:`process_action` call.
@@ -123,9 +123,9 @@ class TransactionalActionAdapter(TransactionalActionBase):
     def process_action(self, *args, **kwargs):
         return self._process_action(*args, **kwargs)
     
-    def rollback_action(self, was_interrupted, args, kwargs, result=_function_interrupted):
+    def rollback_action(self, args, kwargs, was_interrupted, result=_function_interrupted):
         assert (was_interrupted and result is _function_interrupted) or (not was_interrupted and not result is _function_interrupted)
-        return self._rollback_action(was_interrupted, args, kwargs, result)
+        return self._rollback_action(args, kwargs, was_interrupted, result)
 
 
 
@@ -384,7 +384,7 @@ class TransactionBase(object):
             except Exception, e: 
                 raise TransactionRecordingFailure(repr(e)), None, sys.exc_info()[2]    
             
-            action.rollback_action(was_interrupted=True, args=args, kwargs=kwargs) # we try to rollback the unfinished action
+            action.rollback_action(args=args, kwargs=kwargs, was_interrupted=True) # we try to rollback the unfinished action
     
             try:
                 self._action_recorder.rollback_unfinished_action()
@@ -417,7 +417,7 @@ class TransactionBase(object):
             except Exception, e: 
                 raise TransactionRecordingFailure(repr(e)), None, sys.exc_info()[2]    
             
-            action.rollback_action(was_interrupted=False, args=args, kwargs=kwargs, result=result) # we try to rollback the last finished action
+            action.rollback_action(args=args, kwargs=kwargs, was_interrupted=False, result=result) # we try to rollback the last finished action
     
             try:
                 self._action_recorder.rollback_finished_action()
