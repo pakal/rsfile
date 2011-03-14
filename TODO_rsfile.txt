@@ -1,5 +1,18 @@
 
 
+Add atfork to rsfile, to warn users
+
+ Add comment in pypi - don't install as egg !!!! 
+
+**{kwargs} problem unicode still somewhere !!
+ 
+   bug in rsfile - bad indentation !!!!!!!!!!!              
+                if not isinstance(e.strerror, unicode):
+                    strerror = e.strerror.decode(UNIX_MSG_ENCODING, 'replace')
+                else:
+                    strerror = e.strerror
+ 
+ 
 # TODO - add tests for bytearray, bytes, array.array and memoryview writing/reading !!!!
 # IMPORTANT - sort out issues with bytes, bytearray, memoryview etc !!
 
