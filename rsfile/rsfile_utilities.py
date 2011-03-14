@@ -66,11 +66,11 @@ def monkey_patch_open_builtin():
     
     try:
         import __builtin__
+        __builtin__.open = new_open
     except ImportError:
         import builtins
         builtins.open = new_open
-    else:
-        __builtin__.open = new_open
+
 
 
 

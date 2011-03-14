@@ -144,7 +144,8 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
     @_unix_error_converter
     def _inner_close_streams(self):
         """
-        Warning - unlink official stdlib modules, this function may raise IOError !
+        Warning - unlike official stdlib modules, this function won't swallow IOError !
+        # Todo - is that still true ?
         """
         if self._closefd:
             with rsfileio_abstract.IntraProcessLockRegistry.mutex:

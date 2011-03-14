@@ -253,7 +253,7 @@ def inheritance_tester(read, write, append, fileno=None, handle=None):
                     else:
                         sys.exit(9) # we shouldn't be able to write to this fd !
                         
-        except EnvironmentError,e:
+        except EnvironmentError, e:
             #print >>sys.stderr, e
             sys.exit(5)
         else:

@@ -38,13 +38,14 @@ rsfile.monkey_patch_io_module(rsfile.io_module) # _pyio version used
 rsfile.monkey_patch_open_builtin()
 
 
+'''
 try:
     import _io
     _io.FileIO = io.FileIO
     NO_CIO = False
 except ImportError:
     NO_CIO = True
-
+'''
 
 # We patch stdlib test supports if python version is old
 _utilities.patch_test_supports()
@@ -97,7 +98,7 @@ def test_original_io():
         test_largefile.LargeFileTest.test_seekable = dummyfunc
     #test_largefile.test_main() # beware !
     
-    
+ 
     test_io.CBufferedRandomTest = dummyklass
     test_io.CBufferedReaderTest = dummyklass
     test_io.CBufferedWriterTest = dummyklass
@@ -129,7 +130,7 @@ def test_original_io():
     test_fileio.AutoFileTests.testRepr = dummyfunc
     test_fileio.AutoFileTests.testMethods = dummyfunc # messy C functions signatures...
     test_fileio.AutoFileTests.testErrors = dummyfunc # incoherent errors returned on bad fd, between C and Py implementations...
-    if NO_CIO:
+    if not rsfile.HAS_C_RAW_IO:
         test_fileio.OtherFileTests.test_surrogates = dummyfunc
     
     deco = test_fileio.AutoFileTests.__dict__["ClosedFDRaises"] # decorator must not become unbound method !
