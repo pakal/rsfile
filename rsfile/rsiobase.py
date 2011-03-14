@@ -495,7 +495,7 @@ class RSIOBase(IO_BASE):
           Thus, this parameter is only useful for read/write streams, which can alternate 
           shared and exclusive locks depening on their needs.
         
-        On success, ``lock_file`` returns a context manager inside a with statement, 
+        On success, ``lock_file`` returns a context manager for use inside a with statement, 
         to automatically release the lock. However, it is advised that you don't release locks 
         if you close the stream just after that; letting the close() operation release the locks
         is as efficient, and on unix it prevents other threads from taking locks in the short time

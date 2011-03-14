@@ -21,6 +21,20 @@ UNIX_MSG_ENCODING = locale.getpreferredencoding()
 
 class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
 
+   """
+
+    O_EXCL
+    En conjonction avec O_CREAT, déclenchera une erreur si le fichier existe, 
+    et open échouera. O_EXCL ne fonctionne pas sur les systèmes de fichiers NFS. 
+    Les programmes qui ont besoin de cette fonctionnalité pour verrouiller des
+     tâches risquent de rencontrer une concurrence critique (race condition). 
+     La solution consiste à créer un fichier unique sur le même système de fichiers 
+     (par exemple avec le pid et le nom de l'hôte), utiliser link(2) pour créer un lien 
+     sur un fichier de verrouillage et d'utiliser stat(2) sur ce fichier unique pour 
+     vérifier si le nombre de liens a augmenté jusqu'à 2. Ne pas utiliser la valeur 
+     de retour de link(). 
+    
+        """
 
 
     # Warning - this is to be used as a static method ! #
@@ -34,13 +48,14 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
                     raise
                 else:
                     traceback = sys.exc_info()[2]
-
-                if not isinstance(e.strerror, unicode):
-                    strerror = e.strerror.decode(UNIX_MSG_ENCODING, 'replace')
-                else:
-                    strerror = e.strerror
-
+                    
+                    if not isinstance(e.strerror, unicode):
+                        strerror = e.strerror.decode(UNIX_MSG_ENCODING, 'replace')
+                    else:
+                        strerror = e.strerror
+                    
                     raise IOError, (e.errno, strerror, unicode(self._name)), traceback
+
         return wrapper
 
 

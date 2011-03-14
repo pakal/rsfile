@@ -126,7 +126,7 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
     if extended_kwargs["binary"] and newline is not None:
         raise ValueError("binary mode doesn't take a newline argument")     
     
-    raw_kwargs['permissions'] = permissions 
+    raw_kwargs[str('permissions')] = permissions # str is required because of python2.6 bug with unicode kwargs
 
     raw = RSFileIO(**raw_kwargs)
     
