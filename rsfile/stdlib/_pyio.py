@@ -38,7 +38,7 @@ class BlockingIOError(IOError):
         self.characters_written = characters_written
 
 
-def open(file, mode="r", buffering=-1,
+def open(file, mode="r", buffering= -1,
          encoding=None, errors=None,
          newline=None, closefd=True):
 
@@ -446,7 +446,7 @@ class IOBase:
 
     ### Readline[s] and writelines ###
 
-    def readline(self, limit=-1):
+    def readline(self, limit= -1):
         r"""Read and return a line from the stream.
 
         If limit is specified, at most limit bytes will be read.
@@ -534,7 +534,7 @@ class RawIOBase(IOBase):
     # primitive operation, but that would lead to nasty recursion in case
     # a subclass doesn't implement either.)
 
-    def read(self, n=-1):
+    def read(self, n= -1):
         """Read and return up to n bytes.
 
         Returns an empty bytes object on EOF, or None if the object is
@@ -944,7 +944,7 @@ class BufferedReader(_BufferedIOMixin):
         if n <= avail:
             # Fast path: the data to read is fully buffered.
             self._read_pos += n
-            return buf[pos:pos+n]
+            return buf[pos:pos + n]
         # Slow path: read from the stream until enough bytes are read,
         # or until an EOF occurs or until read() would block.
         chunks = [buf[pos:]]
@@ -1262,7 +1262,7 @@ class TextIOBase(IOBase):
     are immutable. There is no public constructor.
     """
 
-    def read(self, n=-1):
+    def read(self, n= -1):
         """Read at most n characters from stream.
 
         Read from underlying buffer until we have n characters or we hit EOF.
@@ -1338,6 +1338,7 @@ class IncrementalNewlineDecoder(codecs.IncrementalDecoder):
         if self.decoder is None:
             output = input
         else:
+            # print (repr(input)) # TODO
             output = self.decoder.decode(input, final=final)
         if self.pendingcr and (output or final):
             output = "\r" + output
@@ -1640,14 +1641,14 @@ class TextIOWrapper(TextIOBase):
         # into the decoder with need_eof as the EOF flag, then skip
         # chars_to_skip characters of the decoded result.  For most simple
         # decoders, tell() will often just give a byte offset in the file.
-        return (position | (dec_flags<<64) | (bytes_to_feed<<128) |
-               (chars_to_skip<<192) | bool(need_eof)<<256)
+        return (position | (dec_flags << 64) | (bytes_to_feed << 128) |
+               (chars_to_skip << 192) | bool(need_eof) << 256)
 
     def _unpack_cookie(self, bigint):
-        rest, position = divmod(bigint, 1<<64)
-        rest, dec_flags = divmod(rest, 1<<64)
-        rest, bytes_to_feed = divmod(rest, 1<<64)
-        need_eof, chars_to_skip = divmod(rest, 1<<64)
+        rest, position = divmod(bigint, 1 << 64)
+        rest, dec_flags = divmod(rest, 1 << 64)
+        rest, bytes_to_feed = divmod(rest, 1 << 64)
+        need_eof, chars_to_skip = divmod(rest, 1 << 64)
         return position, dec_flags, bytes_to_feed, need_eof, chars_to_skip
 
     def tell(self):
