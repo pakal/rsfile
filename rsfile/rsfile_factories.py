@@ -7,11 +7,11 @@ import os
 import rsfile_definitions as defs
 from rsfile_streams import *
 
-    
-    
-def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newline=None, fileno=None, handle=None, closefd=True, 
+
+
+def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newline=None, fileno=None, handle=None, closefd=True,
             locking=True, timeout=None, thread_safe=True, mutex=None, permissions=0777):
-    
+
     """
     This function is a factory similar to :func:`io.open`, which returns chains of I/O streams targeting files, with
     a focus set on security and concurrency protections.
@@ -95,9 +95,9 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
 
 
     """
-    
+
     # TODO - PYCONTRACT !!! check that no mutex if not thread-safe
-    
+
     # Quick type checking
     if name and not isinstance(name, (basestring, int, long)):
         raise TypeError("invalid file: %r" % name)
@@ -109,7 +109,10 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
         raise TypeError("invalid encoding: %r" % encoding)
     if errors is not None and not isinstance(errors, basestring):
         raise TypeError("invalid errors: %r" % errors)
-    
+
+    if not thread_safe and mutex:
+        raise ValueError("providing a mutex for a non thread-safe stream is abnormal")
+
     cleaned_mode = mode.replace("U", "")
     if cleaned_mode.lower() == cleaned_mode:
         assert handle is None and fileno is None # to handle these, use advanced open mode
@@ -124,22 +127,22 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
     if extended_kwargs["binary"] and errors is not None:
         raise ValueError("binary mode doesn't take an errors argument")
     if extended_kwargs["binary"] and newline is not None:
-        raise ValueError("binary mode doesn't take a newline argument")     
-    
+        raise ValueError("binary mode doesn't take a newline argument")
+
     raw_kwargs[str('permissions')] = permissions # str is required because of python2.6 bug with unicode kwargs
 
     raw = RSFileIO(**raw_kwargs)
-    
-    if extended_kwargs["truncate"] and not raw.writable(): 
+
+    if extended_kwargs["truncate"] and not raw.writable():
         raise ValueError("Can't truncate file opened in read-only mode")
-    
-    if locking:   
+
+    if locking:
         #print "we enforce file locking with %s - %s" %(shared, timeout)            
-        raw.lock_file(timeout=timeout) 
-    
-    if extended_kwargs["truncate"]:    
-            raw.truncate(0)            
-    
+        raw.lock_file(timeout=timeout)
+
+    if extended_kwargs["truncate"]:
+            raw.truncate(0)
+
     if buffering is None:
         buffering = -1
     line_buffering = False
@@ -164,7 +167,7 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
             else:
                 return raw
         raise ValueError("can't have unbuffered text I/O")
-    
+
     if raw.readable() and raw.writable():
         buffer = RSBufferedRandom(raw, buffering)
     elif raw.writable():
@@ -173,58 +176,58 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
         buffer = RSBufferedReader(raw, buffering)
     else:
         raise ValueError("unknown mode: %r" % mode)
-    
+
     if extended_kwargs["binary"]:
         if thread_safe:
             return RSThreadSafeWrapper(buffer, mutex=mutex, interprocess=raw_kwargs["inheritable"])
         else:
             return buffer
-        
+
     text = RSTextIOWrapper(buffer, encoding, errors, newline, line_buffering)
     text.mode = mode # TODO - shouldn't we change that weird artefact of the stdlib ?
-    
+
     if thread_safe:
-        return RSThreadSafeWrapper(text, mutex=mutex, interprocess=raw_kwargs["inheritable"])    
+        return RSThreadSafeWrapper(text, mutex=mutex, interprocess=raw_kwargs["inheritable"])
     else:
         return text
-    
-
-    
 
 
 
-    
+
+
+
+
 def parse_standard_args(name, mode, fileno, handle, closefd): # warning - name can be a fileno here ...
-    
+
     modes = set(mode)
     if not mode or modes - set("arwb+tU") or len(mode) > len(modes):
         raise ValueError("invalid mode: %r" % mode)
-    
-    
+
+
     # raw analysis
     reading_flag = "r" in modes or "U" in modes
     writing_flag = "w" in modes
     appending_flag = "a" in modes
     updating_flag = "+" in modes
-    
-    
-    
+
+
+
     truncate = writing_flag
     binary = "b" in modes
     text = "t" in modes
-    
+
     if "U" in modes: # only for backward compatibility
         if writing_flag or appending_flag or updating_flag:
             raise ValueError("can't use U and writing mode at once")
         reading_flag = True # we enforce reading 
-        
+
     if text and binary:
         raise ValueError("can't have text and binary mode at once")
     if reading_flag + writing_flag + appending_flag > 1:
         raise ValueError("can't have read/write/append mode at once")
     if not (reading_flag or writing_flag or appending_flag):
         raise ValueError("must have exactly one of read/write/append mode")
-    
+
     # real semantic
     if isinstance(name, int):
         if fileno is not None:
@@ -239,61 +242,61 @@ def parse_standard_args(name, mode, fileno, handle, closefd): # warning - name c
     write = writing_flag or appending_flag or updating_flag
     append = appending_flag
     must_not_create = reading_flag # "r" and "r+" modes require the file to exist, but no flag enforced "must_create"
-    
+
     raw_kwargs = dict(path=path,
-                    read=read, 
+                    read=read,
                     write=write, append=append,
                     must_create=False,
                     must_not_create=must_not_create,
                     synchronized=False,
-                    inheritable=True, 
+                    inheritable=True,
                     fileno=fileno, handle=handle, closefd=closefd)
-    
-    extended_kwargs = dict(truncate=truncate, 
+
+    extended_kwargs = dict(truncate=truncate,
                             binary=binary,
                             text=text)
-                    
+
     return (raw_kwargs, extended_kwargs)
-    
+
 
 
 
 def parse_advanced_args(path, mode, fileno, handle, closefd):
 
-    
+
     modes = set(mode)
     if modes - set("RAW+-SIEBT") or len(mode) > len(modes):
-        raise ValueError("invalid mode: %r" % mode)    
-    
+        raise ValueError("invalid mode: %r" % mode)
+
     path = path # must be None or a string
-    
+
     read = "R" in mode
     append = "A" in mode
-    write = "W" in mode or append 
-    
+    write = "W" in mode or append
+
     must_create = "-" in mode
     must_not_create = "+" in mode
-    
+
     synchronized = "S" in mode
     inheritable = "I" in mode
-    
+
     truncate = "E" in mode # for "Erase"  
     binary = "B" in modes
     text = "T" in modes
-    
+
     raw_kwargs = dict(path=path,
-                    read=read, 
+                    read=read,
                     write=write, append=append,
                     must_create=must_create,
-                    must_not_create=must_not_create, 
+                    must_not_create=must_not_create,
                     synchronized=synchronized,
-                    inheritable=inheritable, 
+                    inheritable=inheritable,
                     fileno=fileno, handle=handle, closefd=closefd)
-    
-    extended_kwargs = dict(truncate=truncate, 
+
+    extended_kwargs = dict(truncate=truncate,
                       binary=binary,
                       text=text)
-                      
+
     return (raw_kwargs, extended_kwargs)
 
 

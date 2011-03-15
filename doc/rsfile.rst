@@ -1,5 +1,5 @@
 
-RSFile package v1.0 
+RSFile package v1.1
 ======================
 
 
@@ -28,16 +28,16 @@ This modules currently provides pure-python reimplementations of parts of the st
 and is compliant with stdlib test suites.
 It mainly relies on stdlib modules and ctypes extensions (on windows, if pywin32 is available, it is used instead).
 
-The 1.x series will remain in pure python, but future versions might run under cython, for performance considerations.
 
-.. warning::
+.. note::
     The stdlib io module is still slightly suffering from it youth, so if you encounter problems with 
-    RSFile (or, more likely, with running its test suite), consider upgrading to the latest stable version 
-    (or to the development one) of python. 
+    RSFile (or, more likely, with running its test suite), consider upgrading to the latest stable minor version 
+    of your python major version. 
     
-    Furthermore, early python 2.6 versions a problems with "from __future__ import unicode_literals", preventing
-    the use of the "\*\*kwargs" construct (and of rsfile) in some cases, with a weird error "*<funcname>() keyword 
-    arguments must be strings*". Just update your python distribution if this problem occurs.
+    ..
+        Furthermore, early python 2.6 versions a problems with "from __future__ import unicode_literals", preventing
+        the use of the "\*\*kwargs" construct (and of rsfile) in some cases, with a weird error "*<funcname>() keyword 
+        arguments must be strings*". Just update your python distribution if this problem occurs.
 
 .. toctree::
 	:maxdepth: 3

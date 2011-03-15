@@ -45,19 +45,18 @@ except ImportError:
     from distutils.command.build_py import build_py
     print("Normal compilation")
 
-sys.argv.append("install")
 
 setup(name='RSFile',
-      version='1.0',
+      version='1.1',
       author='Pascal Chambon',
       author_email='pythoniks@gmail.com',
       url='http://bitbucket.org/pchambon/python-rock-solid-tools/',
-      license = "http://www.opensource.org/licenses/mit-license.php",
-      platforms = ["any"],
-      description = doclines[0],
-      classifiers = filter(None, classifiers.split("\n")),
-      long_description = " ".join(doclines[2:]),
-      packages=("rsfile", "rsfile.stdlib", "rsbackends", "rstest", "rstest.stdlib"),
-      cmdclass = {'build_py':build_py},
+      license="http://www.opensource.org/licenses/mit-license.php",
+      platforms=["any"],
+      description=doclines[0],
+      classifiers=filter(None, classifiers.split("\n")),
+      long_description=" ".join(doclines[2:]),
+      packages=("rsfile", "rsfile.stdlib", "rsbackends"), # "rstest", "rstest.stdlib" - can't be included atm because they use __file__
+      cmdclass={'build_py':build_py},
      )
 

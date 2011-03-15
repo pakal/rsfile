@@ -200,8 +200,8 @@ pointer (contained in the unique open file object) is common to all related proc
 only may related process corrupt each other writes, but they also may read/write/truncate files at the wrong offset.
 
 
-Inter-processes locking
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+Inter-unrelated-processes locking
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Here begins the hard core part. In a dream world, a process having sufficient privileges would simply lock a file for reading
 and writing, perform its I/O operations on it, and then release the locks. But it can't be so simple: as we've seen, a "file"

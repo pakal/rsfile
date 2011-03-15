@@ -76,7 +76,7 @@ from ctypes import create_string_buffer # R/W fixed-length buffer
 from array import array
 
 import os as _os
-from os import (open, 
+from os import (open,
                close, # not return value
                fstat,
                lseek,
@@ -115,31 +115,31 @@ def ltell(fd):
 
 def readinto(fd, buffer, count):
 
-     #We mimic here the posix read() system call, which works with buffers.
- 
+    #We mimic here the posix read() system call, which works with buffers.
+
     data = _os.read(fd, count)
-  
+
     if isinstance(buffer, array):
         try:
-	        buffer[0:len(data)] = array(b"b", data)
+            buffer[0:len(data)] = array(b"b", data)
         except TypeError:
-	        buffer[0:len(data)] = array("b", data) # mess between py2k and py3k...
+            buffer[0:len(data)] = array("b", data) # mess between py2k and py3k...
     else:
         buffer[0:len(data)] = data
 
     return len(data)
 
 
-    
+
 from os import unlink
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+
+
+
+
+
+
+
+
+
+
+

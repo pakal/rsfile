@@ -6,15 +6,18 @@ Welcome to RockSolidTools' documentation!
 This mini-framework aims at providing cross-platform (unix/linux/mac/windows) object-oriented APIs for widely needed functionalities
 like I/O streams, filesystem operations, inter-process communication, and generic transactional systems.
 
-The focus is set on security and code robustness more than on execution speed, on comprehensive testing and documentation
-more than on code optimisation. However, on the long term cython augmentations might be developed in parallel, and compensate
-the slowness of these pure-python modules compared to stdlib C extensions.
+The focus is currently set on security and code robustness more than on execution speed, on comprehensive testing and documentation
+more than on code optimization. 
 
 RockSolidTools currently features three packages : **rsbackends** (a set of bridges to
-native OS APIs - you shouldn't have to use it directly), and **rsfile** (a partial reimplementation 
+native OS APIs - you shouldn't have to use it directly) and **rsfile** (a partial reimplementation 
 of the standard io module, with advanced features), plus an optional **rstest** package to validate these. 
 
+
 ..
+    However, on the long term cython augmentations might be developed in parallel, and compensate
+    the slowness of these pure-python modules compared to stdlib C extensions.
+
     But below is an optimistic (megalomaniac?) dependency diagram of what RockSolidTools might 
     eventually contain.
     

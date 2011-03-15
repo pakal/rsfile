@@ -27,13 +27,13 @@ try:
     import _io
     HAS_C_RAW_IO = True
 except ImportError:
-    import io # in old python versions, we use the pure python module for raw io
+    import io # in old python versions, we use the pure python module for FileIO
     sys.modules["_io"] = io
     HAS_C_RAW_IO = False
 
 
 
-if sys.version_info[:2] >= (2,7):
+if sys.version_info[:2] >= (2, 7):
     import _pyio as io_module
     # real C io module doesn't work atm because buffer reset is not implemented !!! 
     # seek() doesn't always reset !!!
@@ -44,7 +44,7 @@ else:
     io.SEEK_END = SEEK_END
     import rsfile.stdlib._pyio as io_module # old stdlib io modules are buggy...
     sys.modules["_pyio"] = io_module
-    
+
 
 
 BlockingIOError = io_module.BlockingIOError
@@ -53,7 +53,7 @@ UnsupportedOperation = io_module.UnsupportedOperation
 
 
 class OverFlowException(IOError):
-    pass 
+    pass
 
 class LockingException(IOError):
     pass
@@ -61,11 +61,12 @@ class TimeoutException(LockingException):
     pass
 class ViolationException(LockingException):
     pass # only raised for mandatory locking
-    
-    
-    
+
+
+
 class FileTimes(object):
     def __init__(self, access_time, modification_time):
         self.access_time = access_time
         self.modification_time = modification_time
-        
+
+
