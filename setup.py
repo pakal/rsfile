@@ -56,7 +56,7 @@ setup(name='RSFile',
       description=doclines[0],
       classifiers=filter(None, classifiers.split("\n")),
       long_description=" ".join(doclines[2:]),
-      packages=("rsfile", "rsfile.stdlib", "rsbackends"), # "rstest", "rstest.stdlib" - can't be included atm because they use __file__
+      packages=("rsfile", "rsfile.stdlib", "rsbackends", "rstest", "rstest.stdlib"), # TODO - can't be included atm because they use __file__
       cmdclass={'build_py':build_py},
      )
 
