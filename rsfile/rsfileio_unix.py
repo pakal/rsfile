@@ -158,7 +158,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
             except unix.error:
                 pass
 
-        if not metadata:
+        if not metadata and hasattr(unix, "fdatasync"):
             try:
                 # theoretically, file size will properly be updated, if it is necessary to preserve data integrity
                 unix.fdatasync(self._fileno) # not supported on Mac Os X

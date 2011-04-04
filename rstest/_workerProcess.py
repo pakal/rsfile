@@ -190,7 +190,7 @@ def lock_tester(resultQueue, targetFileName, multiprocessing_lock, multiprocess,
                 
                 if isinstance(resultQueue, basestring):
                     with io.open(resultQueue, "ab", 0) as f:
-                        f.write(b"%s|%d|%f\n" % (myname, 1 if success else 0, total))
+                        f.write(b"%s|%d|%f\n" % (myname.encode("ascii"), 1 if success else 0, total))
                 else:
                     resultQueue.put((myname, success, total))
                     if hasattr(resultQueue, "close"):
