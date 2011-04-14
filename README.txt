@@ -1,12 +1,16 @@
 
-Release V1.0
-19 may 2010
+Release V1.1
+April 2011
 By Pascal Chambon
 
 
-Hello everyone,
 
-I'm presently pleased to announce the first stable release of the "RSFile" package.
+I'm pleased to announce the first bugfix release of the "RSFile" package.
+
+Issues addressed:
+- rejection of unicode keys in kwargs arguments, in some versions of py2.6
+- indentation bug swallowing some permission errors on file opening
+
 
 RSFile aims at providing python with a cross-platform, reliable, and comprehensive file
 I/O API. It's actually a partial reimplementation of the io module, as compatible possible 
@@ -18,8 +22,8 @@ Unix users might particularly be interested by the workaround that this library 
 the catastrophic fcntl() lock semantic (when any descriptor to a file is closed, your process loses ALL 
 locks acquired on it through other streams).
 
-RSFile has been tested with py2.6, py2.7, and py3.2, on win32 and unix-like systems, 
-and should theoretically work with IronPython/Jython/PyPy.
+RSFile has been tested with py2.6, py2.7, and py3.2, on win32, linux and freebsd systems, 
+and should theoretically work with IronPython/Jython/PyPy (on Mac OS X too).
 
 The technical documentation of RSFile includes a comprehensive description
 of concepts and gotchas encountered while setting up this library, which could
@@ -32,14 +36,10 @@ should be a proper choice.
 
 Downloads:
 http://pypi.python.org/pypi/RSFile/1.1
-http://bitbucket.org/pchambon/python-rock-solid-tools/downloads/
 
 Documentation:
 http://bytebucket.org/pchambon/python-rock-solid-tools/wiki/index.html
 
-Enjoy, 
-regards, 
-Pascal
 
 PS : Due to miscellaneous bugs of python core and stdlib io modules which have been fixed relatively recently, 
 it's advised to have an up-to-date minor version of python (be it 2.6, 2.7 or 3.2) to benefit from RSFile.

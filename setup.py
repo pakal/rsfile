@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 # cmd:  python setup.py sdist --formats=gztar,zip  bdist_msi   
-
-# bdist_wininst - not interesting because no 2to3 conversion
+# bdist_wininst - not interesting because no 2to3 conversion?
 
 
 """RockSolidTools' file I/O implementation
@@ -56,7 +55,8 @@ setup(name='RSFile',
       description=doclines[0],
       classifiers=filter(None, classifiers.split("\n")),
       long_description=" ".join(doclines[2:]),
-      packages=("rsfile", "rsfile.stdlib", "rsbackends", "rstest", "rstest.stdlib"), # TODO - can't be included atm because they use __file__
+      # "rstest", "rstest.stdlib" TODO - can't be included atm because they use __file__, incompatible with EGGS
+      packages=("rsfile", "rsfile.stdlib", "rsbackends"), 
       cmdclass={'build_py':build_py},
      )
 
