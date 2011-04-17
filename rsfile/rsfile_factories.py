@@ -68,8 +68,8 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
     'R'       Stream is Readable
     'W'       Stream is Writable
     'A'       Stream is in Append mode (implicitly enforces W)
-    '+'       File must be created (i.e it mustn't already exist)
-    '-'       File must NOT be created (i.e it must already exist)
+    '+'       File must already exist (i.e it must not be created)
+    '-'       File must NOT already exist (i.e it must be created)
     'S'       Stream is Synchronized
     'I'       Stream is Inheritable
     'E'       File is Erased on opening
@@ -241,7 +241,7 @@ def parse_standard_args(name, mode, fileno, handle, closefd): # warning - name c
     read = reading_flag or updating_flag
     write = writing_flag or appending_flag or updating_flag
     append = appending_flag
-    must_not_create = reading_flag # "r" and "r+" modes require the file to exist, but no flag enforced "must_create"
+    must_not_create = reading_flag # "r" and "r+" modes require the file to exist, but no flag enforces "must_create"
 
     raw_kwargs = dict(path=path,
                     read=read,
