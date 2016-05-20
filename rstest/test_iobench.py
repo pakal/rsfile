@@ -1,4 +1,10 @@
+"""
+Run iobench againts rsfile drop-in replacements.
 
+In case you have an error like below, remove any pyc files, and run python with "-B" option, because iobench.py tries to read its own source file.
+UnicodeDecodeError: 'utf8' codec can't decode byte 0xf3 in position 1: invalid continuation byte
+
+"""
 import sys
 import rsfile
 from rstest.stdlib import iobench
