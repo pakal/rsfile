@@ -8,6 +8,11 @@ import sys, os, time, random, string, multiprocessing, threading
 import rsfile 
 import io
 
+VERBOSE_MODE = False
+
+def logger(*args):
+    if VERBOSE_MODE:
+        print(" ".join(str(a) for a in args) + os.linesep, end="")
 
 _streams_already_initialized = False
 def _init_streams(multiprocessing_lock):
@@ -55,7 +60,7 @@ def _init_streams(multiprocessing_lock):
 def chunk_writer_reader(targetFileName, multiprocessing_lock, character, ioOffset=0, payLoad=10000, mustAlwaysSucceedLocking=False, lockingKwargs={}):
     _init_streams(multiprocessing_lock)
     
-    print ("Process %s created with args "%(multiprocessing.current_process().name), locals())
+    logger("Process %s created with args "%(multiprocessing.current_process().name), locals())
 
     
     for i in range(random.randint(5,15)):
@@ -70,12 +75,12 @@ def chunk_writer_reader(targetFileName, multiprocessing_lock, character, ioOffse
                 kwargs = lockingKwargs
                 kwargs['shared'] = False
                 
-                print ("Process %s (%s) wanna lock file with args "%(multiprocessing.current_process().name, threading.currentThread().name), kwargs)
+                logger("Process %s (%s) wanna lock file with args "%(multiprocessing.current_process().name, threading.currentThread().name), kwargs)
                 
                 
                 with targetFile.lock_file(**kwargs):
                     
-                    print ("Process %s (%s) has the lock ! "%(multiprocessing.current_process().name, threading.currentThread().name))
+                    logger("Process %s (%s) has the lock ! "%(multiprocessing.current_process().name, threading.currentThread().name))
                     
                     if(random.randint(0,1)):
                         targetFile.seek(ioOffset)
@@ -89,25 +94,25 @@ def chunk_writer_reader(targetFileName, multiprocessing_lock, character, ioOffse
                     
                     targetFile.seek(ioOffset)
 
-                    print ("Process %s (%s) reads %s bytes at offset %s ***"%(multiprocessing.current_process().name, threading.currentThread().name, payLoad, targetFile.tell()) )                  
+                    logger("Process %s (%s) reads %s bytes at offset %s ***"%(multiprocessing.current_process().name, threading.currentThread().name, payLoad, targetFile.tell()) )                  
                     
                     data = targetFile.read(payLoad)
                      
                     if(data != character*payLoad):
-                        print ("PROBLEM IN %s: " % multiprocessing.current_process().name, data, "            ><            ", character*payLoad)
+                        logger("PROBLEM IN %s: " % multiprocessing.current_process().name, data, "            ><            ", character*payLoad)
                         sys.exit(8)
 
-                print ("Process %s (%s) unlocks file"%(multiprocessing.current_process().name, threading.currentThread().name))
+                logger("Process %s (%s) unlocks file"%(multiprocessing.current_process().name, threading.currentThread().name))
                        
             except rsfile.LockingException:
                 if(mustAlwaysSucceedLocking):
                     raise
                 else:
-                    #print "couldnt lock file, ok..."
+                    #logger"couldnt lock file, ok..."
                     pass
     import rsfile.rsfile_registries as RG
     
-    print ("Process %s (%s) <<<<exiting>>>> - lock is %s"%(multiprocessing.current_process().name, threading.currentThread().name, RG.IntraProcessLockRegistry.mutex))
+    logger("Process %s (%s) <<<<exiting>>>> - lock is %s"%(multiprocessing.current_process().name, threading.currentThread().name, RG.IntraProcessLockRegistry.mutex))
     sys.exit(0)
     
         
@@ -133,8 +138,10 @@ def chunk_reader(targetFileName, multiprocessing_lock, character=None, ioOffset=
                         time.sleep(random.random()/10)
                         
                         targetFile.seek(ioOffset)
-                        
-                        print ("{{{{ %s (%s) reads %s bytes at offset %s }}}}"%(multiprocessing.current_process().name, threading.currentThread().name, payLoad, targetFile.tell()))
+
+                        logger("Process (reader) %s (%s) reads %s bytes at offset %s ***" % (
+                        multiprocessing.current_process().name, threading.currentThread().name, payLoad,
+                        targetFile.tell()))
                         
                         data = targetFile.read(payLoad)
                         
@@ -147,7 +154,7 @@ def chunk_reader(targetFileName, multiprocessing_lock, character=None, ioOffset=
                 if(mustAlwaysSucceedLocking):
                     raise
                 else:
-                    #print "couldnt lock file, ok..."
+                    #logger"couldnt lock file, ok..."
                     pass
 
                 
@@ -205,7 +212,7 @@ def lock_tester(resultQueue, targetFileName, multiprocessing_lock, multiprocess,
             
 def inheritance_tester(read, write, append, fileno=None, handle=None):
         assert not (fileno and handle)
-        #print >>sys.stderr, "Launching Worker Process inheritance_tester with fileno=%s and handle=%s !" % (fileno, handle)
+        #logger>>sys.stderr, "Launching Worker Process inheritance_tester with fileno=%s and handle=%s !" % (fileno, handle)
         #sys.exit(99)        
         
         time.sleep(0.2)
@@ -213,11 +220,11 @@ def inheritance_tester(read, write, append, fileno=None, handle=None):
         try:
             with rsfile.RSFileIO(read=read, write=write, append=append, fileno=fileno, handle=handle) as f:
                 
-                #print >>sys.stderr, "Just opening and closing the file descriptor !!"
+                #logger>>sys.stderr, "Just opening and closing the file descriptor !!"
                 #sys.exit(88)                
                 
                 """
-                print (>>sys.stderr, "Filling the file from workerprocess !")
+                logger(>>sys.stderr, "Filling the file from workerprocess !")
                 f.write("sqsdsdqsdqklkjvlsdfqvudfbqudfhyqsudfbqudjkfhsdsdqb")
                 f.flush()
                 time.sleep(10)"""
@@ -254,7 +261,7 @@ def inheritance_tester(read, write, append, fileno=None, handle=None):
                         sys.exit(9) # we shouldn't be able to write to this fd !
                         
         except EnvironmentError, e:
-            #print >>sys.stderr, e
+            #logger>>sys.stderr, e
             sys.exit(5)
         else:
             sys.exit(4)

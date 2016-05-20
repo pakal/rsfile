@@ -295,7 +295,7 @@ class TestSafeFile(unittest.TestCase):
 
         with open(self.dummyFileName, "wb") as targetFile:
             targetFile.write(character * totalPayLoad)
-            print ("====== ALL INITIALIZED TO %s =====" % character.decode("ascii"))
+            print ("====== ALL INITIALIZED TO CHARACTER '%s' =====" % character.decode("ascii"))
 
         """ # TO REMOVE
         # we add a reader process first  
