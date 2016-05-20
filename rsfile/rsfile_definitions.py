@@ -12,40 +12,8 @@ SEEK_VALUES = (SEEK_SET, SEEK_CUR, SEEK_END)
 
 DEFAULT_BUFFER_SIZE = 8 * 1024  # in bytes
 
-try:
-    memoryview
-    HAS_MEMORYVIEW = True
-except NameError:
-    HAS_MEMORYVIEW = False
 
-
-
-from os import SEEK_SET, SEEK_CUR, SEEK_END
-
-
-try:
-    import _io
-    HAS_C_RAW_IO = True
-except ImportError:
-    import io # in old python versions, we use the pure python module for FileIO
-    sys.modules["_io"] = io
-    HAS_C_RAW_IO = False
-
-
-
-if sys.version_info[:2] >= (2, 7):
-    import _pyio as io_module
-    # real C io module doesn't work atm because buffer reset is not implemented !!! 
-    # seek() doesn't always reset !!!
-else:
-    import io # we must patch older io modules (eg py2.6)
-    io.SEEK_SET = SEEK_SET
-    io.SEEK_CUR = SEEK_CUR
-    io.SEEK_END = SEEK_END
-    import rsfile.stdlib._pyio as io_module # old stdlib io modules are buggy...
-    sys.modules["_pyio"] = io_module
-
-
+import _pyio as io_module  #TODO remove that, or use C version ,?
 
 BlockingIOError = io_module.BlockingIOError
 UnsupportedOperation = io_module.UnsupportedOperation

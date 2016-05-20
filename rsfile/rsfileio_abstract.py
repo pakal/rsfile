@@ -400,12 +400,10 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         if isinstance(buffer, unicode):
             raise TypeError("can't write unicode to binary stream")
 
-
-        if defs.HAS_MEMORYVIEW and isinstance(buffer, memoryview):
+        if isinstance(buffer, memoryview):
             buffer = buffer.tobytes() # TO BE IMPROVED - try to avoid copies !!
         elif isinstance(buffer, array):
             buffer = buffer.tostring() # To be improved hell a lot...
-
 
         res = self._inner_write(buffer)
         #assert res == len(buffer), str(res, len(buffer)) # NOOO - we might have less than that actually if disk full !

@@ -84,7 +84,7 @@ class TestSafeFile(unittest.TestCase):
         print ("----Subprocesses Launch ----")
 
         for process in self.processList:
-            print ("Process '%s' starting..." % process.name)
+            print ("Process '%s' starting" % process.name)
             process.daemon = True
             process.start()
 
@@ -402,7 +402,7 @@ class TestSafeFile(unittest.TestCase):
 
 
                 for process in self.processList:
-                    print ("Process '%s' starting..." % process.name)
+                    print ("Process '%s' starting" % process.name)
                     process.daemon = True
                     process.start()
 

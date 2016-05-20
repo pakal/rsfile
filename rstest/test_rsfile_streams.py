@@ -31,6 +31,7 @@ TESTFN = "@TESTING" # we used our own one, since the test_support version is bro
 
 import io, _pyio
 
+
 # IMPORTANT - we monkey-patch the original io module !!!
 rsfile.monkey_patch_io_module(io)
 rsfile.monkey_patch_io_module(_pyio) # might have been inserted by rsfile
@@ -40,7 +41,7 @@ rsfile.monkey_patch_open_builtin()
 
 
 # We patch stdlib test supports if python version is old
-_utilities.patch_test_supports()
+#_utilities.patch_test_supports()
 
 from test import test_support # AFTER PATCHING TEST_SUPPORT !!
 
@@ -52,21 +53,14 @@ def test_original_io():
     Original cmd : " python -m test.regrtest -uall -v test_fileio test_file test_io test_bufio test_memoryio test_largefile "
     """
 
-    sys.modules["_pyio"] = rsfile.io_module # IMPORTANT - so that tests find it too on py2.6 !!
-
     try:
         import _io
     except ImportError:
         import rsfile.stdlib._io as _io
         sys.modules["_io"] = _io
 
-    try:
-        from test import test_io, test_memoryio, test_file, test_bufio, test_fileio, test_largefile
-        from test.test_largefile import LargeFileTest # excludes py26
-    except ImportError:
-        # backported versions
-        from rstest.stdlib import test_io, test_memoryio, test_file, test_bufio, test_fileio, test_largefile
-
+    from test import test_io, test_memoryio, test_file, test_bufio, test_fileio, test_largefile
+    from test.test_largefile import LargeFileTest # excludes py26
 
     class dummyklass(unittest.TestCase):
         pass
@@ -110,8 +104,6 @@ def test_original_io():
     test_io.BufferedRWPairTest.UnsupportedOperation = rsfile.io_module.UnsupportedOperation
     if not hasattr(unittest.TestCase, "skipTest"):
         test_io.IOTest.test_unbounded_file = dummyfunc
-    if _utilities.KWARGS_PB:
-        test_io.MiscIOTest.test_io_after_close = dummyfunc
 
     test_io.test_main()
 
@@ -122,8 +114,6 @@ def test_original_io():
     test_fileio.AutoFileTests.testRepr = dummyfunc
     test_fileio.AutoFileTests.testMethods = dummyfunc # messy C functions signatures...
     test_fileio.AutoFileTests.testErrors = dummyfunc # incoherent errors returned on bad fd, between C and Py implementations...
-    if not rsfile.HAS_C_RAW_IO:
-        test_fileio.OtherFileTests.test_surrogates = dummyfunc
 
     deco = test_fileio.AutoFileTests.__dict__["ClosedFDRaises"] # decorator must not become unbound method !
     @deco
@@ -828,7 +818,7 @@ def test_main():
     # Historically, these tests have been sloppy about removing TESTFN.
     # So get rid of it no matter what.
     try:
-        test_support.run_unittest(TestRawFileViaWrapper, TestRawFileSpecialFeatures, TestMiscStreams) # TODO TODO PUT BACK PAKAL !!!
+        #test_support.run_unittest(TestRawFileViaWrapper, TestRawFileSpecialFeatures, TestMiscStreams) # TODO TODO PUT BACK PAKAL !!!
         test_original_io()
     finally:
         if os.path.exists(TESTFN):

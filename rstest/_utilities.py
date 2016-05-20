@@ -9,18 +9,6 @@ import subprocess
 
 
 
-
-# Python 2.6 old versions have a bug with unicode_literals #
-def func(**kwargs):
-    pass
-try:
-    func(**{"hello":3})
-except TypeError:
-    KWARGS_PB = True
-else:
-    KWARGS_PB = False
-
-
 def launch_rsfile_tests_on_backends(test_main):
     backends = []
     
@@ -78,8 +66,6 @@ def patch_test_supports():
         # new in py2.7 ...
         def gc_collect():
             import gc
-            gc.collect()
-            gc.collect()
             gc.collect()
         test_support.gc_collect = gc_collect
     
