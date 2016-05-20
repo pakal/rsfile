@@ -157,9 +157,9 @@ def winerror_to_errno(winerror):
 class TestUtilities(unittest.TestCase):
 
         def setUp(self):
-                pass
-                def tearDown(self):
-                        pass
+            pass
+        def tearDown(self):
+            pass
         
         def test_timestamps(self):
                 """Test python and win32 timestamp conversions.
