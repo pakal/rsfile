@@ -29,29 +29,30 @@ def launch_rsfile_tests_on_backends(test_main):
         
           
         try:
-            import rsbackends.pywin32_extensions as win32
+            import rsbackends.pywin32_extensions
         except ImportError:
             pass
         else:
             print ("<Launching test on pywin32 extensions backend !>")
-            rsfileio_win32.win3 = win32
+            assert rsfileio_win32.win32
+            rsfileio_win32.win32 = rsbackends.pywin32_extensions
             test_main()
             backends.append("pywin32_extensions")
         
         try:
-            import rsbackends.pywin32_ctypes as win32
+            import rsbackends.pywin32_ctypes
         except ImportError:
             pass
         else:
             print ("<Launching test on win32 ctypes backend !>")
-            rsfileio_win32.win3 = win32
+            assert rsfileio_win32.win32
+            rsfileio_win32.win32 = rsbackends.pywin32_ctypes
             test_main()
             backends.append("pywin32_ctypes")
 
     else:
         test_main() # only one backend in unix at the moment
         backends.append("unix")
-    
     
     return backends
 
@@ -148,4 +149,3 @@ def patch_test_supports():
                 self.fail(standardMsg)
         TestCase.assertIs = assertIs
 
-  
