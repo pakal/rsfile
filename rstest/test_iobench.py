@@ -1,32 +1,29 @@
 
-#import pyximport; pyximport.install()
-#import Cython
-#import rsfile.rsfile_registries
+import sys
+import rsfile
+from rstest.stdlib import iobench
 
 
-import sys, io, rsfile
-from rstest import iobench
+if True:
+    import io
+    print ">>> benchmarking stdlib io modules of %s, module %r <<<" % (sys.version_info, io)
 
-"""
-print ">>> benchmarking stdlib io modules of %s, module %r <<<" % (sys.version_info, io)
+    iobench.open = io.open
+    iobench.text_open = io.open
 
-iobench.open = io.open
-iobench.text_open = io.open
+    iobench.prepare_files()
+    iobench.run_all_tests("rwtb")
 
-iobench.prepare_files()
-iobench.run_all_tests("rwtb")
-"""
+print "\n-----------\n"
 
-print "\n"
-print ">>> benchmarking rsfile module <<<"
+if True:
+    print ">>> benchmarking rsfile module <<<"
 
+    iobench.open = rsfile.rsopen
+    iobench.text_open = rsfile.rsopen
 
-
-iobench.open = rsfile.rsopen
-iobench.text_open = rsfile.rsopen
-
-iobench.prepare_files()
-iobench.run_all_tests("rwtb")
+    iobench.prepare_files()
+    iobench.run_all_tests("rwtb")
 
 
 

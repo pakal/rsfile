@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # This file should be kept compatible with both Python 2.6 and Python >= 3.0.
+# GRABBED FROM http://svn.python.org/projects/python/trunk/Tools/iobench/, last checked 2016-05-20 #
 
 import time
 import os
