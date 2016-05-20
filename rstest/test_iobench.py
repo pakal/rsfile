@@ -2,108 +2,181 @@
 import sys
 import rsfile
 from rstest.stdlib import iobench
+assert iobench.text_open, vars(iobench)
+
+
+def _launch_iobench_tests():
+    iobench.prepare_files()
+    iobench.run_all_tests("rwtb")
 
 
 if True:
     import io
-    print ">>> benchmarking stdlib io modules of %s, module %r <<<" % (sys.version_info, io)
+    print ">>> benchmarking stdlib io module on python %s: module %r <<<" % (sys.version_info, io)
 
     iobench.open = io.open
     iobench.text_open = io.open
+    _launch_iobench_tests()
 
-    iobench.prepare_files()
-    iobench.run_all_tests("rwtb")
+    print "\n-----------\n"
 
-print "\n-----------\n"
+if True:
+    import _pyio
+    print ">>> benchmarking stdlib pyio module on python %s: module %r <<<" % (sys.version_info, _pyio)
+
+    iobench.open = _pyio.open
+    iobench.text_open = _pyio.open
+    _launch_iobench_tests()
+
+    print "\n-----------\n"
 
 if True:
     print ">>> benchmarking rsfile module <<<"
 
     iobench.open = rsfile.rsopen
     iobench.text_open = rsfile.rsopen
+    _launch_iobench_tests()
 
-    iobench.prepare_files()
-    iobench.run_all_tests("rwtb")
-
-
+    print "\n-----------\n"
 
 
-"""
->>> benchmarking stdlib io modules of 2.6.4 (r264:75708, Oct 26 2009, 08:23:19) [MSC v.1500 32 bit (Intel)], module <module 'io' from 'C:\Python26\lib\io.py'> <<<
+""" # BACKUP OF LATEST BENCHMARK ITERATION #
+
+>>> benchmarking stdlib io module on python sys.version_info(major=2, minor=7, micro=11, releaselevel='final', serial=0): module <module 'io' from 'C:\Python27\lib\io.pyc'> <<<
 Preparing files...
 Binary unit = one byte
 Text unit = one character (utf8-decoded)
 
 ** Binary input **
 
-[ 400KB ] read one unit at a time...                  0.219 MB/s
-[ 400KB ] read 20 units at a time...                   3.57 MB/s
-   warning: test above used only 84% CPU, result may be flawed!
-[ 400KB ] read 4096 units at a time...                  160 MB/s
-   warning: test above used only 78% CPU, result may be flawed!
+[ 400KB ] read one unit at a time...                   4.07 MB/s
+[ 400KB ] read 20 units at a time...                   68.8 MB/s
+[ 400KB ] read 4096 units at a time...                  861 MB/s
 
-[  20KB ] read whole contents at once...                251 MB/s
-   warning: test above used only 86% CPU, result may be flawed!
-[ 400KB ] read whole contents at once...                124 MB/s
-   warning: test above used only 88% CPU, result may be flawed!
-[  10MB ] read whole contents at once...              0.416 MB/s
-   warning: test above used only 83% CPU, result may be flawed!
+[  20KB ] read whole contents at once...                297 MB/s
+[ 400KB ] read whole contents at once...               2735 MB/s
+[  10MB ] read whole contents at once...               1630 MB/s
 
-[ 400KB ] seek forward one unit at a time...          0.204 MB/s
-[ 400KB ] seek forward 1000 units at a time...          191 MB/s
-[ 400KB ] alternate read & seek one unit...          0.0507 MB/s
-   warning: test above used only 88% CPU, result may be flawed!
-[ 400KB ] alternate read & seek 1000 units...          51.5 MB/s
+[ 400KB ] seek forward one unit at a time...          0.672 MB/s
+[ 400KB ] seek forward 1000 units at a time...          656 MB/s
+[ 400KB ] alternate read & seek one unit...            3.57 MB/s
+[ 400KB ] alternate read & seek 1000 units...           687 MB/s
 
 ** Text input **
 
-[ 400KB ] read one unit at a time...                  0.281 MB/s
-   warning: test above used only 89% CPU, result may be flawed!
-[ 400KB ] read 20 units at a time...                   1.91 MB/s
-   warning: test above used only 78% CPU, result may be flawed!
-[ 400KB ] read one line at a time...                   1.98 MB/s
-[ 400KB ] read 4096 units at a time...                 3.39 MB/s
+[ 400KB ] read one unit at a time...                   3.71 MB/s
+[ 400KB ] read 20 units at a time...                   51.2 MB/s
+[ 400KB ] read one line at a time...                    140 MB/s
+[ 400KB ] read 4096 units at a time...                  209 MB/s
 
-[  20KB ] read whole contents at once...               25.9 MB/s
-[ 400KB ] read whole contents at once...               23.7 MB/s
-   warning: test above used only 73% CPU, result may be flawed!
-[  10MB ] read whole contents at once...              0.487 MB/s
+[  20KB ] read whole contents at once...                150 MB/s
+[ 400KB ] read whole contents at once...                310 MB/s
+[  10MB ] read whole contents at once...                271 MB/s
 
-[ 400KB ] seek forward one unit at a time...         0.0632 MB/s
-[ 400KB ] seek forward 1000 units at a time...         62.9 MB/s
+[ 400KB ] seek forward one unit at a time...          0.199 MB/s
+[ 400KB ] seek forward 1000 units at a time...          192 MB/s
 
 ** Binary append **
 
-[  20KB ] write one unit at a time...                 0.167 MB/s
-[ 400KB ] write 20 units at a time...                  3.19 MB/s
-[ 400KB ] write 4096 units at a time...                 254 MB/s
-[  10MB ] write 1e6 units at a time...                  163 MB/s
+[  20KB ] write one unit at a time...                   1.6 MB/s
+[ 400KB ] write 20 units at a time...                  30.4 MB/s
+[ 400KB ] write 4096 units at a time...                1833 MB/s
+[  10MB ] write 1e6 units at a time...                 2283 MB/s
 
 ** Text append **
 
-[  20KB ] write one unit at a time...                 0.075 MB/s
-[ 400KB ] write 20 units at a time...                 0.963 MB/s
-[ 400KB ] write 4096 units at a time...                15.2 MB/s
-[  10MB ] write 1e6 units at a time...                 15.1 MB/s
+[  20KB ] write one unit at a time...                 0.651 MB/s
+[ 400KB ] write 20 units at a time...                  6.38 MB/s
+[ 400KB ] write 4096 units at a time...                61.6 MB/s
+[  10MB ] write 1e6 units at a time...                 62.9 MB/s
 
 ** Binary overwrite **
 
-[  20KB ] modify one unit at a time...                0.115 MB/s
-[ 400KB ] modify 20 units at a time...                 2.03 MB/s
-[ 400KB ] modify 4096 units at a time...                142 MB/s
+[  20KB ] modify one unit at a time...                 1.57 MB/s
+[ 400KB ] modify 20 units at a time...                 28.8 MB/s
+[ 400KB ] modify 4096 units at a time...                657 MB/s
 
-[ 400KB ] alternate write & seek one unit...         0.0574 MB/s
-[ 400KB ] alternate write & seek 1000 units...         54.6 MB/s
-[ 400KB ] alternate read & write one unit...          0.025 MB/s
-[ 400KB ] alternate read & write 1000 units...         25.2 MB/s
+[ 400KB ] alternate write & seek one unit...          0.177 MB/s
+[ 400KB ] alternate write & seek 1000 units...          166 MB/s
+[ 400KB ] alternate read & write one unit...           2.13 MB/s
+[ 400KB ] alternate read & write 1000 units...          250 MB/s
 
 ** Text overwrite **
 
-[  20KB ] modify one unit at a time...               0.0617 MB/s
-[ 400KB ] modify 20 units at a time...                0.848 MB/s
-[ 400KB ] modify 4096 units at a time...               13.4 MB/s
+[  20KB ] modify one unit at a time...                0.518 MB/s
+[ 400KB ] modify 20 units at a time...                 7.92 MB/s
+[ 400KB ] modify 4096 units at a time...               59.7 MB/s
 
 
+-----------
+
+>>> benchmarking stdlib pyio module on python sys.version_info(major=2, minor=7, micro=11, releaselevel='final', serial=0): module <module '_pyio' from 'C:\Python27\lib\_pyio.pyc'> <<<
+Preparing files...
+Binary unit = one byte
+Text unit = one character (utf8-decoded)
+
+** Binary input **
+
+[ 400KB ] read one unit at a time...                  0.511 MB/s
+[ 400KB ] read 20 units at a time...                   9.66 MB/s
+[ 400KB ] read 4096 units at a time...                  415 MB/s
+
+[  20KB ] read whole contents at once...                214 MB/s
+[ 400KB ] read whole contents at once...                992 MB/s
+[  10MB ] read whole contents at once...                898 MB/s
+
+[ 400KB ] seek forward one unit at a time...          0.178 MB/s
+[ 400KB ] seek forward 1000 units at a time...          174 MB/s
+[ 400KB ] alternate read & seek one unit...          0.0777 MB/s
+[ 400KB ] alternate read & seek 1000 units...          74.2 MB/s
+
+** Text input **
+
+[ 400KB ] read one unit at a time...                  0.288 MB/s
+[ 400KB ] read 20 units at a time...                   5.37 MB/s
+[ 400KB ] read one line at a time...                   7.29 MB/s
+[ 400KB ] read 4096 units at a time...                 65.4 MB/s
+
+[  20KB ] read whole contents at once...               87.6 MB/s
+[ 400KB ] read whole contents at once...                166 MB/s
+[  10MB ] read whole contents at once...                149 MB/s
+
+[ 400KB ] seek forward one unit at a time...         0.0672 MB/s
+[ 400KB ] seek forward 1000 units at a time...         67.1 MB/s
+
+** Binary append **
+
+[  20KB ] write one unit at a time...                 0.306 MB/s
+[ 400KB ] write 20 units at a time...                  5.85 MB/s
+[ 400KB ] write 4096 units at a time...                 607 MB/s
+[  10MB ] write 1e6 units at a time...                 1138 MB/s
+
+** Text append **
+
+[  20KB ] write one unit at a time...                 0.124 MB/s
+[ 400KB ] write 20 units at a time...                   1.8 MB/s
+[ 400KB ] write 4096 units at a time...                  53 MB/s
+[  10MB ] write 1e6 units at a time...                 60.5 MB/s
+
+** Binary overwrite **
+
+[  20KB ] modify one unit at a time...                0.175 MB/s
+[ 400KB ] modify 20 units at a time...                 3.37 MB/s
+[ 400KB ] modify 4096 units at a time...                297 MB/s
+
+[ 400KB ] alternate write & seek one unit...         0.0738 MB/s
+[ 400KB ] alternate write & seek 1000 units...         68.4 MB/s
+[ 400KB ] alternate read & write one unit...         0.0407 MB/s
+[ 400KB ] alternate read & write 1000 units...         38.6 MB/s
+
+** Text overwrite **
+
+[  20KB ] modify one unit at a time...               0.0959 MB/s
+[ 400KB ] modify 20 units at a time...                 1.77 MB/s
+[ 400KB ] modify 4096 units at a time...               50.2 MB/s
+
+
+-----------
 
 >>> benchmarking rsfile module <<<
 Preparing files...
@@ -112,76 +185,63 @@ Text unit = one character (utf8-decoded)
 
 ** Binary input **
 
-[ 400KB ] read one unit at a time...                 0.0568 MB/s
-[ 400KB ] read 20 units at a time...                    1.2 MB/s
-[ 400KB ] read 4096 units at a time...                 82.4 MB/s
+[ 400KB ] read one unit at a time...                 0.0975 MB/s
+[ 400KB ] read 20 units at a time...                   1.83 MB/s
+[ 400KB ] read 4096 units at a time...                  171 MB/s
 
-[  20KB ] read whole contents at once...               41.6 MB/s
-[ 400KB ] read whole contents at once...               51.5 MB/s
-[  10MB ] read whole contents at once...               23.9 MB/s
+[  20KB ] read whole contents at once...                139 MB/s
+[ 400KB ] read whole contents at once...                471 MB/s
+[  10MB ] read whole contents at once...                310 MB/s
 
-[ 400KB ] seek forward one unit at a time...         0.0415 MB/s
-[ 400KB ] seek forward 1000 units at a time...         41.1 MB/s
-[ 400KB ] alternate read & seek one unit...         0.00823 MB/s
-[ 400KB ] alternate read & seek 1000 units...            10 MB/s
+[ 400KB ] seek forward one unit at a time...         0.0512 MB/s
+[ 400KB ] seek forward 1000 units at a time...           56 MB/s
+[ 400KB ] alternate read & seek one unit...          0.0374 MB/s
+[ 400KB ] alternate read & seek 1000 units...          36.5 MB/s
 
 ** Text input **
 
-[ 400KB ] read one unit at a time...                 0.0628 MB/s
-[ 400KB ] read 20 units at a time...                  0.907 MB/s
-[ 400KB ] read one line at a time...                   1.96 MB/s
-[ 400KB ] read 4096 units at a time...                 2.72 MB/s
-   warning: test above used only 76% CPU, result may be flawed!
+[ 400KB ] read one unit at a time...                  0.076 MB/s
+[ 400KB ] read 20 units at a time...                   1.47 MB/s
+[ 400KB ] read one line at a time...                   6.65 MB/s
+[ 400KB ] read 4096 units at a time...                 51.7 MB/s
 
-[  20KB ] read whole contents at once...               13.9 MB/s
-   warning: test above used only 82% CPU, result may be flawed!
-[ 400KB ] read whole contents at once...               16.1 MB/s
-[  10MB ] read whole contents at once...               14.3 MB/s
+[  20KB ] read whole contents at once...               71.5 MB/s
+[ 400KB ] read whole contents at once...                134 MB/s
+[  10MB ] read whole contents at once...                114 MB/s
 
-[ 400KB ] seek forward one unit at a time...         0.0242 MB/s
-[ 400KB ] seek forward 1000 units at a time...         24.2 MB/s
+[ 400KB ] seek forward one unit at a time...         0.0341 MB/s
+[ 400KB ] seek forward 1000 units at a time...         33.7 MB/s
 
 ** Binary append **
 
-[  20KB ] write one unit at a time...                0.0497 MB/s
-[ 400KB ] write 20 units at a time...                 0.442 MB/s
-   warning: test above used only 41% CPU, result may be flawed!
-[ 400KB ] write 4096 units at a time...                39.3 MB/s
-   warning: test above used only 55% CPU, result may be flawed!
-[  10MB ] write 1e6 units at a time...                 91.9 MB/s
-   warning: test above used only 82% CPU, result may be flawed!
+[  20KB ] write one unit at a time...                 0.081 MB/s
+[ 400KB ] write 20 units at a time...                  1.59 MB/s
+[ 400KB ] write 4096 units at a time...                 196 MB/s
+[  10MB ] write 1e6 units at a time...                 1099 MB/s
 
 ** Text append **
 
-[  20KB ] write one unit at a time...                0.0128 MB/s
-   warning: test above used only 38% CPU, result may be flawed!
-[ 400KB ] write 20 units at a time...                 0.204 MB/s
-   warning: test above used only 34% CPU, result may be flawed!
-[ 400KB ] write 4096 units at a time...                9.62 MB/s
-   warning: test above used only 74% CPU, result may be flawed!
-[  10MB ] write 1e6 units at a time...                   14 MB/s
+[  20KB ] write one unit at a time...                0.0545 MB/s
+[ 400KB ] write 20 units at a time...                  1.04 MB/s
+[ 400KB ] write 4096 units at a time...                45.5 MB/s
+[  10MB ] write 1e6 units at a time...                 61.2 MB/s
 
 ** Binary overwrite **
 
-[  20KB ] modify one unit at a time...               0.0164 MB/s
-   warning: test above used only 39% CPU, result may be flawed!
-[ 400KB ] modify 20 units at a time...                0.247 MB/s
-   warning: test above used only 32% CPU, result may be flawed!
-[ 400KB ] modify 4096 units at a time...               21.3 MB/s
-   warning: test above used only 32% CPU, result may be flawed!
+[  20KB ] modify one unit at a time...               0.0674 MB/s
+[ 400KB ] modify 20 units at a time...                 1.31 MB/s
+[ 400KB ] modify 4096 units at a time...                143 MB/s
 
-[ 400KB ] alternate write & seek one unit...         0.0135 MB/s
-   warning: test above used only 60% CPU, result may be flawed!
-[ 400KB ] alternate write & seek 1000 units...         19.1 MB/s
-[ 400KB ] alternate read & write one unit...        0.00688 MB/s
-[ 400KB ] alternate read & write 1000 units...         7.11 MB/s
-   warning: test above used only 83% CPU, result may be flawed!
+[ 400KB ] alternate write & seek one unit...         0.0319 MB/s
+[ 400KB ] alternate write & seek 1000 units...         30.5 MB/s
+[ 400KB ] alternate read & write one unit...         0.0216 MB/s
+[ 400KB ] alternate read & write 1000 units...         20.6 MB/s
 
 ** Text overwrite **
 
-[  20KB ] modify one unit at a time...               0.0246 MB/s
-   warning: test above used only 81% CPU, result may be flawed!
-[ 400KB ] modify 20 units at a time...                0.446 MB/s
-   warning: test above used only 81% CPU, result may be flawed!
-[ 400KB ] modify 4096 units at a time...               11.9 MB/s
+[  20KB ] modify one unit at a time...                0.047 MB/s
+[ 400KB ] modify 20 units at a time...                0.903 MB/s
+[ 400KB ] modify 4096 units at a time...               40.4 MB/s
+
+
 """
