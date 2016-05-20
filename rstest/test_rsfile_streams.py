@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 
 
 from rstest import _utilities
-from rstest import _workerProcess
+from rstest import _worker_process
 
 import sys
 import os
@@ -560,14 +560,14 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
 
 
     def testInheritance(self):
-        # # """Checks that handles are well inherited iff this creation option is set to True"""   
+        # # """Checks that handles are well inherited iff this creation option is set to True"""
 
         kargs = dict(path=TESTFN,
                      read=False,
                      write=True, append=True,
                      inheritable=True)
 
-        target = _workerProcess.inheritance_tester
+        target = _worker_process.inheritance_tester
 
         bools = [True, False]
         permutations = [(a, b, c) for a in bools for b in bools for c in bools if (a or b or c)]
@@ -600,13 +600,13 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
                     pre_args = ("python", "-m", "rstest._inheritance_tester") #.os.path.join(os.path.dirname(__file__), "_inheritance_tester.py"))
                     args = (str(read), str(write), str(append), str(kwargs.get("fileno", "-")), str(kwargs.get("handle", "-")))
 
-                    myfile.seek(0, os.SEEK_END) # to fulfill the expectations of the worker process 
+                    myfile.seek(0, os.SEEK_END) # to fulfill the expectations of the worker process
                     child = subprocess.Popen(pre_args + args, executable=executable, shell=False, close_fds=False)
                     retcode = child.wait()
                     self.assertEqual(retcode, EXPECTED_RETURN_CODE, "Spawned child returned %d instead of %d" % (retcode, EXPECTED_RETURN_CODE))
 
 
-                    myfile.seek(0, os.SEEK_END) # to fulfill the expectations of the worker process 
+                    myfile.seek(0, os.SEEK_END) # to fulfill the expectations of the worker process
 
                     if rsfile.FILE_IMPLEMENTATION == "win32":
                         cmdline = subprocess.list2cmdline(pre_args + args) # Important for space escaping, with the buggy win32 spawn implementation...
@@ -841,7 +841,7 @@ def test_main():
 
 if __name__ == '__main__':
     #test_original_io()
-    #run_unittest(TestMiscStreams) 
+    #run_unittest(TestMiscStreams)
 
 
     #_cleanup()

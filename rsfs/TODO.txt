@@ -1,4 +1,0 @@
-
-
-# warning - we must take care of file deletion on windows and linux !!! share_delete renaming etc.!! 
-avoid broken file waiting deletion
