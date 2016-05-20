@@ -4,6 +4,9 @@
 python setup.py sdist --formats=gztar,zip  bdist_wininst
  
 
+# Implementer la fonction SYNC dans rsFile ?? non, existe pas sous win32
+# mais http://stackoverflow.com/questions/85595/flush-disk-cache-from-windows-cli
+# et ca demande trop de privileges !!
 
 Add atfork to rsfile, to warn users
 
