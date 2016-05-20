@@ -3,15 +3,64 @@
 
 import sys
 import os
+import re
 import os.path
 import tempfile
 import subprocess
 import py_compile
 import contextlib
 import shutil
-import zipfile
+try:
+    import zipfile
+except ImportError:
+    # If Python is build without Unicode support, importing _io will
+    # fail, which, in turn, means that zipfile cannot be imported
+    # Most of this module can then still be used.
+    pass
+
+from test.test_support import strip_python_stderr
 
 # Executing the interpreter in a subprocess
+def _assert_python(expected_success, *args, **env_vars):
+    cmd_line = [sys.executable]
+    if not env_vars:
+        cmd_line.append('-E')
+    cmd_line.extend(args)
+    # Need to preserve the original environment, for in-place testing of
+    # shared library builds.
+    env = os.environ.copy()
+    env.update(env_vars)
+    p = subprocess.Popen(cmd_line, stdin=subprocess.PIPE,
+                         stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                         env=env)
+    try:
+        out, err = p.communicate()
+    finally:
+        subprocess._cleanup()
+        p.stdout.close()
+        p.stderr.close()
+    rc = p.returncode
+    err =  strip_python_stderr(err)
+    if (rc and expected_success) or (not rc and not expected_success):
+        raise AssertionError(
+            "Process return code is %d, "
+            "stderr follows:\n%s" % (rc, err.decode('ascii', 'ignore')))
+    return rc, out, err
+
+def assert_python_ok(*args, **env_vars):
+    """
+    Assert that running the interpreter with `args` and optional environment
+    variables `env_vars` is ok and return a (return code, stdout, stderr) tuple.
+    """
+    return _assert_python(True, *args, **env_vars)
+
+def assert_python_failure(*args, **env_vars):
+    """
+    Assert that running the interpreter with `args` and optional environment
+    variables `env_vars` fails and return a (return code, stdout, stderr) tuple.
+    """
+    return _assert_python(False, *args, **env_vars)
+
 def python_exit_code(*args):
     cmd_line = [sys.executable, '-E']
     cmd_line.extend(args)

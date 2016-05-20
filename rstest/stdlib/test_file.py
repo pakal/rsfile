@@ -30,7 +30,7 @@ class AutoFileTests(unittest.TestCase):
         # verify weak references
         p = proxy(self.f)
         p.write(b'teststring')
-        self.assertEquals(self.f.tell(), p.tell())
+        self.assertEqual(self.f.tell(), p.tell())
         self.f.close()
         self.f = None
         self.assertRaises(ReferenceError, getattr, p, 'tell')
@@ -49,7 +49,7 @@ class AutoFileTests(unittest.TestCase):
         a = array('b', b'x'*10)
         self.f = self.open(TESTFN, 'rb')
         n = self.f.readinto(a)
-        self.assertEquals(b'12', a.tostring()[:n])
+        self.assertEqual(b'12', a.tostring()[:n])
 
     def testReadinto_text(self):
         # verify readinto refuses text files
@@ -66,7 +66,7 @@ class AutoFileTests(unittest.TestCase):
         self.f.close()
         self.f = self.open(TESTFN, 'rb')
         buf = self.f.read()
-        self.assertEquals(buf, b'12')
+        self.assertEqual(buf, b'12')
 
     def testWritelinesIntegers(self):
         # verify writelines with integers
@@ -87,9 +87,9 @@ class AutoFileTests(unittest.TestCase):
 
     def testErrors(self):
         f = self.f
-        self.assertEquals(f.name, TESTFN)
-        self.assertTrue(not f.isatty())
-        self.assertTrue(not f.closed)
+        self.assertEqual(f.name, TESTFN)
+        self.assertFalse(f.isatty())
+        self.assertFalse(f.closed)
 
         if hasattr(f, "readinto"):
             self.assertRaises((IOError, TypeError), f.readinto, "")
@@ -124,12 +124,12 @@ class AutoFileTests(unittest.TestCase):
             self.assertRaises(ValueError, method, *args)
 
         # file is closed, __exit__ shouldn't do anything
-        self.assertEquals(self.f.__exit__(None, None, None), None)
+        self.assertEqual(self.f.__exit__(None, None, None), None)
         # it must also return None if an exception was given
         try:
             1 // 0
         except:
-            self.assertEquals(self.f.__exit__(*sys.exc_info()), None)
+            self.assertEqual(self.f.__exit__(*sys.exc_info()), None)
 
     def testReadWhenWriting(self):
         self.assertRaises(IOError, self.f.read)
@@ -153,16 +153,6 @@ class OtherFileTests(unittest.TestCase):
             else:
                 f.close()
                 self.fail('%r is an invalid file mode' % mode)
-
-    def testStdin(self):
-        # This causes the interpreter to exit on OSF1 v5.1.
-        if sys.platform != 'osf1V5':
-            self.assertRaises((IOError, ValueError), sys.stdin.seek, -1)
-        else:
-            print((
-                '  Skipping sys.stdin.seek(-1), it may crash the interpreter.'
-                ' Test manually.'), file=sys.__stdout__)
-        self.assertRaises((IOError, ValueError), sys.stdin.truncate)
 
     def testBadModeArgument(self):
         # verify that we get a sensible error message for bad mode argument
@@ -195,7 +185,7 @@ class OtherFileTests(unittest.TestCase):
                 f.close()
             except IOError as msg:
                 self.fail('error setting buffer size %d: %s' % (s, str(msg)))
-            self.assertEquals(d, s)
+            self.assertEqual(d, s)
 
     def testTruncateOnWindows(self):
         # SF bug <http://www.python.org/sf/801631>
@@ -310,6 +300,7 @@ class OtherFileTests(unittest.TestCase):
                 self.fail("readlines() after next() with empty buffer "
                           "failed. Got %r, expected %r" % (line, testline))
             # Reading after iteration hit EOF shouldn't hurt either
+            f.close()
             f = self.open(TESTFN, 'rb')
             try:
                 for line in f:
