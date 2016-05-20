@@ -163,26 +163,28 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         self._readable = read
         self._writable = write # 'append' enforced the value of 'write' to True, just above
         self._append = append
+        self._must_create = must_create
+        self._must_not_create = must_not_create
 
         self._synchronized = synchronized
         self._inheritable = inheritable
 
 
-        self._name = None # 'name' : descriptor exposed just for retrocompatibility !!!
+        name = None # 'name' : descriptor exposed just for retrocompatibility !!!
         if path is not None:
-            self._name = path
+            name = path
             self._origin = "path"
         elif fileno is not None:
             if int(fileno) < 0:
-                raise ValueError("A fileno to be wrapped can't be negative.")
-            self._name = fileno
+                raise TypeError("A fileno to be wrapped can't be negative.")
+            name = fileno
             self._origin = "fileno"
         elif handle is not None:
             if int(handle) < 0:
-                raise ValueError("A handle to be wrapped can't be negative.")
-            self._name = handle
+                raise TypeError("A handle to be wrapped can't be negative.")
+            name = handle
             self._origin = "handle"
-
+        self.name = name  # do not use self._name, else unit-tests corner cases don't work anymore...
 
         """ Aborted - don't mix stream and filesystem methods !!
         self._path = None
@@ -202,10 +204,13 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         self._lock_registry_inode = None
         self._lock_registry_descriptor = None
 
-        self._inner_create_streams(**kwargs)
+        try:
+            self._inner_create_streams(**kwargs)
+        except OverflowError as e:
+            raise TypeError(e)  # probably a too big filedescriptor number
 
         if append:
-            self.seek(0, os.SEEK_END) # required by unit tests...      
+            self.seek(0, os.SEEK_END) # required by unit tests...
 
 
     def close(self):
@@ -258,15 +263,28 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
     @property
     def mode(self):  # TODO - improve this
         """
+        TODO CHANGED UPDATED
         At the moment, this property behaves like its sibling from the stdlib io module, 
         i.e it computes and returns one of "rb", "wb" and "rb+" for binary streams, 
         and the actual opening mode for text streams. This might change in the future.
         """
         # we mimic the _fileio.c implementation, that's weird but well...
-        if self.readable():
-            return "rb+" if self.writable() else "rb"
+        if self._append:
+            if self.readable():
+                return "ab+"
+            else:
+                return "ab"
+        elif self.writable():
+            if self.readable():
+                if self._must_not_create:
+                    return "rb+"
+                else:
+                    return "rb+"  #FIXME - py2.7 returns this instead of wb+ ...
+            else:
+                return "wb"
         else:
-            return "wb"
+            assert self.readable()
+            return "rb"
 
     @property
     def name(self):
@@ -276,6 +294,9 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         To interpret this attribute, refer to the :attr:`origin` property.
         """
         return self._name
+    @name.setter
+    def name(self, value):
+        self._name = value
 
     @property
     def origin(self):

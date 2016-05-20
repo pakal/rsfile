@@ -59,7 +59,7 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
     
     In addition to standard modes as described in the documentation of :func:`io.open`,
     a set of advanced modes is available, as capital-case flags. These advanced modes
-    should be combinated in the order listed below, for ease of reading. Standard and advanced 
+    should be combined in the order listed below, for ease of reading. Standard and advanced
     modes may not be mixed together.
     
     ========= ===============================================================
@@ -209,8 +209,6 @@ def parse_standard_args(name, mode, fileno, handle, closefd): # warning - name c
     appending_flag = "a" in modes
     updating_flag = "+" in modes
 
-
-
     truncate = writing_flag
     binary = "b" in modes
     text = "t" in modes
@@ -228,7 +226,7 @@ def parse_standard_args(name, mode, fileno, handle, closefd): # warning - name c
         raise ValueError("must have exactly one of read/write/append mode")
 
     # real semantic
-    if isinstance(name, int):
+    if isinstance(name, (int, long)):
         if fileno is not None:
             raise ValueError("Impossible to provide a file descriptor via both name and fileno arguments")
         fileno = name

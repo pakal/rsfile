@@ -105,7 +105,7 @@ class _text_forwarder_mixin(object):
         self._reset_buffers()
         return self.buffer.unlock_file(*args, **kwargs)
 
-    def close(self):
+    def __USELESS__close(self):
         if not self.closed:
             self.flush() # we do NOT swallow exceptions !
             self.buffer.close()

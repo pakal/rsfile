@@ -108,7 +108,6 @@ def test_original_io():
 
     test_io.test_main()
 
-    return
     test_fileio._FileIO = rsfile.io_module.FileIO
     test_fileio.OtherFileTests.testWarnings = dummyfunc
     test_fileio.OtherFileTests.testInvalidFd = dummyfunc # different exception types...
@@ -122,7 +121,6 @@ def test_original_io():
         f.write(b'a') # in py27 trunk "binary" was lacking...
     test_fileio.AutoFileTests.testErrnoOnClosedWrite = bugfixed
     test_fileio.test_main()
-
 
     test_memoryio.CStringIOPickleTest = dummyklass
     test_memoryio.CBytesIOTest = dummyklass
@@ -659,7 +657,7 @@ class TestMiscStreams(unittest.TestCase):
 
             stream.flush = ioerror
             self.assertRaises(IOError, stream.close)
-            self.assertEqual(False, stream.closed) # stream has NOT been closed
+            self.assertEqual(True, stream.closed) # stream HAS been closed
 
         assertCloseOK(io.open(TESTFN, "RB", buffering=100))
         assertCloseOK(io.open(TESTFN, "WB", buffering=100))
@@ -819,7 +817,7 @@ def test_main():
     # Historically, these tests have been sloppy about removing TESTFN.
     # So get rid of it no matter what.
     try:
-        #test_support.run_unittest(TestRawFileViaWrapper, TestRawFileSpecialFeatures, TestMiscStreams) # TODO TODO PUT BACK PAKAL !!!
+        test_support.run_unittest(TestRawFileViaWrapper, TestRawFileSpecialFeatures, TestMiscStreams)
         test_original_io()
     finally:
         if os.path.exists(TESTFN):
