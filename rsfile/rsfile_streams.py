@@ -49,10 +49,13 @@ class _buffer_forwarder_mixin(object):
         self._reset_buffers()
         return self.raw.unlock_file(*args, **kwargs)
 
-    def close(self):
+    def ___USELESS__close(self):
         if not self.closed:
-            self.flush() # we do NOT swallow exceptions !
-            self.raw.close()
+            try:
+                # may raise BlockingIOError or BrokenPipeError etc
+                self.flush()
+            finally:
+                self.raw.close()
 
     def __repr__(self):
         clsname = self.__class__.__name__

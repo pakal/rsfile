@@ -343,9 +343,12 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
             data = self.read(defs.DEFAULT_BUFFER_SIZE)
             if not data:
                 break
-            chunks. append(data)
-        return b"".join(chunks)
-
+            chunks.append(data)
+        if chunks:
+            return b"".join(chunks)
+        else:
+            # b'' or None
+            return data
 
     def read(self, n= -1):
         """Reads and returns up to n bytes (a negative value for n means *infinity*).

@@ -100,7 +100,7 @@ class RSIOBase(IO_BASE):
     def seek(self, pos, whence=0):
         """Changes stream position.
 
-        Changes the stream position to byte offset ``pos`` . This offset is
+        Change the stream position to byte offset pos. Argument pos is
         interpreted relative to the position indicated by whence.  Values
         for whence are:
 
@@ -187,8 +187,10 @@ class RSIOBase(IO_BASE):
         """
         
         if not self.__closed:
-            self.flush()
-            self.__closed = True
+            try:
+                self.flush()
+            finally:
+                self.__closed = True
 
 
     def __del__(self):
@@ -1179,4 +1181,3 @@ class RSTextIOWrapper(io.TextIOWrapper, RSIOBase):
             self.buffer.close()
            
 '''
-           

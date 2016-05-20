@@ -132,67 +132,66 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
     raw_kwargs['permissions'] = permissions
 
     raw = RSFileIO(**raw_kwargs)
+    result = raw
+    try:
+        if extended_kwargs["truncate"] and not raw.writable():
+            raise ValueError("Can't truncate file opened in read-only mode")
 
-    if extended_kwargs["truncate"] and not raw.writable():
-        raise ValueError("Can't truncate file opened in read-only mode")
+        if locking:
+            #print "we enforce file locking with %s - %s" %(shared, timeout)
+            raw.lock_file(timeout=timeout)
 
-    if locking:
-        #print "we enforce file locking with %s - %s" %(shared, timeout)            
-        raw.lock_file(timeout=timeout)
+        if extended_kwargs["truncate"]:
+                raw.truncate(0)
 
-    if extended_kwargs["truncate"]:
-            raw.truncate(0)
+        if buffering is None:
+            buffering = -1
+        line_buffering = False
+        if buffering == 1 or buffering < 0 and raw.isatty():
+            buffering = -1
+            line_buffering = True
+        if buffering < 0:
+            buffering = defs.DEFAULT_BUFFER_SIZE
+            try:
+                bs = os.fstat(raw.fileno()).st_blksize # TODO - TO BE IMPROVED, on win32 it uselessly puts to work the libc compatibility layer !
+            except (os.error, AttributeError):
+                pass
+            else:
+                if bs > 1:
+                    buffering = bs
+        if buffering < 0:
+            raise ValueError("invalid buffering size")
+        if buffering == 0:
+            if extended_kwargs["binary"]:
+                if thread_safe:
+                    result = RSThreadSafeWrapper(raw, mutex=mutex, interprocess=raw_kwargs["inheritable"])
+                return result
+            raise ValueError("can't have unbuffered text I/O")
 
-    if buffering is None:
-        buffering = -1
-    line_buffering = False
-    if buffering == 1 or buffering < 0 and raw.isatty():
-        buffering = -1
-        line_buffering = True
-    if buffering < 0:
-        buffering = defs.DEFAULT_BUFFER_SIZE
-        try:
-            bs = os.fstat(raw.fileno()).st_blksize # TODO - TO BE IMPROVED, on win32 it uselessly puts to work the libc compatibility layer !
-        except (os.error, AttributeError):
-            pass
+        if raw.readable() and raw.writable():
+            buffer = RSBufferedRandom(raw, buffering)
+        elif raw.writable():
+            buffer = RSBufferedWriter(raw, buffering)
+        elif raw.readable():
+            buffer = RSBufferedReader(raw, buffering)
         else:
-            if bs > 1:
-                buffering = bs
-    if buffering < 0:
-        raise ValueError("invalid buffering size")
-    if buffering == 0:
+            raise ValueError("unknown mode: %r" % mode)
+        result = buffer
         if extended_kwargs["binary"]:
             if thread_safe:
-                return RSThreadSafeWrapper(raw, mutex=mutex, interprocess=raw_kwargs["inheritable"])
-            else:
-                return raw
-        raise ValueError("can't have unbuffered text I/O")
+                result = RSThreadSafeWrapper(buffer, mutex=mutex, interprocess=raw_kwargs["inheritable"])
+            return result
 
-    if raw.readable() and raw.writable():
-        buffer = RSBufferedRandom(raw, buffering)
-    elif raw.writable():
-        buffer = RSBufferedWriter(raw, buffering)
-    elif raw.readable():
-        buffer = RSBufferedReader(raw, buffering)
-    else:
-        raise ValueError("unknown mode: %r" % mode)
+        text = RSTextIOWrapper(buffer, encoding, errors, newline, line_buffering)
+        text.mode = mode # TODO - shouldn't we change that weird artefact of the stdlib ?
+        result = text
 
-    if extended_kwargs["binary"]:
         if thread_safe:
-            return RSThreadSafeWrapper(buffer, mutex=mutex, interprocess=raw_kwargs["inheritable"])
-        else:
-            return buffer
-
-    text = RSTextIOWrapper(buffer, encoding, errors, newline, line_buffering)
-    text.mode = mode # TODO - shouldn't we change that weird artefact of the stdlib ?
-
-    if thread_safe:
-        return RSThreadSafeWrapper(text, mutex=mutex, interprocess=raw_kwargs["inheritable"])
-    else:
-        return text
-
-
-
+            result = RSThreadSafeWrapper(text, mutex=mutex, interprocess=raw_kwargs["inheritable"])
+        return result
+    except:
+        result.close()
+        raise
 
 
 
