@@ -11,6 +11,8 @@ from rsfile_streams import *
 from rsfile_factories import *
 
 
+BUILTIN_OPEN_FUNC_REPLACEMENT = functools.partial(rsopen, handle=None, locking=False, timeout=0, thread_safe=False, mutex=None, permissions=0777)
+
 
 def monkey_patch_io_module(module=None):
     """
@@ -24,10 +26,6 @@ def monkey_patch_io_module(module=None):
     if module is None:
         import io
         module = io
-
-    if not hasattr(module, "UnsupportedOperation"):
-        module.UnsupportedOperation = io_module.UnsupportedOperation # old io hasn't it
-
 
     # we replace the most basic file io type by a backward-compatible but enhanced version
     class RSFileIORawWrapper(RSFileIO):
@@ -52,7 +50,7 @@ def monkey_patch_io_module(module=None):
     module.BufferedRandom = RSBufferedRandom
     module.TextIOWrapper = RSTextIOWrapper
 
-    new_open = functools.partial(rsopen, handle=None, locking=False, timeout=0, thread_safe=False, mutex=None, permissions=0777)
+    new_open = BUILTIN_OPEN_FUNC_REPLACEMENT
     module.open = new_open
 
 
@@ -62,7 +60,7 @@ def monkey_patch_open_builtin():
     thread safety on stream opening), but which returns rsfile streams on invocation.
     """
 
-    new_open = functools.partial(rsopen, handle=None, locking=False, timeout=0, thread_safe=False, mutex=None, permissions=0777)
+    new_open = BUILTIN_OPEN_FUNC_REPLACEMENT
 
     try:
         import __builtin__

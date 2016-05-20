@@ -105,12 +105,6 @@ def patch_test_supports():
                 self.fail(standardMsg)
         TestCase.assertIsNone = assertIsNone
 
-    try:
-        from test import script_helper
-    except ImportError:
-        import rstest.stdlib.script_helper as script_helper
-        sys.modules["test.script_helper"] = script_helper
-
 
     from unittest import TestCase
     if not hasattr(TestCase, "assertIsInstance"):
