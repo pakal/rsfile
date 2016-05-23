@@ -201,19 +201,30 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
 
     @_unix_error_converter
     def _inner_read(self, n):
-        return unix.read(self._fileno, n)
-
+        try:
+            return unix.read(self._fileno, n)
+        except OSError as e:
+            #print ("<<< inner read", e.__class__)
+            if e.args[0] == errno.EAGAIN:
+                return None
+            raise
     '''      
     @_unix_error_converter
     def _inner_readinto(self, buffer):
         return unix.readinto(self._fileno, buffer, len(buffer))
     '''
 
+
     @_unix_error_converter
     def _inner_write(self, bytes):
         # 'append' is already handled at file opening
-        return unix.write(self._fileno, bytes)
-
+        try:
+            return unix.write(self._fileno, bytes)
+        except OSError as e:
+            #print(">>>>>>>>>_inner_write", e.__class__)
+            if e.args[0] == errno.EAGAIN:
+                return None
+            raise
 
     @_unix_error_converter
     def _inner_file_lock(self, length, abs_offset, blocking, shared):

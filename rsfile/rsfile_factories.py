@@ -9,8 +9,7 @@ from rsfile_streams import *
 
 
 def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newline=None, fileno=None, handle=None, closefd=True,
-           locking=True, timeout=None, thread_safe=True, mutex=None, permissions=0777,
-           original_opener=defs.original_io_open):  # by default, we fallback to C-backed version
+           locking=True, timeout=None, thread_safe=True, mutex=None, permissions=0777):
 
     """
     This function is a factory similar to :func:`io.open`, which returns chains of I/O streams targeting files, with
@@ -97,16 +96,6 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
     """
 
     # TODO - PYCONTRACT !!! check that no mutex if not thread-safe
-
-    if isinstance(name, (int, long)):
-        # we bypass Rsfile for file descriptors that are pipes, devices, directories, symlinks etc.
-        st_mode = os.fstat(name).st_mode  # might raise
-        is_regular = stat.S_ISREG(st_mode)
-        if not is_regular:
-            #print("WE OPEN ORIGINAL FILE WITH", name, mode, buffering, encoding, errors, newline, closefd)
-            original_kwargs = dict(mode=mode, buffering=(buffering if buffering is not None else -1),
-                                   encoding=encoding, errors=errors, newline=newline, closefd=closefd)
-            return original_opener(name, **original_kwargs)
 
     # Quick type checking
     if name and not isinstance(name, (basestring, int, long)):

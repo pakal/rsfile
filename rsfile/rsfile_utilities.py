@@ -49,8 +49,7 @@ def monkey_patch_io_module(module=None):
     module.BufferedRandom = RSBufferedRandom
     module.TextIOWrapper = RSTextIOWrapper
 
-    new_open = functools.partial(BUILTIN_OPEN_FUNC_REPLACEMENT,
-                                 original_opener=module.open)
+    new_open = BUILTIN_OPEN_FUNC_REPLACEMENT
     module.open = new_open
 
 

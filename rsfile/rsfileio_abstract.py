@@ -3,9 +3,12 @@ from __future__ import with_statement
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import sys, os, time, threading, multiprocessing, collections, functools
+import sys, os, time, threading, multiprocessing, collections, functools, stat
 from array import array
 from contextlib import contextmanager
+
+import errno
+
 import rsfile_definitions as defs
 from rsfile_registries import IntraProcessLockRegistry, _default_rsfile_options
 
@@ -158,8 +161,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         self._multi_syscall_lock = threading.Lock() # Pakal - shouldn't it be removed after full locking enforcement ????
 
 
-        # variables to determine future write/read operations 
-        self._seekable = True
+        # variables to determine future write/read operations
         self._readable = read
         self._writable = write # 'append' enforced the value of 'write' to True, just above
         self._append = append
@@ -209,8 +211,18 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         except OverflowError as e:
             raise TypeError(e)  # probably a too big filedescriptor number
 
+        seekable = True
+        if isinstance(self._fileno, (int, long)):
+            # we bypass Rsfile for file descriptors that are pipes, devices, directories, symlinks etc.
+            st_mode = os.fstat(self._fileno).st_mode  # might raise
+            is_regular = stat.S_ISREG(st_mode)
+            seekable = is_regular
+        else:
+            pass  # if we only have a handle, we're on windows, so no such pipe
+        self._seekable = seekable
+
         if append:
-            self.seek(0, os.SEEK_END) # required by unit tests...
+            self.seek(0, os.SEEK_END) # required by unit tests, might raise if non-seekable file...
 
 
     def close(self):
@@ -248,6 +260,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
     def seekable(self):
         self._checkClosed()
         return self._seekable
+
     def readable(self):
         self._checkClosed()
         return self._readable
@@ -432,14 +445,11 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         res = self._inner_write(buffer)
         #assert res == len(buffer), str(res, len(buffer)) # NOOO - we might have less than that actually if disk full !
 
-        if not res and len(buffer):
-            # weird, no error detected but no bytes written...
-            raise IOError("Unknown error, no bytes could be written to the device.")
-
-        if res < 0 or res > len(buffer):
+        assert res != 0, "Abnormal state, 0 bytes written to raw stream, write() should return None instead, in this case"
+        if res is not None and (res < 0 or res > len(buffer)):
             raise RuntimeError("Madness - %d bytes written instead of max %d for buffer '%r'" % (res, len(buffer), buffer))
 
-        return res
+        return res  # might be None (nonblocking IO)
 
 
     def truncate(self, size=None, zero_fill=True):
@@ -480,7 +490,8 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
                     for _ in range(q):
                         padding = b'\0' * defs.DEFAULT_BUFFER_SIZE
                         self._inner_write(padding)
-                    self._inner_write(b'\0' * r)
+                    count = self._inner_write(b'\0' * r)
+                    assert count == r, (count, r)  # no blocking writes for files, theoretically...
                     self._inner_seek(old_pos) #important
             return self.size()
 
