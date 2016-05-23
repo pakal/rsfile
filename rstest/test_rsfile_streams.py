@@ -50,6 +50,7 @@ def test_original_io():
 
     import _io
 
+    # to have these stdlib test suites on Ubuntu, install packages like "libpython2.7-testsuite"
     from test import test_io, test_memoryio, test_file, test_bufio, test_fileio, test_largefile
     from test.test_largefile import LargeFileTest # excludes py26
 
@@ -817,7 +818,7 @@ def test_main():
     # Historically, these tests have been sloppy about removing TESTFN.
     # So get rid of it no matter what.
     try:
-        test_support.run_unittest(TestRawFileViaWrapper, TestRawFileSpecialFeatures, TestMiscStreams)
+        ########test_support.run_unittest(TestRawFileViaWrapper, TestRawFileSpecialFeatures, TestMiscStreams)
         test_original_io()
     finally:
         if os.path.exists(TESTFN):
