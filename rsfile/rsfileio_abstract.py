@@ -460,9 +460,12 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
                 raise IOError(22, "Invalid argument : truncation size must be None or positive integer, not '%s'" % size)
 
             current_size = self.size()
-            if size < current_size:
+            if size == current_size:
+                pass  # nothing to be done
+            elif size < current_size:
                 self._inner_reduce(size)
             else:
+                assert size > current_size, (size, current_size)
                 self._inner_extend(size, zero_fill)
 
                 current_size = self.size()
