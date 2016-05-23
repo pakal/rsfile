@@ -208,18 +208,21 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
 
         try:
             self._inner_create_streams(**kwargs)
+
+            seekable = True
+            if isinstance(self._fileno, (int, long)):
+                # we bypass Rsfile for file descriptors that are pipes, devices, directories, symlinks etc.
+                st_mode = os.fstat(self._fileno).st_mode  # might raise
+                if stat.S_ISDIR(st_mode):
+                    raise IOError(errno.EISDIR, "Can't wrap a directory in FileIO")
+                is_regular = stat.S_ISREG(st_mode)
+                seekable = is_regular
+            else:
+                pass  # if we only have a handle, we're on windows, so no such pipe
+            self._seekable = seekable
+
         except OverflowError as e:
             raise TypeError(e)  # probably a too big filedescriptor number
-
-        seekable = True
-        if isinstance(self._fileno, (int, long)):
-            # we bypass Rsfile for file descriptors that are pipes, devices, directories, symlinks etc.
-            st_mode = os.fstat(self._fileno).st_mode  # might raise
-            is_regular = stat.S_ISREG(st_mode)
-            seekable = is_regular
-        else:
-            pass  # if we only have a handle, we're on windows, so no such pipe
-        self._seekable = seekable
 
         if append:
             self.seek(0, os.SEEK_END) # required by unit tests, might raise if non-seekable file...
