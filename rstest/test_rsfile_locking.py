@@ -461,7 +461,7 @@ class TestSafeFile(unittest.TestCase):
 def test_main():
     try:
         unittest.main()
-    except BaseException, e: # some kind of SystemExit exception gets raised by unittest.main()
+    except Exception, e: # some kind of SystemExit exception gets raised by unittest.main()
         print("CAUGHT EXCEPTION ", repr(e))
         print("-----------------------------------------------------------------------")
 

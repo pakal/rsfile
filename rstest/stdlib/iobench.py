@@ -372,6 +372,7 @@ def prepare_files():
             f.write(os.urandom(size))
     # Text files
     chunk = []
+    #print(">> Opening %s to look for chunk markers" % __file__)
     with text_open(__file__, "rU", encoding='utf8') as f:
         for line in f:
             if line.startswith("# <iobench text chunk marker>"):

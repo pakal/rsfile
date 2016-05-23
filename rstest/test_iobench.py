@@ -1,8 +1,5 @@
 """
-Run iobench againts rsfile drop-in replacements.
-
-In case you have an error like below, remove any pyc files, and run python with "-B" option, because iobench.py tries to read its own source file.
-UnicodeDecodeError: 'utf8' codec can't decode byte 0xf3 in position 1: invalid continuation byte
+Run iobench against rsfile drop-in replacements.
 
 """
 import sys
@@ -10,6 +7,12 @@ import rsfile
 from rstest.stdlib import iobench
 assert iobench.text_open, vars(iobench)
 
+
+"""
+# HACK to ignore iobench.pyc file automatically, so that when iobench tries to access his "__file__", it works.
+This should solve "UnicodeDecodeError: 'utf8' codec can't decode byte 0xf3 in position 1: invalid continuation byte" error when running iobench.
+"""
+iobench.__file__ = iobench.__file__.rstrip("c")
 
 def _launch_iobench_tests():
     iobench.prepare_files()
@@ -184,7 +187,7 @@ Text unit = one character (utf8-decoded)
 
 -----------
 
->>> benchmarking rsfile module <<<
+>>> benchmarking rsfile (pywin32) module <<<
 Preparing files...
 Binary unit = one byte
 Text unit = one character (utf8-decoded)
