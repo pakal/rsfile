@@ -9,7 +9,7 @@ from rsfile_streams import *
 
 
 def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newline=None, fileno=None, handle=None, closefd=True,
-           locking=True, timeout=None, thread_safe=True, mutex=None, permissions=0777):
+           locking=True, timeout=None, thread_safe=False, mutex=None, permissions=0777):
 
     """
     This function is a factory similar to :func:`io.open`, which returns chains of I/O streams targeting files, with
@@ -45,7 +45,8 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
 
     If ``thread_safe`` is True, the chain of streams returned by the function will be wrapped into 
     a thread-safe interface ; in this case, if ``mutex`` is provided, it is used as the concurrency lock, 
-    else a new lock is created (a multiprocessing RLock() if the stream is inheritable, else a threading RLock(). 
+    else a new lock is created (a multiprocessing RLock() if the stream is inheritable, else a threading RLock().
+     Note that thread-safety prevents the reentrancy of file methods (eg. if you write to it from a signal handler).
 
     The ``permissions`` argument will simply be forwarded to the lowest level stream, 
     so as to be applied in case a file creation occurs (note : decimal '511' corresponds to octal '0777', i.e whole permissions).
