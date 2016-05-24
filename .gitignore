@@ -4,6 +4,7 @@ ___*
 *.pyc
 *.pyo
 
+MYTODO.txt
 _build/
 build/*
 dist/*
