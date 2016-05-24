@@ -8,7 +8,7 @@ import os, sys
 import unittest, tempfile, threading, multiprocessing, Queue , random, string, time, traceback
 
 from rsfile.rstest import _worker_process
-
+from rsfile.rstest import _utilities
 
 """ WARNING - HEAVY monkey-patching """
 
@@ -458,22 +458,26 @@ class TestSafeFile(unittest.TestCase):
         self._test_whence_and_timeout(ThreadWithExitCode, self.multithreading_lock, Queue.Queue, multiprocess=False)
 
 
-def test_main():
-    try:
-        unittest.main()
-    except Exception as e: # some kind of SystemExit exception gets raised by unittest.main()
-        print("CAUGHT EXCEPTION ", repr(e))
-        print("-----------------------------------------------------------------------")
 
+
+
+def test_main():
+
+    def _launch_test_on_single_backend():
+        try:
+            unittest.main()
+        except Exception as e: # some kind of SystemExit exception gets raised by unittest.main()
+            raise
+            #print("CAUGHT EXCEPTION ", repr(e))
+            #print("-----------------------------------------------------------------------")
+
+    backends = _utilities.launch_rsfile_tests_on_backends(_launch_test_on_single_backend)
+    print("** RSFILE_LOCKING Test Suite has been run on backends %s **" % backends)
 
 if __name__ == '__main__':
+    test_main()
 
-    from rsfile.rstest import _utilities
 
-    backends = _utilities.launch_rsfile_tests_on_backends(test_main)
 
-    print ("** RSFILE_LOCKING Test Suite has been run on backends %s **" % backends)
 
-    #suite = unittest.defaultTestLoader.loadTestsFromName("__main__.TestSafeFile.test_intra_process_locking")
-    #unittest.TextTestRunner(verbosity=2).run(suite)
 

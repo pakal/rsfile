@@ -559,7 +559,6 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
 
     def testInheritance(self):
         # # """Checks that handles are well inherited iff this creation option is set to True"""
-
         kargs = dict(path=TESTFN,
                      read=False,
                      write=True, append=True,
@@ -823,32 +822,30 @@ class TestMiscStreams(unittest.TestCase):
 
 
 def test_main():
-    # Historically, these tests have been sloppy about removing TESTFN.
-    # So get rid of it no matter what.
-    try:
-        test_support.run_unittest(TestRawFileViaWrapper, TestRawFileSpecialFeatures, TestMiscStreams)
-        test_original_io()
-    finally:
-        if os.path.exists(TESTFN):
-            try:
-                os.unlink(TESTFN)
-            except OSError:
-                pass
+    def _launch_test_on_single_backend():
+        # Historically, these tests have been sloppy about removing TESTFN.
+        # So get rid of it no matter what.
+        try:
+            test_support.run_unittest(TestRawFileViaWrapper, TestRawFileSpecialFeatures, TestMiscStreams)
+            test_original_io()
+        finally:
+            if os.path.exists(TESTFN):
+                try:
+                    os.unlink(TESTFN)
+                except OSError:
+                    pass
 
+    backends = _utilities.launch_rsfile_tests_on_backends(_launch_test_on_single_backend)
+    print("** RSFILE_STREAMS Test Suite has been run on backends %s **" % backends)
 
 
 if __name__ == '__main__':
+    test_main()
+
+    ##_cleanup()
     #test_original_io()
     #run_unittest(TestMiscStreams)
-
-
-    #_cleanup()
     #TestMiscStreams("testMethodForwarding").testMethodForwarding()
-    #print ("===OVER===")
-
-
-    backends = _utilities.launch_rsfile_tests_on_backends(test_main)
-    print ("** RSFILEIO Test Suite has been run on backends %s **" % backends)
 
 
 

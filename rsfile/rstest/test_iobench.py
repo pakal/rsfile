@@ -5,48 +5,51 @@ Run iobench against rsfile drop-in replacements.
 import sys
 import rsfile
 from rsfile.rstest.stdlib import iobench
-assert iobench.text_open, vars(iobench)
+
+def launch_benchmark():
+
+    # HACK to ignore iobench.pyc file automatically, so that when iobench tries to access his "__file__", it works.
+    # This should solve "UnicodeDecodeError: 'utf8' codec can't decode byte 0xf3 in position 1: invalid continuation byte" error when running iobench.
+    iobench.__file__ = iobench.__file__.rstrip("c")
+    assert iobench.text_open, vars(iobench)
+
+    def _launch_iobench_tests():
+        iobench.prepare_files()
+        iobench.run_all_tests("rwtb")
+
+    if True:
+        import io
+        print ">>> benchmarking stdlib io module on python %s: module %r <<<" % (sys.version_info, io)
+
+        iobench.open = io.open
+        iobench.text_open = io.open
+        _launch_iobench_tests()
+
+        print "\n-----------\n"
+
+    if True:
+        import _pyio
+        print ">>> benchmarking stdlib pyio module on python %s: module %r <<<" % (sys.version_info, _pyio)
+
+        iobench.open = _pyio.open
+        iobench.text_open = _pyio.open
+        _launch_iobench_tests()
+
+        print "\n-----------\n"
+
+    if True:
+        print ">>> benchmarking rsfile module <<<"
+
+        iobench.open = rsfile.rsopen
+        iobench.text_open = rsfile.rsopen
+        _launch_iobench_tests()
+
+        print "\n-----------\n"
 
 
-"""
-# HACK to ignore iobench.pyc file automatically, so that when iobench tries to access his "__file__", it works.
-This should solve "UnicodeDecodeError: 'utf8' codec can't decode byte 0xf3 in position 1: invalid continuation byte" error when running iobench.
-"""
-iobench.__file__ = iobench.__file__.rstrip("c")
+if __name__ == '__main__':
+    launch_benchmark()
 
-def _launch_iobench_tests():
-    iobench.prepare_files()
-    iobench.run_all_tests("rwtb")
-
-
-if True:
-    import io
-    print ">>> benchmarking stdlib io module on python %s: module %r <<<" % (sys.version_info, io)
-
-    iobench.open = io.open
-    iobench.text_open = io.open
-    _launch_iobench_tests()
-
-    print "\n-----------\n"
-
-if True:
-    import _pyio
-    print ">>> benchmarking stdlib pyio module on python %s: module %r <<<" % (sys.version_info, _pyio)
-
-    iobench.open = _pyio.open
-    iobench.text_open = _pyio.open
-    _launch_iobench_tests()
-
-    print "\n-----------\n"
-
-if True:
-    print ">>> benchmarking rsfile module <<<"
-
-    iobench.open = rsfile.rsopen
-    iobench.text_open = rsfile.rsopen
-    _launch_iobench_tests()
-
-    print "\n-----------\n"
 
 
 """ # BACKUP OF LATEST BENCHMARK ITERATION #
