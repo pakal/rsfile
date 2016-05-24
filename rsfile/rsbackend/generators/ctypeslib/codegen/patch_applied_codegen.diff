@@ -1,0 +1,167 @@
+Index: codegenerator.py
+===================================================================
+--- codegenerator.py	(revision 71434)
++++ codegenerator.py	(working copy)
+@@ -61,6 +61,9 @@
+     "void": "None",
+ }
+ 
++if not hasattr(ctypes, "c_longdouble"):
++    ctypes_names['long double'] = 'c_double' # only since python2.6
++
+ ################
+ 
+ def storage(t):
+@@ -276,6 +279,7 @@
+                  searched_dlls=None,
+                  preloaded_dlls=[],
+                  generate_docstrings=False):
++        self.variables = []
+         self.output = output
+         self.stream = StringIO.StringIO()
+         self.imports = StringIO.StringIO()
+@@ -468,16 +472,31 @@
+     def Variable(self, tp):
+         self._variables += 1
+         dllname = self.find_dllname(tp)
++
++        # avoid conflict varialbe names
++        name = tp.name
++        if name in self.names:
++            if tp.typ not in ctypes_names:
++                name += 'obj'
++            n = 1
++            while name in self.names:
++                name = "%s%d" % (name, n)
++
+         if dllname:
++            # not enough, we could have:
++            #    type2 = type1
++            #    var = (type2)obj
++            # if type1._fields_ is defined after var,
++            # we will in trouble.
+             self.generate(tp.typ)
+             # calling convention does not matter for in_dll...
+             libname = self.get_sharedlib(dllname, "cdecl")
+             print >> self.stream, \
+-                  "%s = (%s).in_dll(%s, '%s')" % (tp.name,
++                  "%s = (%s).in_dll(%s, '%s')" % (name,
+                                                   self.type_name(tp.typ),
+                                                   libname,
+                                                   tp.name)
+-            self.names.add(tp.name)
++            self.names.add(name)
+             # wtypes.h contains IID_IProcessInitControl, for example
+             return
+ 
+@@ -496,11 +515,11 @@
+ ##            raise
+             return
+         print >> self.stream, \
+-              "%s = %r # Variable %s %r" % (tp.name,
++              "%s = %r # Variable %s %r" % (name,
+                                          value,
+                                          self.type_name(tp.typ, False),
+                                          tp.init)
+-        self.names.add(tp.name)
++        self.names.add(name)
+ 
+     _enumvalues = 0
+     def EnumValue(self, tp):
+@@ -585,20 +604,21 @@
+         if unnamed_fields:
+             print >> self.stream, "%s._anonymous_ = %r" % \
+                   (body.struct.name, unnamed_fields.values())
+-        print >> self.stream, "%s._fields_ = [" % body.struct.name
++        if fields:
++            print >> self.stream, "%s._fields_ = [" % body.struct.name
+ 
+-        if self.generate_comments and body.struct.location:
+-            print >> self.stream, "    # %s %s" % body.struct.location
+-        index = 0
+-        for f in fields:
+-            fieldname = unnamed_fields.get(f, f.name)
+-            if f.bits is None:
+-                print >> self.stream, "    ('%s', %s)," % \
+-                   (fieldname, self.type_name(f.typ))
+-            else:
+-                print >> self.stream, "    ('%s', %s, %s)," % \
+-                      (fieldname, self.type_name(f.typ), f.bits)
+-        print >> self.stream, "]"
++            if self.generate_comments and body.struct.location:
++                print >> self.stream, "    # %s %s" % body.struct.location
++            index = 0
++            for f in fields:
++                fieldname = unnamed_fields.get(f, f.name)
++                if f.bits is None:
++                    print >> self.stream, "    ('%s', %s)," % \
++                       (fieldname, self.type_name(f.typ))
++                else:
++                    print >> self.stream, "    ('%s', %s, %s)," % \
++                          (fieldname, self.type_name(f.typ), f.bits)
++            print >> self.stream, "]"
+         # disable size checks because they are not portable across
+         # platforms:
+ ##        # generate assert statements for size and alignment
+@@ -731,7 +751,7 @@
+ 
+     ########
+ 
+-    def generate(self, item):
++    def generate(self, item, do_variable=False):
+         if item in self.done:
+             return
+         if isinstance(item, typedesc.StructureHead):
+@@ -746,12 +766,20 @@
+                 self.done.add(item.get_head())
+                 self.done.add(item.get_body())
+             return
+-        mth = getattr(self, type(item).__name__)
+-        # to avoid infinite recursion, we have to mark it as done
+-        # before actually generating the code.
+-        self.done.add(item)
+-        mth(item)
+ 
++        # We have to put variable in the end to avoid instantiate
++        # structure before define it _fields_
++        if not do_variable and isinstance(item, typedesc.Variable):
++            self.variables.append(item)
++            # have to add it to done in order to stop generate_items()
++            self.done.add(item)
++        else:
++            mth = getattr(self, type(item).__name__)
++            # to avoid infinite recursion, we have to mark it as done
++            # before actually generating the code.
++            self.done.add(item)
++            mth(item)
++
+     def generate_all(self, items):
+         for item in items:
+             self.generate(item)
+@@ -774,6 +802,24 @@
+ 
+             items |= self.more
+             items -= self.done
++
++        # Do variables
++        # fool generate() first
++        done = self.done
++        self.done = set()
++        # Avoid recursive type defined in variables, push out 
++        # types before we generate variables
++        for item in self.variables:
++            dllname = self.find_dllname(item)
++            if dllname:
++                self.generate(item.typ)
++
++        while self.variables:
++            variables = self.variables
++            self.variables = []
++            for item in variables:
++                self.generate(item, do_variable=True)
++        self.done.update(done)
+         return loops
+ 
+     def generate_code(self, items):
+
+ 	  	 

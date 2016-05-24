@@ -53,7 +53,7 @@ setup(name='RSFile',
       classifiers=filter(None, classifiers.split("\n")),
       long_description=" ".join(doclines[2:]),
       # "rstest", "rstest.stdlib" TODO - can't be included atm because they use __file__, incompatible with EGGS
-      packages=("rsfile", "rsbackends", "rstest", "rstest.stdlib"),
+      packages=("rsfile", "rsfile.rsbackend", "rsfile.rstest", "rsfile.rstest.stdlib"),
       cmdclass={'build_py': build_py},
      )
 

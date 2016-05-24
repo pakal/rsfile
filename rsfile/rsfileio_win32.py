@@ -8,13 +8,13 @@ from array import array
 
 import rsfileio_abstract
 import rsfile_definitions as defs
-from rsbackends import _utilities as utilities
+from rsbackend import _utilities as utilities
 
 
 try:
-    import rsbackends.pywin32_extensions as win32
+    import rsbackend.pywin32_extensions as win32
 except ImportError:
-    import rsbackends.pywin32_ctypes as win32 
+    import rsbackend.pywin32_ctypes as win32
         
 
 WIN32_MSG_ENCODING = locale.getpreferredencoding()
