@@ -6,15 +6,15 @@ from __future__ import unicode_literals
 import sys, os, functools, time, errno, stat, locale
 from array import array
 
-import rsfileio_abstract
-import rsfile_definitions as defs
-from rsbackend import _utilities as utilities
+from . import rsfileio_abstract
+from . import rsfile_definitions as defs
+from .rsbackend import _utilities as utilities
 
 
 try:
-    import rsbackend.pywin32_extensions as win32
+    from .rsbackend import pywin32_extensions as win32
 except ImportError:
-    import rsbackend.pywin32_ctypes as win32
+    from .rsbackend import pywin32_ctypes as win32
         
 
 WIN32_MSG_ENCODING = locale.getpreferredencoding()

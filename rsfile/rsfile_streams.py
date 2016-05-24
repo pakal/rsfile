@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 
 import sys, multiprocessing, threading, functools, collections
 
-import rsfile_definitions as defs
+from . import rsfile_definitions as defs
 
 if sys.platform == 'win32':
     try:

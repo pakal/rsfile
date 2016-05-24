@@ -3,12 +3,9 @@ from __future__ import with_statement
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from rsfile_factories import rsopen
-
-
-from rsfile_definitions import * # constants, base types and exceptions
-from rsfile_streams import *
-from rsfile_factories import *
+from .rsfile_definitions import * # constants, base types and exceptions
+from .rsfile_streams import *
+from .rsfile_factories import *
 
 
 BUILTIN_OPEN_FUNC_REPLACEMENT = functools.partial(rsopen, handle=None, locking=False, timeout=0, thread_safe=False, mutex=None, permissions=0o777)

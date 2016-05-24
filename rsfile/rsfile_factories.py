@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 
 import os, stat
 import rsfile_definitions as defs
-from rsfile_streams import *
+from .rsfile_streams import *
 
 
 def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newline=None, fileno=None, handle=None, closefd=True,

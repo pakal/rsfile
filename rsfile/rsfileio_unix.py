@@ -4,11 +4,11 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import sys, os, functools, errno, time, stat, threading, locale
-import rsfileio_abstract
-import rsfile_definitions as defs
+from .import rsfileio_abstract
+from .import rsfile_definitions as defs
 
 
-from rsbackend import unix_stdlib as unix
+from .rsbackend import unix_stdlib as unix
 
 
 

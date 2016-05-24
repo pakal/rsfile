@@ -22,7 +22,7 @@ except ImportError:
     from dummy_thread import allocate_lock as Lock
 
 
-from rsfile_definitions import SEEK_SET, SEEK_CUR, SEEK_END, io_module
+from .rsfile_definitions import SEEK_SET, SEEK_CUR, SEEK_END, io_module
 
 
 __metaclass__ = type

@@ -9,9 +9,8 @@ from contextlib import contextmanager
 
 import errno
 
-import rsfile_definitions as defs
-from rsfile_registries import IntraProcessLockRegistry, _default_rsfile_options
-
+from . import rsfile_definitions as defs
+from .rsfile_registries import IntraProcessLockRegistry, _default_rsfile_options
 
 
 
