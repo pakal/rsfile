@@ -10,11 +10,11 @@ import unittest, tempfile, threading, multiprocessing, Queue , random, string, t
 from rsfile.rstest import _worker_process
 from rsfile.rstest import _utilities
 
-""" WARNING - HEAVY monkey-patching """
-
 import rsfile
-import io
 
+from test import test_support
+
+import io  #FIXME - ensure to import original one
 rsfile.monkey_patch_io_module()
 
 RESULT_FILE = "@RESULTFILE"
@@ -465,7 +465,7 @@ def test_main():
 
     def _launch_test_on_single_backend():
         try:
-            unittest.main()
+            test_support.run_unittest(TestSafeFile)
         except Exception as e: # some kind of SystemExit exception gets raised by unittest.main()
             raise
             #print("CAUGHT EXCEPTION ", repr(e))
