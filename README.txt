@@ -1,8 +1,16 @@
 
 
-TESTING
+BUILDING
 ================
 
+To build the rsfile package:
+$ python setup.py sdist --formats=gztar,zip
+
+No need for bdist_msi or the weaker bdist_wininst: no intelligent 2to3 conversion with them, and rsfile is pure-python anyway, no binary distrib needed.
+
+
+TESTING
+================
 
 To launch the test suite, which reuses stdlib tests and adds specific ones:
 $ python -m  rsfile.rstest.__main__

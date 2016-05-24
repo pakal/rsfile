@@ -1,9 +1,5 @@
 #!/usr/bin/env python
 
-# cmd:  python setup.py sdist --formats=gztar,zip  bdist_msi   
-# bdist_wininst - not interesting because no 2to3 conversion?
-
-
 """RockSolidTools' file I/O implementation
 
 RSFile aims at providing python with a cross-platform, reliable, and
