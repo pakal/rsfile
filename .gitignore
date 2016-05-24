@@ -6,4 +6,6 @@ ___*
 
 _build/
 build/*
+dist/*
+MANIFEST
 

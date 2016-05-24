@@ -6,13 +6,14 @@
 
 """RockSolidTools' file I/O implementation
 
-RSFile aims at providing python with a cross-platform, reliable, and comprehensive file
-I/O API (that is, file stream manipulation, not filesystem operations like shutil does).
+RSFile aims at providing python with a cross-platform, reliable, and
+comprehensive file I/O API (that is, file stream manipulation, not
+filesystem operations like shutil does).
 
-Features include shared/exclusive file record locking, cache synchronization, advanced opening flags,
-and handy stat getters (size, inode...).
+Features include shared/exclusive file record locking, cache synchronization,
+advanced opening flags, and handy stat getters (size, inode...).
 
-Tested on py2.6, py2.7, py3k, on win32 and unix-like systems. Should work with IronPython/Jython/PyPy too.
+Tested on py2.7, py3k, on windows and unix-like systems. Should work with IronPython/Jython/PyPy too.
 """
 
 classifiers = """\
@@ -27,10 +28,6 @@ Operating System :: Unix
 Operating System :: MacOS :: MacOS X
 """
 
-from distutils.core import setup
-
-
-
 doclines = [line.strip() for line in __doc__.split("\n")]
 
 
@@ -39,14 +36,14 @@ from distutils.core import setup
 
 try:
     from distutils.command.build_py import build_py_2to3 as build_py
-    print("Compiling Py2to3")
+    print("Compiling via Py2to3")
 except ImportError:
     from distutils.command.build_py import build_py
-    print("Normal compilation")
+    print("Normal python build")
 
 
 setup(name='RSFile',
-      version='1.1',
+      version='1.2',
       author='Pascal Chambon',
       author_email='pythoniks@gmail.com',
       url='http://bitbucket.org/pchambon/python-rock-solid-tools/',
@@ -56,7 +53,7 @@ setup(name='RSFile',
       classifiers=filter(None, classifiers.split("\n")),
       long_description=" ".join(doclines[2:]),
       # "rstest", "rstest.stdlib" TODO - can't be included atm because they use __file__, incompatible with EGGS
-      packages=("rsfile", "rsfile.stdlib", "rsbackends"), 
-      cmdclass={'build_py':build_py},
+      packages=("rsfile", "rsbackends", "rstest", "rstest.stdlib"),
+      cmdclass={'build_py': build_py},
      )
 
