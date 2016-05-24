@@ -14,7 +14,12 @@ import raw_win32_ctypes as win32api
 from raw_win32_ctypes import GetLastError, OVERLAPPED, FILETIME, BY_HANDLE_FILE_INFORMATION, SECURITY_ATTRIBUTES
 
 
-from raw_win32_defines import * 
+from raw_win32_defines import (ERROR_IO_PENDING, ERROR_MORE_DATA,
+                                GENERIC_READ, GENERIC_WRITE, FILE_SHARE_WRITE, OPEN_ALWAYS,
+                                FILE_ATTRIBUTE_NORMAL, FILE_BEGIN, LOCKFILE_EXCLUSIVE_LOCK,
+                                FILE_SHARE_READ, OPEN_EXISTING, CREATE_NEW, FILE_CURRENT,
+                                FILE_ATTRIBUTE_READONLY, FILE_ATTRIBUTE_NORMAL, FILE_FLAG_WRITE_THROUGH,
+                                FILE_END, FILE_SHARE_DELETE)
 
 # as long as they're supported by the stdlib, let's enjoy these safer version !
 from msvcrt import open_osfhandle as _open_osfhandle, get_osfhandle as _get_osfhandle 
@@ -139,7 +144,7 @@ SECURITY_IMPERSONATION = 0x20000
 
 # Constant taken from winerror.py module
 # ERROR_LOCK_VIOLATION = 33
-# Grab othe rerrors !!!!!!!!!
+# Grab other errors !!!!!!!!!
 
 
 """

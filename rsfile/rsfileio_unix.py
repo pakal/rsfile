@@ -8,7 +8,7 @@ import rsfileio_abstract
 import rsfile_definitions as defs
 
 
-import rsbackend.unix_stdlib as unix
+from rsbackend import unix_stdlib as unix
 
 
 
