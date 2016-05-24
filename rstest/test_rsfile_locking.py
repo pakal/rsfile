@@ -29,11 +29,11 @@ class ThreadWithExitCode(threading.Thread):
     def run(self):
         try:
             threading.Thread.run(self)
-        except Exception, e:
+        except Exception as e:
             print ("THREAD %s TERMINATION ON ERROR" % threading.current_thread().name)
             traceback.print_exc()
             self.exitcode = 1
-        except SystemExit, e:
+        except SystemExit as e:
             self.exitcode = e.code
         else:
             self.exitcode = 0
@@ -461,7 +461,7 @@ class TestSafeFile(unittest.TestCase):
 def test_main():
     try:
         unittest.main()
-    except Exception, e: # some kind of SystemExit exception gets raised by unittest.main()
+    except Exception as e: # some kind of SystemExit exception gets raised by unittest.main()
         print("CAUGHT EXCEPTION ", repr(e))
         print("-----------------------------------------------------------------------")
 

@@ -31,7 +31,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         def wrapper(self, *args, **kwds):
             try:
                 return f(self, *args, **kwds)
-            except win32.error, e: # WARNING - this is not a subclass of OSERROR !!!!!!!!!!!!!
+            except win32.error as e: # WARNING - this is not a subclass of OSERROR !!!!!!!!!!!!!
                 traceback = sys.exc_info()[2]
                 #print repr(e)str(e[1])+" - "+str(e[2
                 
@@ -153,7 +153,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
                 # WARNING - necessary to avoid leaks of C file descriptors !!!!!!!!!
                 try:
                     os.close(self._fileno) # this closes the underlying native handle as well
-                except OSError, e:
+                except OSError as e:
                     raise IOError(errno.EBADF, "bad file descriptor")
             else:
                 win32.CloseHandle(self._handle)

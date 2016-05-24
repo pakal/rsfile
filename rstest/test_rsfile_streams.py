@@ -154,11 +154,11 @@ def test_original_io():
 
 def _cleanup():
     if os.path.exists(TESTFN):
-        os.chmod(TESTFN, 0777)
+        os.chmod(TESTFN, 0o777)
         os.remove(TESTFN)
 
     if os.path.exists(TESTFN + ".temp"):
-        os.chmod(TESTFN + ".temp", 0777)
+        os.chmod(TESTFN + ".temp", 0o777)
         os.remove(TESTFN + ".temp")
 
 
@@ -487,7 +487,7 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
 
     def testCreationPermissions(self):
 
-        with rsfile.rsopen(TESTFN, "RWB-", buffering=0, locking=False, permissions=0555) as f: # creating read-only file
+        with rsfile.rsopen(TESTFN, "RWB-", buffering=0, locking=False, permissions=0o555) as f: # creating read-only file
 
             with rsfile.rsopen(TESTFN, "RB+", buffering=0, locking=False) as g:
                 pass # no problem

@@ -9,7 +9,7 @@ from rsfile_streams import *
 
 
 def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newline=None, fileno=None, handle=None, closefd=True,
-           locking=True, timeout=None, thread_safe=True, mutex=None, permissions=0777):
+           locking=True, timeout=None, thread_safe=True, mutex=None, permissions=0o777):
 
     """
     This function is a factory similar to :func:`io.open`, which returns chains of I/O streams targeting files, with

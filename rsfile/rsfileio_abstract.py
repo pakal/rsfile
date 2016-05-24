@@ -32,7 +32,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
 
                  synchronized=False,
                  inheritable=False,
-                 permissions=0777
+                 permissions=0o777
                  ):
 
         """
@@ -633,7 +633,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
 
                         success = True # we leave the two loops
 
-                    except EnvironmentError, e:
+                    except EnvironmentError as e:
                         check_timeout(e)
 
             finally:

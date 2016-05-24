@@ -11,7 +11,7 @@ from rsfile_streams import *
 from rsfile_factories import *
 
 
-BUILTIN_OPEN_FUNC_REPLACEMENT = functools.partial(rsopen, handle=None, locking=False, timeout=0, thread_safe=False, mutex=None, permissions=0777)
+BUILTIN_OPEN_FUNC_REPLACEMENT = functools.partial(rsopen, handle=None, locking=False, timeout=0, thread_safe=False, mutex=None, permissions=0o777)
 
 
 def monkey_patch_io_module(module=None):

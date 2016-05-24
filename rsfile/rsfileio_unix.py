@@ -24,7 +24,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         def wrapper(self, *args, **kwds):
             try:
                 return f(self, *args, **kwds)
-            except unix.error, e: # WARNING - this is not a subclass of OSERROR !!!!!!!!!!!!!
+            except unix.error as e: # WARNING - this is not a subclass of OSERROR !!!!!!!!!!!!!
                 if isinstance(e, IOError):
                     raise
                 else:
