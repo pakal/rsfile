@@ -1,3 +1,5 @@
+#-*- coding: utf-8 -*-
+from __future__ import unicode_literals, print_function
 
 # Only useful OS values, grabbed from raw_win32_defines_all.txt
 

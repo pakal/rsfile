@@ -1,4 +1,5 @@
 #-*- coding: utf-8 -*-
+from __future__ import unicode_literals, print_function
 
 from os import O_WRONLY, O_RDONLY, O_RDWR, O_SYNC, O_CREAT, O_EXCL, O_APPEND
 

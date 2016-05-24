@@ -1,4 +1,7 @@
-# SCRIPT
+# -*- coding: utf-8 -*-
+# CHILD SCRIPT FOR TESTS
+from __future__ import unicode_literals, print_function
+
 
 import sys, os
 #print "we enter function with path : ", sys.path, " | ", sys.executable

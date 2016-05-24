@@ -1,7 +1,5 @@
 #-*- coding: utf-8 -*-
-from __future__ import with_statement
-from __future__ import print_function
-from __future__ import unicode_literals
+from __future__ import unicode_literals, print_function
 
 # Large files linux : http://www.suse.de/~aj/linux_lfs.html
 """
