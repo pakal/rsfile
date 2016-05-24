@@ -424,10 +424,9 @@ def ReadFile(handle, buffer_or_int, overlapped=None):
             raise ctypes.WinError(err) 
     else:
         err = 0
-    
-        
+
     if overlapped :
-        return (err, buffer(target_buffer))  # working, or not ?
+        return (err, bytearray(target_buffer))  # untested feature
     elif isinstance(buffer_or_int, (int, long)):
         return (err, target_buffer.raw[0:bytes_read.value])
     else:
