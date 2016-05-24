@@ -1,4 +1,25 @@
 
+
+TESTING
+================
+
+
+To launch the test suite, which reuses stdlib tests and adds specific ones:
+$ python -m  rsfile.rstest.__main__
+
+To launch the benchmark, tweak the flags in rsfile/rstest/run_iobench.py to your liking,
+maybe modify rsfileio_win32 to force a specific low-level backend (on windows), and then run:
+$ python -m  rsfile.rstest.run_iobench
+
+
+
+
+
+=======================================
+
+
+
+
 Release V1.1
 April 2011
 By Pascal Chambon

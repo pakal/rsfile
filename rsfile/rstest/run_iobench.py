@@ -6,6 +6,13 @@ import sys
 import rsfile
 from rsfile.rstest.stdlib import iobench
 
+# Select here the versions of the IO API which need to be benchmarked #
+RUN_STDLIB_CIO = True
+RUN_STDLIB_PYIO = True
+RUN_RSFILE = True  # exact OS backend depends on what's installed, see rsfileio_xxx.py and rsbackend
+
+
+
 def launch_benchmark():
 
     # HACK to ignore iobench.pyc file automatically, so that when iobench tries to access his "__file__", it works.
@@ -17,7 +24,7 @@ def launch_benchmark():
         iobench.prepare_files()
         iobench.run_all_tests("rwtb")
 
-    if True:
+    if RUN_STDLIB_CIO:
         import io
         print ">>> benchmarking stdlib io module on python %s: module %r <<<" % (sys.version_info, io)
 
@@ -27,7 +34,7 @@ def launch_benchmark():
 
         print "\n-----------\n"
 
-    if True:
+    if RUN_STDLIB_PYIO:
         import _pyio
         print ">>> benchmarking stdlib pyio module on python %s: module %r <<<" % (sys.version_info, _pyio)
 
@@ -37,7 +44,7 @@ def launch_benchmark():
 
         print "\n-----------\n"
 
-    if True:
+    if RUN_RSFILE:
         print ">>> benchmarking rsfile module <<<"
 
         iobench.open = rsfile.rsopen
