@@ -185,11 +185,14 @@ class RSThreadSafeWrapper(object):
     def __getattr__(self, name):
         #FIXME - too much time lost in that dynamic wrapper!!!!
         attr = getattr(self.wrapped_stream, name) # might raise AttributeError
-        if isinstance(attr, collections.Callable):  # actually, we shouldn't care about others than types.MethodType, types.LambdaType, types.FunctionType
+
+        if not name.startswith("_") and isinstance(attr, collections.Callable):
+            # actually, we shouldn't care about others than types.MethodType, types.LambdaType, types.FunctionType
             #print ("<<<<<<< WRAPPING METHOD", name)
-            return functools.partial(self._secure_call, name)
-        else:
-            return attr
+            attr = functools.partial(self._secure_call, name)
+            setattr(self, name, attr)  # CACHE the thread-safe caller in object, so that we bypass this __getattr__ later
+
+        return attr
 
     def __iter__(self):
         return iter(self.wrapped_stream)

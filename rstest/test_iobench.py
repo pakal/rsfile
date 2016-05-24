@@ -194,63 +194,65 @@ Text unit = one character (utf8-decoded)
 
 ** Binary input **
 
-[ 400KB ] read one unit at a time...                 0.0975 MB/s
-[ 400KB ] read 20 units at a time...                   1.83 MB/s
-[ 400KB ] read 4096 units at a time...                  171 MB/s
+[ 400KB ] read one unit at a time...                  0.162 MB/s
+[ 400KB ] read 20 units at a time...                   3.16 MB/s
+[ 400KB ] read 4096 units at a time...                  237 MB/s
 
-[  20KB ] read whole contents at once...                139 MB/s
-[ 400KB ] read whole contents at once...                471 MB/s
-[  10MB ] read whole contents at once...                310 MB/s
+[  20KB ] read whole contents at once...                157 MB/s
+[ 400KB ] read whole contents at once...                328 MB/s
+[  10MB ] read whole contents at once...                296 MB/s
 
-[ 400KB ] seek forward one unit at a time...         0.0512 MB/s
-[ 400KB ] seek forward 1000 units at a time...           56 MB/s
-[ 400KB ] alternate read & seek one unit...          0.0374 MB/s
-[ 400KB ] alternate read & seek 1000 units...          36.5 MB/s
+[ 400KB ] seek forward one unit at a time...         0.0729 MB/s
+[ 400KB ] seek forward 1000 units at a time...           71 MB/s
+[ 400KB ] alternate read & seek one unit...           0.044 MB/s
+[ 400KB ] alternate read & seek 1000 units...          43.5 MB/s
 
 ** Text input **
 
-[ 400KB ] read one unit at a time...                  0.076 MB/s
-[ 400KB ] read 20 units at a time...                   1.47 MB/s
-[ 400KB ] read one line at a time...                   6.65 MB/s
-[ 400KB ] read 4096 units at a time...                 51.7 MB/s
+[ 400KB ] read one unit at a time...                  0.114 MB/s
+[ 400KB ] read 20 units at a time...                   2.13 MB/s
+[ 400KB ] read one line at a time...                   6.21 MB/s
+[ 400KB ] read 4096 units at a time...                 54.1 MB/s
 
-[  20KB ] read whole contents at once...               71.5 MB/s
-[ 400KB ] read whole contents at once...                134 MB/s
-[  10MB ] read whole contents at once...                114 MB/s
+[  20KB ] read whole contents at once...               74.1 MB/s
+[ 400KB ] read whole contents at once...                120 MB/s
+[  10MB ] read whole contents at once...                110 MB/s
 
-[ 400KB ] seek forward one unit at a time...         0.0341 MB/s
-[ 400KB ] seek forward 1000 units at a time...         33.7 MB/s
+[ 400KB ] seek forward one unit at a time...         0.0402 MB/s
+[ 400KB ] seek forward 1000 units at a time...         39.5 MB/s
 
 ** Binary append **
 
-[  20KB ] write one unit at a time...                 0.081 MB/s
-[ 400KB ] write 20 units at a time...                  1.59 MB/s
-[ 400KB ] write 4096 units at a time...                 196 MB/s
-[  10MB ] write 1e6 units at a time...                 1099 MB/s
+[  20KB ] write one unit at a time...                 0.124 MB/s
+[ 400KB ] write 20 units at a time...                  2.42 MB/s
+[ 400KB ] write 4096 units at a time...                 254 MB/s
+[  10MB ] write 1e6 units at a time...                 1048 MB/s
 
 ** Text append **
 
-[  20KB ] write one unit at a time...                0.0545 MB/s
-[ 400KB ] write 20 units at a time...                  1.04 MB/s
-[ 400KB ] write 4096 units at a time...                45.5 MB/s
-[  10MB ] write 1e6 units at a time...                 61.2 MB/s
+[  20KB ] write one unit at a time...                0.0713 MB/s
+[ 400KB ] write 20 units at a time...                  1.34 MB/s
+[ 400KB ] write 4096 units at a time...                46.8 MB/s
+[  10MB ] write 1e6 units at a time...                 59.6 MB/s
 
 ** Binary overwrite **
 
-[  20KB ] modify one unit at a time...               0.0674 MB/s
-[ 400KB ] modify 20 units at a time...                 1.31 MB/s
-[ 400KB ] modify 4096 units at a time...                143 MB/s
+[  20KB ] modify one unit at a time...               0.0918 MB/s
+[ 400KB ] modify 20 units at a time...                 1.79 MB/s
+[ 400KB ] modify 4096 units at a time...                167 MB/s
 
-[ 400KB ] alternate write & seek one unit...         0.0319 MB/s
-[ 400KB ] alternate write & seek 1000 units...         30.5 MB/s
-[ 400KB ] alternate read & write one unit...         0.0216 MB/s
-[ 400KB ] alternate read & write 1000 units...         20.6 MB/s
+[ 400KB ] alternate write & seek one unit...          0.037 MB/s
+[ 400KB ] alternate write & seek 1000 units...         34.7 MB/s
+[ 400KB ] alternate read & write one unit...         0.0233 MB/s
+[ 400KB ] alternate read & write 1000 units...         22.2 MB/s
 
 ** Text overwrite **
 
-[  20KB ] modify one unit at a time...                0.047 MB/s
-[ 400KB ] modify 20 units at a time...                0.903 MB/s
-[ 400KB ] modify 4096 units at a time...               40.4 MB/s
+[  20KB ] modify one unit at a time...               0.0559 MB/s
+[ 400KB ] modify 20 units at a time...                 1.09 MB/s
+[ 400KB ] modify 4096 units at a time...                 42 MB/s
 
+
+-----------
 
 """
