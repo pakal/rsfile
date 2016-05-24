@@ -39,8 +39,7 @@ def monkey_patch_io_module(module=None):
                 raise ValueError("Raw stream can't be created in text mode")
             RSFileIO.__init__(self, **raw_kwargs)
             if extended_kwargs["truncate"]:
-                # HERE, ERROR IF FILE NOT WRITABLE !!!! PAKAL
-                self.truncate(0) # Warning - this raw wrapper mimics basic rawFileIO, and doesn't use locking !!!!
+                self.truncate(0) # this mimicks basic rawFileIO, without locking anything
 
     # Important Patching ! #
     module.FileIO = RSFileIORawWrapper

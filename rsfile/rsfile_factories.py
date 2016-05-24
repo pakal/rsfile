@@ -142,7 +142,7 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
             raw.lock_file(timeout=timeout)
 
         if extended_kwargs["truncate"]:
-                raw.truncate(0)
+            raw.truncate(0)
 
         if buffering is None:
             buffering = -1
