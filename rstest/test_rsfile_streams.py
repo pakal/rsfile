@@ -31,7 +31,9 @@ TESTFN = "@TESTING" # we used our own one, since the test_support version is bro
 
 import io, _pyio
 
-
+"""
+Binary buffered objects (instances of BufferedReader, BufferedWriter, BufferedRandom and BufferedRWPair) are not reentrant. While reentrant calls will not happen in normal situations, they can arise from doing I/O in a signal handler. If a thread tries to re-enter a buffered object which it is already accessing, a RuntimeError is raised. Note this doesn’t prohibit a different thread from entering the buffered object.
+"""
 # IMPORTANT - we monkey-patch the original io modules !!!
 rsfile.monkey_patch_io_module(io)  # C-backed version
 rsfile.monkey_patch_io_module(_pyio)  # pure python version
@@ -106,6 +108,12 @@ def test_original_io():
         test_io.IOTest.test_unbounded_file = dummyfunc
     test_io.BufferedRWPairTest.test_uninitialized = dummyfunc  #FIXME
     test_io.PyTextIOWrapperTest.test_uninitialized = dummyfunc  #FIXME
+
+    # like in _pyio, in rsfile we do not detect reentrant access to raise RuntimeError and avoid deadlocks
+    test_io.PySignalsTest.test_reentrant_write_buffered = dummyfunc
+    test_io.PySignalsTest.test_reentrant_write_text = dummyfunc
+    test_io.CSignalsTest.test_reentrant_write_buffered = dummyfunc
+    test_io.CSignalsTest.test_reentrant_write_text = dummyfunc
 
     test_io.test_main()
 
@@ -777,7 +785,7 @@ class TestMiscStreams(unittest.TestCase):
             f.write(b"abc")
 
         with rsfile.rsopen(TESTFN, "RWB") as f:
-            self.assertTrue(isinstance(f, rsfile.RSThreadSafeWrapper))
+            self.assertTrue(isinstance(f, rsfile.RSThreadSafeWrapper))  # by default, thread-safe
             f.write(b"abc")
         with rsfile.rsopen(TESTFN, "RWB", thread_safe=False) as f:
             self.assertTrue(isinstance(f, io.BufferedIOBase))
@@ -818,7 +826,7 @@ def test_main():
     # Historically, these tests have been sloppy about removing TESTFN.
     # So get rid of it no matter what.
     try:
-        ########test_support.run_unittest(TestRawFileViaWrapper, TestRawFileSpecialFeatures, TestMiscStreams)
+        test_support.run_unittest(TestRawFileViaWrapper, TestRawFileSpecialFeatures, TestMiscStreams)
         test_original_io()
     finally:
         if os.path.exists(TESTFN):

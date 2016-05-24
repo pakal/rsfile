@@ -9,7 +9,7 @@ from rsfile_streams import *
 
 
 def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newline=None, fileno=None, handle=None, closefd=True,
-           locking=True, timeout=None, thread_safe=False, mutex=None, permissions=0777):
+           locking=True, timeout=None, thread_safe=True, mutex=None, permissions=0777):
 
     """
     This function is a factory similar to :func:`io.open`, which returns chains of I/O streams targeting files, with
@@ -21,7 +21,7 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
     ``mode`` is the access mode of the stream, it can be given either as a standard mode string, or as an advanced mode string 
     (see :ref:`file opening modes<file_opening_modes>`). 
     
-    ``closefd`` (boolean) can only be False when wrapping a fileno or a handle, and in this case the wrapped 
+    ``closefd`` (boolean) may only be False when wrapping a fileno or a handle, and in this case the wrapped
     stream will not be closed when the stream objects are closed.
  
     .. note:: 
@@ -46,7 +46,7 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
     If ``thread_safe`` is True, the chain of streams returned by the function will be wrapped into 
     a thread-safe interface ; in this case, if ``mutex`` is provided, it is used as the concurrency lock, 
     else a new lock is created (a multiprocessing RLock() if the stream is inheritable, else a threading RLock().
-     Note that thread-safety prevents the reentrancy of file methods (eg. if you write to it from a signal handler).
+     Note that, for performance reasons, there are currently no checks to prevent reentrant calls to file methods (eg. made via an OS signal), by raising RuntimeError like the original C-backed io module does, so reentrant calls may cause deadlocks if the file is buffered or thread-safe-wrapped.
 
     The ``permissions`` argument will simply be forwarded to the lowest level stream, 
     so as to be applied in case a file creation occurs (note : decimal '511' corresponds to octal '0777', i.e whole permissions).
@@ -164,7 +164,7 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
         if buffering == 0:
             if extended_kwargs["binary"]:
                 if thread_safe:
-                    result = RSThreadSafeWrapper(raw, mutex=mutex, interprocess=raw_kwargs["inheritable"])
+                    result = RSThreadSafeWrapper(raw, mutex=mutex, is_interprocess=raw_kwargs["inheritable"])
                 return result
             raise ValueError("can't have unbuffered text I/O")
 
@@ -179,7 +179,7 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
         result = buffer
         if extended_kwargs["binary"]:
             if thread_safe:
-                result = RSThreadSafeWrapper(buffer, mutex=mutex, interprocess=raw_kwargs["inheritable"])
+                result = RSThreadSafeWrapper(buffer, mutex=mutex, is_interprocess=raw_kwargs["inheritable"])
             return result
 
         text = RSTextIOWrapper(buffer, encoding, errors, newline, line_buffering)
@@ -187,7 +187,7 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
         result = text
 
         if thread_safe:
-            result = RSThreadSafeWrapper(text, mutex=mutex, interprocess=raw_kwargs["inheritable"])
+            result = RSThreadSafeWrapper(text, mutex=mutex, is_interprocess=raw_kwargs["inheritable"])
         return result
     except:
         result.close()

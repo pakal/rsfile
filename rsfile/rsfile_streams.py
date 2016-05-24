@@ -165,14 +165,14 @@ class RSThreadSafeWrapper(object):
     else a multiprocessing or multithreading (depending on *interprocess* boolean value) will be created.
     """
 
-    def __init__(self, wrapped_stream, mutex=None, interprocess=False):
+    def __init__(self, wrapped_stream, mutex=None, is_interprocess=False):
         self.wrapped_stream = wrapped_stream
-        self.interprocess = interprocess
+        self.is_interprocess = is_interprocess
 
         if mutex is not None:
             self.mutex = mutex
         else:
-            if interprocess:
+            if is_interprocess:
                 self.mutex = multiprocessing.RLock()
             else:
                 self.mutex = threading.RLock()
