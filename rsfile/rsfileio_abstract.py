@@ -199,9 +199,14 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         self._handle = None # native platform handle other than fileno - if existing
         self._closefd = closefd
 
-        # These two keys are used to identify the file and handle near the intra process lock registry
+        # These two keys are used to identify the file and handle in the intra process lock registry
         self._lock_registry_inode = None
         self._lock_registry_descriptor = None
+
+        if path:
+            null_char = ("\0" if isinstance(path, str) else b"\0")
+            if null_char in path:
+                raise TypeError("NULL characters forbidden in file path")
 
         try:
             self._inner_create_streams(**kwargs)
@@ -212,7 +217,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
                 st_mode = os.fstat(self._fileno).st_mode  # might raise
                 if stat.S_ISDIR(st_mode):
                     raise IOError(errno.EISDIR, "Can't wrap a directory in FileIO")
-                is_regular = stat.S_ISREG(st_mode)
+                is_regular = stat.S_ISREG(st_mode)  #FIXME - contradicts the rejecion of unix inner opener
                 seekable = is_regular
             else:
                 pass  # if we only have a handle, we're on windows, so no such pipe

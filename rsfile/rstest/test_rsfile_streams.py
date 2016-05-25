@@ -3,6 +3,8 @@ from __future__ import unicode_literals, print_function
 
 
 from rsfile.rstest import _utilities
+_utilities.patch_test_supports()
+
 from rsfile.rstest import _worker_process
 
 import sys
@@ -50,9 +52,8 @@ def test_original_io():
 
     import _io
 
-    # to have these stdlib test suites on Ubuntu, install packages like "libpython2.7-testsuite"
     from test import test_io, test_memoryio, test_file, test_bufio, test_fileio, test_largefile
-    from test.test_largefile import LargeFileTest # excludes py26
+    from test.test_largefile import LargeFileTest # TODO REVIVE THIS ?? it excludes py26
 
     class dummyklass(unittest.TestCase):
         pass
@@ -113,7 +114,6 @@ def test_original_io():
     test_io.CSignalsTest.test_reentrant_write_buffered = dummyfunc
     test_io.CSignalsTest.test_reentrant_write_text = dummyfunc
 
-    test_io.test_main()
 
     test_fileio._FileIO = rsfile.io_module.FileIO
     test_fileio.OtherFileTests.testWarnings = dummyfunc
@@ -127,19 +127,29 @@ def test_original_io():
     def bugfixed(self, f):
         f.write(b'a') # in py27 trunk "binary" was lacking...
     test_fileio.AutoFileTests.testErrnoOnClosedWrite = bugfixed
-    test_fileio.test_main()
+
 
     test_memoryio.CStringIOPickleTest = dummyklass
     test_memoryio.CBytesIOTest = dummyklass
     test_memoryio.CStringIOTest = dummyklass
-    test_memoryio.test_main()
 
 
     test_file.CAutoFileTests = dummyklass
-    test_file.test_main()
 
 
-    test_bufio.test_main()
+    all_test_suites = []
+
+    for stdlib_test_module in (test_io, test_memoryio, test_file, test_bufio, test_fileio):
+
+        if hasattr(stdlib_test_module, "test_main"):
+            stdlib_test_module.test_main()  # OLD STYLE
+        else:
+            # NOTE: this calls stdlib_test_module.load_tests() if present
+            new_tests = unittest.defaultTestLoader.loadTestsFromModule(stdlib_test_module)
+            all_test_suites.extend(all_test_suites)
+
+    if all_test_suites:
+        test_support.run_unittest(*all_test_suites)
 
 
 

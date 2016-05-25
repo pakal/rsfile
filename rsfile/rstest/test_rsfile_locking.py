@@ -7,6 +7,7 @@ import unittest, tempfile, threading, multiprocessing, Queue , random, string, t
 
 from rsfile.rstest import _worker_process
 from rsfile.rstest import _utilities
+_utilities.patch_test_supports()
 
 import rsfile
 

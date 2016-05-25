@@ -7,13 +7,13 @@ from . import rsfile_definitions as defs
 
 if sys.platform == 'win32':
     try:
-        from rsfileio_win32 import RSFileIO
+        from .rsfileio_win32 import RSFileIO
         FILE_IMPLEMENTATION = "win32"
     except Exception as e:
         raise ImportError("No win32 backend available : %s" % e)
 else:
     try:
-        from rsfileio_unix import RSFileIO
+        from .rsfileio_unix import RSFileIO
         FILE_IMPLEMENTATION = "unix"
     except Exception as e:
         raise ImportError("No unix backend available : %s" % e)

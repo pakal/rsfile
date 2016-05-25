@@ -52,15 +52,17 @@ def patch_test_supports():
     from unittest import TestCase
     
     try:
-        from test import test_support
-    except ImportError: # 2to3 doesn't handle this case alas...
+        # in python3, test.test_support contains almost nothing, stuffs have moved to test.support...
+        from test.test_support import run_unittest
+    except ImportError:
         import test
         from test import support as test_support
         sys.modules["test.test_support"] = test_support
         test.test_support = test_support
-        
+
+    '''
     import functools, contextlib
-        
+
     if not hasattr(test_support, "gc_collect"):
         # new in py2.7 ...
         def gc_collect():
@@ -127,4 +129,4 @@ def patch_test_supports():
                                                  repr(expr2))
                 self.fail(standardMsg)
         TestCase.assertIs = assertIs
-
+        '''

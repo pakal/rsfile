@@ -13,6 +13,9 @@ TESTING
 ================
 
 To launch the test suite, which reuses stdlib tests and adds specific ones:
+
+Install the stdlib test suite if needed (eg. on Ubuntu, install packages like "libpython2.7-testsuite")
+
 $ python -m  rsfile.rstest.__main__
 
 To launch the benchmark, tweak the flags in rsfile/rstest/run_iobench.py to your liking,

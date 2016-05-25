@@ -15,7 +15,6 @@ UNIX_MSG_ENCODING = locale.getpreferredencoding()
 
 class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
 
-
     # Warning - this is to be used as a static method ! #
     def _unix_error_converter(f): #@NoSelf
         @functools.wraps(f)
@@ -99,7 +98,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
                 flags |= unix.O_CREAT | unix.O_EXCL
             else:
                 flags |= unix.O_CREAT # by default - we create the file iff it doesn't exists
-
+            # TODO - TWEAK INHERITABILITY HERE WITH FLAGS ??? like O_CLOEXEC
 
             self._fileno = self._handle = unix.open(strname, flags, permissions)
 
@@ -109,11 +108,16 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
                 raise IOError(errno.EISDIR, "RSFile can't open directories", self.name)
             if not stat.S_ISREG(stats):
                 raise IOError(errno.EINVAL, "RSFile can only open regular files", self.name)
+            #FIXME TODO close just-opened stream then ?????????
 
-            if not inheritable:
-                old_flags = unix.fcntl(self._fileno, unix.F_GETFD, 0);
-                if not (old_flags & unix.FD_CLOEXEC): # we may use O_CLOEXEC instead (Since Linux 2.6.23)
-                    unix.fcntl(self._fileno, unix.F_SETFD, old_flags | unix.FD_CLOEXEC);
+            if hasattr(os, "set_inheritable"):
+                os.set_inheritable(self._fileno, inheritable)
+            else:
+                # before PEP0446, newly created file descriptors were inheritable by default
+                if not inheritable:
+                    old_flags = unix.fcntl(self._fileno, unix.F_GETFD, 0);
+                    if not (old_flags & unix.FD_CLOEXEC): # we may use O_CLOEXEC instead (Since Linux 2.6.23)
+                        unix.fcntl(self._fileno, unix.F_SETFD, old_flags | unix.FD_CLOEXEC);
 
             self._lock_registry_inode = self._inner_uid()
             self._lock_registry_descriptor = self._fileno

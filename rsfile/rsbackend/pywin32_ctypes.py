@@ -17,7 +17,7 @@ from .raw_win32_defines import (ERROR_IO_PENDING, ERROR_MORE_DATA,
                                 FILE_ATTRIBUTE_NORMAL, FILE_BEGIN, LOCKFILE_EXCLUSIVE_LOCK,
                                 FILE_SHARE_READ, OPEN_EXISTING, CREATE_NEW, FILE_CURRENT,
                                 FILE_ATTRIBUTE_READONLY, FILE_ATTRIBUTE_NORMAL, FILE_FLAG_WRITE_THROUGH,
-                                FILE_END, FILE_SHARE_DELETE)
+                                FILE_END, FILE_SHARE_DELETE, LOCKFILE_FAIL_IMMEDIATELY)
 
 # as long as they're supported by the stdlib, let's enjoy these safer version !
 from msvcrt import open_osfhandle as _open_osfhandle, get_osfhandle as _get_osfhandle 
