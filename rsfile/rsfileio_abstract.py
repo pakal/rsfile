@@ -216,6 +216,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
                 # we bypass Rsfile for file descriptors that are pipes, devices, directories, symlinks etc.
                 st_mode = os.fstat(self._fileno).st_mode  # might raise
                 if stat.S_ISDIR(st_mode):
+                    self._fileno = None  # disown file descriptor
                     raise IOError(errno.EISDIR, "Can't wrap a directory in FileIO")
                 is_regular = stat.S_ISREG(st_mode)  #FIXME - contradicts the rejecion of unix inner opener
                 seekable = is_regular
@@ -256,6 +257,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         # deleted, and then the close() call might fail.  Since
         # there's nothing we can do about such failures and they annoy
         # the end users, we suppress the traceback.
+        # BEWARE, also called if __init__() itself raised an exception!
         try:
             self.close()
         except:
