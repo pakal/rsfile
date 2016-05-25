@@ -137,20 +137,20 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         # HERE WE CHECK EVERYTHING !!! PAKAL
 
         if path is not None and not isinstance(path, (bytes, unicode)):
-            raise ValueError("If provided, path must be a string.")
+            raise defs.BadValueTypeError("If provided, path must be a string.")
 
         if bool(path) + (fileno is not None) + (handle is not None) != 1:
             #print ("##################", locals())
-            raise ValueError("File must provide path, fileno or handle value, and only one of these.")
+            raise defs.BadValueTypeError("File must provide path, fileno or handle value, and only one of these.")
 
         if not read and not write:
-            raise ValueError("File must be opened at least in 'read', 'write' or 'append' mode.")
+            raise defs.BadValueTypeError("File must be opened at least in 'read', 'write' or 'append' mode.")
 
         if must_create and must_not_create :
-            raise ValueError("File can't be wanted both existing and unexisting.")
+            raise defs.BadValueTypeError("File can't be wanted both existing and unexisting.")
 
         if not closefd and not (fileno or handle):
-            raise ValueError("Cannot use closefd=False without providing a descriptor to wrap.")
+            raise defs.BadValueTypeError("Cannot use closefd=False without providing a descriptor to wrap.")
 
         # Inner lock used when several field operations are involved, eg. when truncating with zero-fill
         # The rule is : public methods must protect themselves, whereas inner ones are clueless 
@@ -175,12 +175,12 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
             self._origin = "path"
         elif fileno is not None:
             if int(fileno) < 0:
-                raise TypeError("A fileno to be wrapped can't be negative.")
+                raise defs.BadValueTypeError("A fileno to be wrapped can't be negative.")
             name = fileno
             self._origin = "fileno"
         elif handle is not None:
             if int(handle) < 0:
-                raise TypeError("A handle to be wrapped can't be negative.")
+                raise defs.BadValueTypeError("A handle to be wrapped can't be negative.")
             name = handle
             self._origin = "handle"
         self.name = name  # do not use self._name, else unit-tests corner cases don't work anymore...
@@ -206,7 +206,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         if path:
             null_char = ("\0" if isinstance(path, str) else b"\0")
             if null_char in path:
-                raise TypeError("NULL characters forbidden in file path")
+                raise defs.BadValueTypeError("NULL characters forbidden in file path")
 
         try:
             self._inner_create_streams(**kwargs)
@@ -225,7 +225,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
             self._seekable = seekable
 
         except OverflowError as e:
-            raise TypeError(e)  # probably a too big filedescriptor number
+            raise defs.BadValueTypeError(e)  # probably a too big filedescriptor number
 
         if append:
             self.seek(0, os.SEEK_END) # required by unit tests, might raise if non-seekable file...
@@ -264,7 +264,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
             pass
 
     def __reduce__(self):
-        raise TypeError("RSFileIO is not pickleable")
+        raise defs.BadValueTypeError("RSFileIO is not pickleable")
 
 
     def seekable(self):
@@ -369,7 +369,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
 
         #print ("raw seek called to offset ", offset, " - ", whence, "with size", self._inner_size())
         if not isinstance(offset, (int, long)):
-            raise TypeError("Expecting an integer as argument for seek")
+            raise defs.BadValueTypeError("Expecting an integer as argument for seek")
         res = self._inner_seek(offset, whence)
 
         return res
@@ -445,7 +445,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         self._checkWritable()
 
         if isinstance(buffer, unicode):
-            raise TypeError("can't write unicode to binary stream")
+            raise defs.BadValueTypeError("can't write unicode to binary stream")
 
         if isinstance(buffer, memoryview):
             buffer = buffer.tobytes() # TO BE IMPROVED - try to avoid copies !!
@@ -565,19 +565,19 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         self._checkClosed()
 
         if timeout is not None and (not isinstance(timeout, (int, long, float)) or timeout < 0):
-            raise ValueError("timeout must be None or positive float.")
+            raise defs.BadValueTypeError("timeout must be None or positive float.")
 
         if length is not None and (not isinstance(length, (int, long)) or length < 0):
-            raise ValueError("length must be None or positive integer.")
+            raise defs.BadValueTypeError("length must be None or positive integer.")
 
         if offset is not None and not isinstance(offset, (int, long)):
-            raise ValueError("offset must be None or an integer.")
+            raise defs.BadValueTypeError("offset must be None or an integer.")
 
         if whence not in defs.SEEK_VALUES:
-            raise ValueError("whence must be a valid SEEK_\* value")
+            raise defs.BadValueTypeError("whence must be a valid SEEK_\* value")
 
         if shared is not None and shared not in (True, False):
-            raise ValueError("shared must be None or True/False.")
+            raise defs.BadValueTypeError("shared must be None or True/False.")
 
 
 
@@ -657,13 +657,13 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         self._checkClosed()
 
         if length is not None and (not isinstance(length, (int, long)) or length < 0):
-            raise ValueError("length must be None or positive integer.")
+            raise defs.BadValueTypeError("length must be None or positive integer.")
 
         if offset is not None and (not isinstance(offset, (int, long)) or offset < 0):
-            raise ValueError("offset must be None or positive integer.")
+            raise defs.BadValueTypeError("offset must be None or positive integer.")
 
         if whence not in defs.SEEK_VALUES:
-            raise ValueError("whence must be a valid SEEK_\* value")
+            raise defs.BadValueTypeError("whence must be a valid SEEK_\* value")
 
 
         #import multiprocessing

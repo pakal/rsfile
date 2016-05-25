@@ -110,7 +110,7 @@ class _text_forwarder_mixin(object):
 
     def readinto(self, buffer): # to please test suite...
         self._checkClosed()
-        raise TypeError("Text stream can't be read into buffer")
+        raise defs.BadValueTypeError("Text stream can't be read into buffer")
 
     def __repr__(self):
         clsname = self.__class__.__name__

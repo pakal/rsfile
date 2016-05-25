@@ -265,7 +265,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         """       
         
         if not isinstance(offset, (int,long)):
-            raise TypeError("Offset should be an integer in seek(), not %s object"%type(offset))
+            raise defs.BadValueTypeError("Offset should be an integer in seek(), not %s object"%type(offset))
 
         reference = self.__POSITION_REFERENCES[whence]
         new_offset = win32.SetFilePointer(self._handle, offset, reference)

@@ -21,6 +21,9 @@ BlockingIOError = io_module.BlockingIOError
 UnsupportedOperation = io_module.UnsupportedOperation
 
 
+class BadValueTypeError(ValueError, TypeError):
+    pass  # class to handle differences
+
 
 class OverFlowException(IOError):
     pass

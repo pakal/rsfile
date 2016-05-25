@@ -29,14 +29,15 @@ import rsfile
 
 TESTFN = "@TESTING" # we used our own one, since the test_support version is broken
 
-import io, _pyio
+import io, _io, _pyio
 
 """
 Binary buffered objects (instances of BufferedReader, BufferedWriter, BufferedRandom and BufferedRWPair) are not reentrant. While reentrant calls will not happen in normal situations, they can arise from doing I/O in a signal handler. If a thread tries to re-enter a buffered object which it is already accessing, a RuntimeError is raised. Note this doesn’t prohibit a different thread from entering the buffered object.
 """
 # IMPORTANT - we monkey-patch the original io modules !!!
-rsfile.monkey_patch_io_module(io)  # C-backed version
-rsfile.monkey_patch_io_module(_pyio)  # pure python version
+rsfile.monkey_patch_io_module(_io)  # C-backed version
+rsfile.monkey_patch_io_module(io)  # python interface to C-backed version
+rsfile.monkey_patch_io_module(_pyio)  # (almost) pure python version
 rsfile.monkey_patch_open_builtin()
 
 
@@ -79,6 +80,7 @@ def test_original_io():
     #test_largefile.test_main() # beware !
     """
 
+    # Skip C-specific tests, which are anyway often skipped for "_pyio" itself
     test_io.CBufferedRandomTest = dummyklass
     test_io.CBufferedReaderTest = dummyklass
     test_io.CBufferedWriterTest = dummyklass
@@ -87,28 +89,40 @@ def test_original_io():
     test_io.CTextIOWrapperTest = dummyklass
     test_io.CMiscIOTest = dummyklass
     test_io.CIOTest = dummyklass
-    test_io.TextIOWrapperTest.test_repr = dummyfunc
+
     test_io.IOTest.test_garbage_collection = dummyfunc # cyclic GC can't work with python classes having __del__() method
     test_io.PyIOTest.test_garbage_collection = dummyfunc # idem
-    test_io.PyIOTest.test_garbage_collection = dummyfunc # test_support.skip() unexisting
-    test_io.PyIOTest.test_flush_error_on_close = dummyfunc  #FIXME flush on close on rsfile !!
-    test_io.PyIOTest.test_invalid_newline = dummyfunc  #FIXME
-    test_io.PyIOTest.test_large_file_ops = dummyfunc  #FIXME heavy
 
+    test_io.PyIOTest.test_large_file_ops = dummyfunc  # we just skip because HEAVY AND LONG
+
+    test_io.TextIOWrapperTest.test_repr = dummyfunc  # repr() of streams changes of course
+
+
+    # TESTCASES TO FIX !!!!!!!!!!!  #
+    test_io.PyIOTest.test_invalid_newline = dummyfunc  # FIXME
     test_io.PyBufferedReaderTest.test_uninitialized = dummyfunc  #FIXME
     test_io.PyBufferedWriterTest.test_uninitialized = dummyfunc  #FIXME
+    test_io.BufferedRWPairTest.test_uninitialized = dummyfunc  #FIXME
+    test_io.PyBufferedRandomTest.test_uninitialized = dummyfunc  #FIXME
+    test_io.PyTextIOWrapperTest.test_uninitialized = dummyfunc  #FIXME
+
+    """
+
+    test_io.PyIOTest.test_garbage_collection = dummyfunc # test_support.skip() unexisting
+    test_io.PyIOTest.test_flush_error_on_close = dummyfunc  #FIXME flush on close on rsfile !!
+
     test_io.PyBufferedWriterTest.test_max_buffer_size_deprecation = dummyfunc  # sometimes lacking check_warnings() implementation
     test_io.PyBufferedRWPairTest.test_max_buffer_size_deprecation = dummyfunc
     test_io.PyBufferedRWPairTest.test_constructor_max_buffer_size_deprecation = dummyfunc
     test_io.PyBufferedRandomTest.test_max_buffer_size_deprecation = dummyfunc
-    test_io.PyBufferedRandomTest.test_uninitialized = dummyfunc  #FIXME
+
     test_io.BufferedRWPairTest.UnsupportedOperation = rsfile.io_module.UnsupportedOperation
     if not hasattr(unittest.TestCase, "skipTest"):
         test_io.IOTest.test_unbounded_file = dummyfunc
-    test_io.BufferedRWPairTest.test_uninitialized = dummyfunc  #FIXME
-    test_io.PyTextIOWrapperTest.test_uninitialized = dummyfunc  #FIXME
 
-    # like in _pyio, in rsfile we do not detect reentrant access to raise RuntimeError and avoid deadlocks
+    """
+
+    # like in _pyio, in rsfile, we do not detect reentrant access, nor raise RuntimeError to avoid deadlocks
     test_io.PySignalsTest.test_reentrant_write_buffered = dummyfunc
     test_io.PySignalsTest.test_reentrant_write_text = dummyfunc
     test_io.CSignalsTest.test_reentrant_write_buffered = dummyfunc
@@ -128,11 +142,13 @@ def test_original_io():
     test_io.PyTextIOWrapperTest.test_create_at_shutdown_without_encoding = dummyfunc
 
     test_fileio._FileIO = rsfile.io_module.FileIO
+    """
     test_fileio.OtherFileTests.testWarnings = dummyfunc
     test_fileio.OtherFileTests.testInvalidFd = dummyfunc # different exception types...
     test_fileio.AutoFileTests.testRepr = dummyfunc
     test_fileio.AutoFileTests.testMethods = dummyfunc # messy C functions signatures...
     test_fileio.AutoFileTests.testErrors = dummyfunc # incoherent errors returned on bad fd, between C and Py implementations...
+    """
 
     deco = test_fileio.AutoFileTests.__dict__["ClosedFDRaises"] # decorator must not become unbound method !
     @deco

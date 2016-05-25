@@ -98,18 +98,18 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
 
     # Quick type checking
     if name and not isinstance(name, (basestring, int, long)):
-        raise TypeError("invalid file: %r" % name)
+        raise defs.BadValueTypeError("invalid file: %r" % name)
     if not isinstance(mode, basestring):
-        raise TypeError("invalid mode: %r" % mode)
+        raise defs.BadValueTypeError("invalid mode: %r" % mode)
     if buffering is not None and not isinstance(buffering, (int, long)):
-        raise TypeError("invalid buffering: %r" % buffering)
+        raise defs.BadValueTypeError("invalid buffering: %r" % buffering)
     if encoding is not None and not isinstance(encoding, basestring):
-        raise TypeError("invalid encoding: %r" % encoding)
+        raise defs.BadValueTypeError("invalid encoding: %r" % encoding)
     if errors is not None and not isinstance(errors, basestring):
-        raise TypeError("invalid errors: %r" % errors)
+        raise defs.BadValueTypeError("invalid errors: %r" % errors)
 
     if not thread_safe and mutex:
-        raise ValueError("providing a mutex for a non thread-safe stream is abnormal")
+        raise defs.BadValueTypeError("providing a mutex for a non thread-safe stream is abnormal")
 
     cleaned_mode = mode.replace("U", "")
     if cleaned_mode.lower() == cleaned_mode:
@@ -118,14 +118,14 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
     elif cleaned_mode.upper() == cleaned_mode:
         (raw_kwargs, extended_kwargs) = parse_advanced_args(name, mode, fileno, handle, closefd)
     else:
-        raise ValueError("bad mode string %r : it must contain only lower case (standard mode) or upper case (advanced mode) characters" % mode)
+        raise defs.BadValueTypeError("bad mode string %r : it must contain only lower case (standard mode) or upper case (advanced mode) characters" % mode)
 
     if extended_kwargs["binary"] and encoding is not None:
-        raise ValueError("binary mode doesn't take an encoding argument")
+        raise defs.BadValueTypeError("binary mode doesn't take an encoding argument")
     if extended_kwargs["binary"] and errors is not None:
-        raise ValueError("binary mode doesn't take an errors argument")
+        raise defs.BadValueTypeError("binary mode doesn't take an 'errors' argument")
     if extended_kwargs["binary"] and newline is not None:
-        raise ValueError("binary mode doesn't take a newline argument")
+        raise defs.BadValueTypeError("binary mode doesn't take a newline argument")
 
     raw_kwargs['permissions'] = permissions
 
@@ -133,7 +133,7 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
     result = raw
     try:
         if extended_kwargs["truncate"] and not raw.writable():
-            raise ValueError("Can't truncate file opened in read-only mode")
+            raise defs.BadValueTypeError("Can't truncate file opened in read-only mode")
 
         if locking:
             #print "we enforce file locking with %s - %s" %(shared, timeout)
@@ -158,13 +158,13 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
                 if bs > 1:
                     buffering = bs
         if buffering < 0:
-            raise ValueError("invalid buffering size")
+            raise defs.BadValueTypeError("invalid buffering size")
         if buffering == 0:
             if extended_kwargs["binary"]:
                 if thread_safe:
                     result = RSThreadSafeWrapper(raw, mutex=mutex, is_interprocess=raw_kwargs["inheritable"])
                 return result
-            raise ValueError("can't have unbuffered text I/O")
+            raise defs.BadValueTypeError("can't have unbuffered text I/O")
 
         if raw.readable() and raw.writable():
             buffer = RSBufferedRandom(raw, buffering)
@@ -173,7 +173,7 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
         elif raw.readable():
             buffer = RSBufferedReader(raw, buffering)
         else:
-            raise ValueError("unknown mode: %r" % mode)
+            raise defs.BadValueTypeError("unknown mode: %r" % mode)
         result = buffer
         if extended_kwargs["binary"]:
             if thread_safe:
@@ -198,7 +198,7 @@ def parse_standard_args(name, mode, fileno, handle, closefd): # warning - name c
 
     modes = set(mode)
     if not mode or modes - set("xarwb+tU") or len(mode) > len(modes):
-        raise ValueError("invalid mode: %r" % mode)
+        raise defs.BadValueTypeError("invalid mode: %r" % mode)
 
 
     # raw analysis
@@ -214,20 +214,20 @@ def parse_standard_args(name, mode, fileno, handle, closefd): # warning - name c
 
     if "U" in modes: # only for backward compatibility
         if creating_flag or writing_flag or appending_flag or updating_flag:
-            raise ValueError("can't use U and writing mode at once")
+            raise defs.BadValueTypeError("can't use U and writing mode at once")
         reading_flag = True # we enforce reading 
 
     if text and binary:
-        raise ValueError("can't have text and binary mode at once")
+        raise defs.BadValueTypeError("can't have text and binary mode at once")
     if creating_flag + reading_flag + writing_flag + appending_flag > 1:
-        raise ValueError("can't have create/read/write/append mode flags at once")
+        raise defs.BadValueTypeError("can't have create/read/write/append mode flags at once")
     if not (creating_flag or reading_flag or writing_flag or appending_flag):
-        raise ValueError("must have one of create/read/write/append mode flags")
+        raise defs.BadValueTypeError("must have one of create/read/write/append mode flags")
 
     # real semantic
     if isinstance(name, (int, long)):
         if fileno is not None:
-            raise ValueError("Impossible to provide a file descriptor via both name and fileno arguments")
+            raise defs.BadValueTypeError("Impossible to provide a file descriptor via both name and fileno arguments")
         fileno = name
         path = None
     else:
@@ -263,7 +263,7 @@ def parse_advanced_args(path, mode, fileno, handle, closefd):
 
     modes = set(mode)
     if modes - set("RAW+-SIEBT") or len(mode) > len(modes):
-        raise ValueError("invalid mode: %r" % mode)
+        raise defs.BadValueTypeError("invalid mode: %r" % mode)
 
     path = path # must be None or a string
 
