@@ -139,14 +139,14 @@ def test_original_io():
 
     all_test_suites = []
 
-    for stdlib_test_module in (test_io, test_memoryio, test_file, test_bufio, test_fileio):
+    for stdlib_test_module in (test_fileio, test_io, test_file, test_bufio, test_memoryio):
 
         if hasattr(stdlib_test_module, "test_main"):
             stdlib_test_module.test_main()  # OLD STYLE
         else:
             # NOTE: this calls stdlib_test_module.load_tests() if present
             new_tests = unittest.defaultTestLoader.loadTestsFromModule(stdlib_test_module)
-            all_test_suites.extend(all_test_suites)
+            all_test_suites.extend(new_tests)
 
     if all_test_suites:
         test_support.run_unittest(*all_test_suites)
