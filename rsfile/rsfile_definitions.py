@@ -15,7 +15,8 @@ from io import open as original_io_open
 from _pyio import open as original_pyio_open
 
 
-import _pyio as io_module  #TODO remove that, or use C version ,?
+# beware, using C-backed IO doesn't work ATM because of class layout conflicts
+import _pyio as io_module
 
 BlockingIOError = io_module.BlockingIOError
 UnsupportedOperation = io_module.UnsupportedOperation

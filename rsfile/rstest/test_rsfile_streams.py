@@ -106,7 +106,7 @@ def test_original_io():
     test_io.PyBufferedRandomTest.test_uninitialized = dummyfunc  #FIXME
     test_io.PyTextIOWrapperTest.test_uninitialized = dummyfunc  #FIXME
 
-    """
+    """ OLD
 
     test_io.PyIOTest.test_garbage_collection = dummyfunc # test_support.skip() unexisting
     test_io.PyIOTest.test_flush_error_on_close = dummyfunc  #FIXME flush on close on rsfile !!
@@ -142,14 +142,19 @@ def test_original_io():
     test_io.PyTextIOWrapperTest.test_create_at_shutdown_without_encoding = dummyfunc
 
     test_fileio._FileIO = rsfile.io_module.FileIO
-    """
-    test_fileio.OtherFileTests.testWarnings = dummyfunc
-    test_fileio.OtherFileTests.testInvalidFd = dummyfunc # different exception types...
-    test_fileio.AutoFileTests.testRepr = dummyfunc
     test_fileio.AutoFileTests.testMethods = dummyfunc # messy C functions signatures...
     test_fileio.AutoFileTests.testErrors = dummyfunc # incoherent errors returned on bad fd, between C and Py implementations...
+    test_fileio.OtherFileTests.testInvalidFd = dummyfunc  # different exception types...
+
+    test_fileio.AutoFileTests.testRepr = dummyfunc  # repr() of streams changes of course
+
+    """ OLD
+    test_fileio.OtherFileTests.testWarnings = dummyfunc
+
+
     """
 
+    # bugfix of testErrnoOnClosedWrite() test in python2.7
     deco = test_fileio.AutoFileTests.__dict__["ClosedFDRaises"] # decorator must not become unbound method !
     @deco
     def bugfixed(self, f):
@@ -157,11 +162,13 @@ def test_original_io():
     test_fileio.AutoFileTests.testErrnoOnClosedWrite = bugfixed
 
 
+    # Skip C-oriented tests
     test_memoryio.CStringIOPickleTest = dummyklass
     test_memoryio.CBytesIOTest = dummyklass
     test_memoryio.CStringIOTest = dummyklass
 
 
+    # Skip C-oriented tests
     test_file.CAutoFileTests = dummyklass
 
 
@@ -181,7 +188,7 @@ def test_original_io():
 
 
 
-    # Custom launching :
+    ## Custom launching iof single test ##
     #mytest = test.test_io.TextIOWrapperTest('testBasicIO')
     #mytest.run()
 
@@ -192,7 +199,6 @@ def _cleanup():
     if os.path.exists(TESTFN):
         os.chmod(TESTFN, 0o777)
         os.remove(TESTFN)
-
     if os.path.exists(TESTFN + ".temp"):
         os.chmod(TESTFN + ".temp", 0o777)
         os.remove(TESTFN + ".temp")
