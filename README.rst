@@ -1,33 +1,34 @@
 RSFILE
 ================
 
-This lib is currently getting updated to support latest python2/3 versions.
+This lib (currently in version 1.1) is getting updated to support latest python2/3 versions.
 
-Lots of stuffs have been moving in the last years regarding IO streams, exception hierarchies, file descriptor inheritance and all that stuff, so it's time to move towards a new version.
+Lots of stuffs have been moving in the last years regarding IO streams, exception hierarchies, file descriptor inheritance and all that stuff, so it's time to move towards a version 2.0
 
 
 
 BUILDING
-================
+-----------
 
 To build the rsfile package:
-$ python setup.py sdist --formats=gztar,zip
 
-No need for bdist_msi or the weaker bdist_wininst: no intelligent 2to3 conversion with them, and rsfile is pure-python anyway, no binary distrib needed.
+    $ python setup.py sdist --formats=gztar,zip
+
+No need for `bdist_msi` or the weaker `bdist_wininst`: no intelligent 2to3 conversion with them, and rsfile is pure-python anyway, so no binary distribution is needed.
 
 
 TESTING
-================
+-----------
 
-To launch the test suite, which reuses stdlib tests and adds specific ones:
+To launch the test suite (which reuses some stdlib testcases, and adds specific ones), install the stdlib test suite if needed (eg. on Ubuntu, install packages like "libpython2.7-testsuite").
 
-Install the stdlib test suite if needed (eg. on Ubuntu, install packages like "libpython2.7-testsuite")
-
-$ python -m  rsfile.rstest.__main__
+    $ python -m  rsfile.rstest.test_rsfile_streams
+    $ python -m  rsfile.rstest.test_rsfile_locking
 
 To launch the benchmark, tweak the flags in rsfile/rstest/run_iobench.py to your liking,
 maybe modify rsfileio_win32 to force a specific low-level backend (on windows), and then run:
-$ python -m  rsfile.rstest.run_iobench
+
+    $ python -m  rsfile.rstest.run_iobench
 
 
 
