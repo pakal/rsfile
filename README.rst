@@ -1,4 +1,9 @@
+RSFILE
+================
 
+This lib is currently getting updated to support latest python2/3 versions.
+
+Lots of stuffs have been moving in the last years regarding IO streams, exception hierarchies, file descriptor inheritance and all that stuff, so it's time to move towards a new version.
 
 
 
