@@ -173,8 +173,10 @@ class RSIOBase(IO_BASE):
     __closed = False
 
     def close(self):
-        """Flushes and closes the IO object. Potential exceptions are NOT swallowed, 
-        and the streams is only marked as closed closed if the whole flush() was successful.
+        """
+        # FIXME OUTDATED
+        Flushes and closes the IO object. Potential exceptions are NOT swallowed,
+        and the streams is only marked as closed if the whole flush() was successful.
         
         This method has no effect if the file is already closed.
         

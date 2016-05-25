@@ -40,15 +40,15 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'RockSolidTools'
-copyright = u'2010, Pascal Chambon'
+project = u'RsFile'
+copyright = u'2016, Pascal Chambon'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
 # The short X.Y version.
-version = '1.1'
+version = '1.2'
 # The full version, including alpha/beta/rc tags.
 release = version
 
@@ -161,7 +161,7 @@ html_static_path = ['_static']
 #html_file_suffix = ''
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'RockSolidToolsdoc'
+htmlhelp_basename = 'rsfiledoc'
 
 
 # -- Options for LaTeX output --------------------------------------------------
@@ -174,10 +174,10 @@ htmlhelp_basename = 'RockSolidToolsdoc'
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
-latex_documents = [
-  ('index', 'RockSolidTools.tex', u'RockSolidTools Documentation',
-   u'Pascal Chambon', 'manual'),
-]
+#latex_documents = [
+#  ('index', 'RockSolidTools.tex', u'RockSolidTools Documentation',
+#   u'Pascal Chambon', 'manual'),
+#]
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
