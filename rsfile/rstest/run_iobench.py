@@ -30,32 +30,32 @@ def launch_benchmark():
 
     if RUN_STDLIB_CIO:
         import io
-        print ">>> benchmarking stdlib io module on python %s: module %r <<<" % (sys.version_info, io)
+        print (">>> benchmarking stdlib io module on python %s: module %r <<<" % (sys.version_info, io))
 
         iobench.open = io.open
         iobench.text_open = io.open
         _launch_iobench_tests()
 
-        print "\n-----------\n"
+        print ("\n-----------\n")
 
     if RUN_STDLIB_PYIO:
         import _pyio
-        print ">>> benchmarking stdlib pyio module on python %s: module %r <<<" % (sys.version_info, _pyio)
+        print (">>> benchmarking stdlib pyio module on python %s: module %r <<<" % (sys.version_info, _pyio))
 
         iobench.open = _pyio.open
         iobench.text_open = _pyio.open
         _launch_iobench_tests()
 
-        print "\n-----------\n"
+        print ("\n-----------\n")
 
     if RUN_RSFILE:
-        print ">>> benchmarking rsfile module <<<"
+        print (">>> benchmarking rsfile module <<<")
 
         iobench.open = rsfile.rsopen
         iobench.text_open = rsfile.rsopen
         _launch_iobench_tests()
 
-        print "\n-----------\n"
+        print ("\n-----------\n")
 
 
 if __name__ == '__main__':
