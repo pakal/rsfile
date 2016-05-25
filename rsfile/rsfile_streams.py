@@ -67,9 +67,9 @@ class _buffer_forwarder_mixin(object):
 
     def __getattr__(self, name):
         # print ("--> taking ", name, "in ", self)
-        raw = object.__getattribute__(self, "raw") # warning - avoid infinite recursion on getattr !
-        if isinstance(raw, collections.Callable):
-            raise AttributeError("Attribute %s not found" % name) # we don't want to inherit methods this way !
+        raw = self.__dict__.get("raw") # beware here - we avoid infinite recursion on getattr !
+        if raw is None or isinstance(raw, collections.Callable):
+            raise AttributeError("Attribute %s not found on RSBufferedStream (uninitialized?)" % name)  # problem...
         return getattr(raw, name)
 
 
@@ -113,6 +113,7 @@ class _text_forwarder_mixin(object):
         raise defs.BadValueTypeError("Text stream can't be read into buffer")
 
     def __repr__(self):
+        self.buffer  # raises exception if object is uninitialized
         clsname = self.__class__.__name__
         try:
             name = self.name
@@ -124,9 +125,9 @@ class _text_forwarder_mixin(object):
 
     def __getattr__(self, name):
         # print ("--> taking ", name, "in ", self)
-        buffer = object.__getattribute__(self, "buffer") # beware here - we avoid infinite recursion on getattr !
-        if isinstance(buffer, collections.Callable):
-            raise AttributeError("Attribute %s not found" % name) # we don't want to inherit methods this way !
+        buffer = self.__dict__.get("buffer") # beware here - we avoid infinite recursion on getattr !
+        if buffer is None or isinstance(buffer, collections.Callable):
+            raise AttributeError("Attribute %s not found on RSTextIO (uninitialized?)" % name)  # problem...
         return getattr(buffer, name)
 
 

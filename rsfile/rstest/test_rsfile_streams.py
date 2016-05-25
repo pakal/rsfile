@@ -99,12 +99,15 @@ def test_original_io():
 
 
     # TESTCASES TO FIX !!!!!!!!!!!  #
-    test_io.PyIOTest.test_invalid_newline = dummyfunc  # FIXME
-    test_io.PyBufferedReaderTest.test_uninitialized = dummyfunc  #FIXME
+    ####test_io.PyIOTest.test_invalid_newline = dummyfunc  # FIXME
+
+    """ OLDIE
+    #test_io.PyBufferedReaderTest.test_uninitialized = dummyfunc  #FIXME
     test_io.PyBufferedWriterTest.test_uninitialized = dummyfunc  #FIXME
     test_io.BufferedRWPairTest.test_uninitialized = dummyfunc  #FIXME
     test_io.PyBufferedRandomTest.test_uninitialized = dummyfunc  #FIXME
     test_io.PyTextIOWrapperTest.test_uninitialized = dummyfunc  #FIXME
+    """
 
     """ OLD
 
@@ -172,6 +175,12 @@ def test_original_io():
     test_file.CAutoFileTests = dummyklass
 
 
+    ## Custom launching iof single test ##
+    #mytest = test_io.PyIOTest('test_invalid_newline')
+    #res = mytest.run()
+    #print(res)
+
+
     all_test_suites = []
 
     for stdlib_test_module in (test_fileio, test_io, test_file, test_bufio, test_memoryio):
@@ -188,9 +197,6 @@ def test_original_io():
 
 
 
-    ## Custom launching iof single test ##
-    #mytest = test.test_io.TextIOWrapperTest('testBasicIO')
-    #mytest.run()
 
 
 
