@@ -113,8 +113,11 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
                 # Warning - it seems that for some people, metadata is actually NOT written to disk along with data !!!
                 
 
+            if isinstance(path, bytes):
+                path = path.decode(sys.getfilesystemencoding())  # pywin32 wants unicode
+
             args = (
-                path, # accepts both unicode and bytes
+                path,
                 desiredAccess, 
                 shareMode,
                 securityAttributes,
