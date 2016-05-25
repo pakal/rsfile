@@ -263,6 +263,9 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         except:
             pass
 
+    def __reduce__(self):
+        raise TypeError("RSFileIO is not pickleable")
+
 
     def seekable(self):
         self._checkClosed()
