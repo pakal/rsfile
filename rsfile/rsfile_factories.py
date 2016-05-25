@@ -6,7 +6,7 @@ import rsfile_definitions as defs
 from .rsfile_streams import *
 
 
-def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newline=None, fileno=None, handle=None, closefd=True,
+def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newline=None, fileno=None, handle=None, closefd=True, opener=None,
            locking=True, timeout=None, thread_safe=True, mutex=None, permissions=0o777):
 
     """
@@ -91,7 +91,7 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
     '...t'        '...T'
     ========= =====================
 
-
+    # TODO DOCUMENT that opener is ignored, and document x flag!!
     """
 
     # TODO - PYCONTRACT !!! check that no mutex if not thread-safe
@@ -197,11 +197,12 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
 def parse_standard_args(name, mode, fileno, handle, closefd): # warning - name can be a fileno here ...
 
     modes = set(mode)
-    if not mode or modes - set("arwb+tU") or len(mode) > len(modes):
+    if not mode or modes - set("xarwb+tU") or len(mode) > len(modes):
         raise ValueError("invalid mode: %r" % mode)
 
 
     # raw analysis
+    creating_flag = "x" in modes
     reading_flag = "r" in modes or "U" in modes
     writing_flag = "w" in modes
     appending_flag = "a" in modes
@@ -212,16 +213,16 @@ def parse_standard_args(name, mode, fileno, handle, closefd): # warning - name c
     text = "t" in modes
 
     if "U" in modes: # only for backward compatibility
-        if writing_flag or appending_flag or updating_flag:
+        if creating_flag or writing_flag or appending_flag or updating_flag:
             raise ValueError("can't use U and writing mode at once")
         reading_flag = True # we enforce reading 
 
     if text and binary:
         raise ValueError("can't have text and binary mode at once")
-    if reading_flag + writing_flag + appending_flag > 1:
-        raise ValueError("can't have read/write/append mode at once")
-    if not (reading_flag or writing_flag or appending_flag):
-        raise ValueError("must have exactly one of read/write/append mode")
+    if creating_flag + reading_flag + writing_flag + appending_flag > 1:
+        raise ValueError("can't have create/read/write/append mode flags at once")
+    if not (creating_flag or reading_flag or writing_flag or appending_flag):
+        raise ValueError("must have one of create/read/write/append mode flags")
 
     # real semantic
     if isinstance(name, (int, long)):
@@ -234,14 +235,15 @@ def parse_standard_args(name, mode, fileno, handle, closefd): # warning - name c
         path = name
 
     read = reading_flag or updating_flag
-    write = writing_flag or appending_flag or updating_flag
+    write = creating_flag or writing_flag or appending_flag or updating_flag
     append = appending_flag
-    must_not_create = reading_flag # "r" and "r+" modes require the file to exist, but no flag enforces "must_create"
+    must_create = creating_flag
+    must_not_create = read and not write
 
     raw_kwargs = dict(path=path,
                     read=read,
                     write=write, append=append,
-                    must_create=False,
+                    must_create=creating_flag,
                     must_not_create=must_not_create,
                     synchronized=False,
                     inheritable=True,
