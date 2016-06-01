@@ -15,40 +15,34 @@ module, as classes named *RSBufferedReader*, *RSBufferedWriter*, *RSBufferedRand
 *RSTextIOWrapper* and *RSThreadSafeWrapper*. They implement all methods from the original
 io.IOBase abstract class, with the new methods and semantics described below in their parent class *RSIOBase*.
 
-.. note:: 
-    RS Streams have a __getattr__ implementation allowing to access wrapped stream attributes from top level
-    streams. Thus, the attributes of RSFileIO listed below, *name, origin and mode*, also exist on buffered
-    and text streams from RSFile.
 
 .. autoclass:: RSIOBase
     
     
     .. rubric::
-        **SPECIFIC OR MODIFIED METHODS**
-    
+        **IMPROVED METHODS**
+
+    .. automethod:: truncate
+
     .. automethod:: close
-    
-    .. automethod:: fileno
+
+
+    .. rubric::
+        **ADDED METHODS**
     
     .. automethod:: handle
-    
-    .. automethod:: size
-    
-    .. automethod:: sync
-    
-    .. automethod:: times
-    
+
     .. automethod:: uid
-    
-    
-    .. rubric::
-        **LOCKING SYSTEM**
+
+    .. automethod:: size
+
+    .. automethod:: times
+
+    .. automethod:: sync
     
     .. automethod:: lock_file
     
     .. automethod:: unlock_file
-    
-    
 
     
  
@@ -62,13 +56,17 @@ New Raw Streams
 The replacement for **io.FileIO** has a quite different constructor, 
 giving a far broader range of possible semantics, as well as some new attributes.
 
-Note that the "share-delete" semantic has been on enforced on win32 as on unix, which means
+Note that the "share-delete" semantic has been on enforced on windows as on unix, which means
 that files opened with this library can still be moved/deleted in the filesystem while they're open.
 However, on win32 it may result in "stale files", which are not really deleted until the last handle to them is closed.
 
+.. note::
+    Rsfile streams implement __getattr__(), so that attributes are searched on wrapped streams if they can't be found on upper streams. Thus, the attributes of RSFileIO listed below, *name, origin and mode*, also exist on buffered
+    and text streams from Rsfile.
+
+
 .. autoclass:: RSFileIO
-	
-	
+
 	.. rubric::
 		**SPECIFIC OR MODIFIED ATTRIBUTES**
 	
