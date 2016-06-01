@@ -246,7 +246,7 @@ def parse_standard_args(name, mode, fileno, handle, closefd): # warning - name c
                     must_create=creating_flag,
                     must_not_create=must_not_create,
                     synchronized=False,
-                    inheritable=True,
+                    inheritable=False,  # was changed in python stdlib, no more inheritability by default!
                     fileno=fileno, handle=handle, closefd=closefd)
 
     extended_kwargs = dict(truncate=truncate,

@@ -799,12 +799,12 @@ class TestMiscStreams(unittest.TestCase):
         parser2 = rsfile.parse_advanced_args
 
         filemodes = {
-                    "r": "RI+",
-                    "w": "WIE",
-                    "a": "AI",
-                    "r+": "RWI+",
-                    "w+": "RWEI",
-                    "a+": "RWAI"
+                    "r": "R+",
+                    "w": "WE",
+                    "a": "A",
+                    "r+": "RW+",
+                    "w+": "RWE",
+                    "a+": "RWA"
                     }
         suffixes = {
                     "": "",
@@ -818,7 +818,10 @@ class TestMiscStreams(unittest.TestCase):
 
             res1 = parser1(TESTFN, mode1, None, None, True)
             res2 = parser2(TESTFN, mode2, None, None, True)
-            msg = str((mode1, mode2))
+            msg = """
+                    %s != %s :
+                    %s
+                    %s""" % (mode1, mode2, res1, res2)
             self.assertEqual(res1, res2, msg)
 
 
@@ -874,7 +877,7 @@ def test_main():
         # Historically, these tests have been sloppy about removing TESTFN.
         # So get rid of it no matter what.
         try:
-            ###test_support.run_unittest(TestRawFileViaWrapper, TestRawFileSpecialFeatures, TestMiscStreams)
+            test_support.run_unittest(TestRawFileViaWrapper, TestRawFileSpecialFeatures, TestMiscStreams)
             test_original_io()
         finally:
             if os.path.exists(TESTFN):

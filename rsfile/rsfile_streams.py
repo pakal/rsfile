@@ -67,9 +67,9 @@ class _buffer_forwarder_mixin(object):
 
     def __getattr__(self, name):
         # print ("--> taking ", name, "in ", self)
-        raw = self.__dict__.get("raw") # beware here - we avoid infinite recursion on getattr !
+        raw = self.__dict__.get("_raw")  # beware here - we avoid infinite recursion on getattr !
         if raw is None or isinstance(raw, collections.Callable):
-            raise AttributeError("Attribute %s not found on RSBufferedStream (uninitialized?)" % name)  # problem...
+            raise AttributeError("Attribute '_raw' not found on RSBufferedStream (uninitialized?)")  # problem...
         return getattr(raw, name)
 
 
@@ -125,9 +125,9 @@ class _text_forwarder_mixin(object):
 
     def __getattr__(self, name):
         # print ("--> taking ", name, "in ", self)
-        buffer = self.__dict__.get("buffer") # beware here - we avoid infinite recursion on getattr !
+        buffer = self.__dict__.get("_buffer") # beware here - we avoid infinite recursion on getattr !
         if buffer is None or isinstance(buffer, collections.Callable):
-            raise AttributeError("Attribute %s not found on RSTextIO (uninitialized?)" % name)  # problem...
+            raise AttributeError("Attribute '_buffer' not found on RSTextIO (uninitialized?)")  # problem...
         return getattr(buffer, name)
 
 
@@ -183,7 +183,7 @@ class RSThreadSafeWrapper(object):
 
     def __getattr__(self, name):
         #FIXME - too much time lost in that dynamic wrapper!!!!
-        attr = getattr(self.wrapped_stream, name) # might raise AttributeError
+        attr = getattr(self.wrapped_stream, name)  # might raise AttributeError
 
         if not name.startswith("_") and isinstance(attr, collections.Callable):
             # actually, we shouldn't care about others than types.MethodType, types.LambdaType, types.FunctionType
