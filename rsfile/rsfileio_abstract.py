@@ -247,7 +247,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
                         length = None if end is None else (end - start)
                         self._inner_file_unlock(length, start)
 
-                    self._inner_close_streams()
+                    self._inner_close_streams()  # should close the stream even if some operations fail
 
 
     def __del__(self):

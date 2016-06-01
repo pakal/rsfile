@@ -49,18 +49,14 @@ class RSIOBase(object):
 
     def close(self):
         """
-        # FIXME OUTDATED
-        Flushes and closes the IO object. Potential exceptions are NOT swallowed,
-        and the streams is only marked as closed if the whole flush() was successful.
+        Flushes and closes the IO object. This method has no effect if the file is already closed.
 
-        This method has no effect if the file is already closed.
+        Potential exceptions are NOT swallowed. Yet the underlying IO streams are closed even if the flush() failed, as is done in the stdlib io module. So if your data is very important, issue a separate flush() and handle potential errors (no more disk space, blocking operation error on a non-blocking stream...) before close().
 
         All the locks still held by the stream's file descriptor are released,
-        but on unix systems the descriptor itself is only closed when no more locks
-        are held by the process on the target disk file (this is a workaround for fctnl()'s
-        amazing semantic).
-
-        #FIXME WHAT IF ERROR? TEST AND DOCUMENT OUR OWN BEGAVIOUR COMPARED TO STDLIB
+        but on unix systems the file descriptor itself is only closed when no more locks
+        are held by the process on the target disk file. This is a workaround to prevent fctnl
+        locks on that file from all becoming stale in the process, due to the fctnl semantic.
         """
 
 
