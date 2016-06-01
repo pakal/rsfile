@@ -64,8 +64,8 @@ def test_original_io():
     def clean_unlink(filename):
         try:
             newname = filename + ".tmp" + str(int(time.time()))
-            os.rename(filename, newname) # to deal with stale win32 files due to SHARE_DELETE flag!
-            os.remove(newname) # on win32, file only removed when last handle is closed !
+            os.rename(filename, newname) # to deal with stale windows files due to SHARE_DELETE flag!
+            os.remove(newname) # on windows, file only removed when last handle is closed !
         except:
             pass
     test_support.unlink = clean_unlink
@@ -183,7 +183,7 @@ def test_original_io():
 
     all_test_suites = []
 
-    for stdlib_test_module in (test_fileio, test_io, test_file, test_bufio, test_memoryio):
+    for stdlib_test_module in (test_io, test_file, test_fileio, test_bufio, test_memoryio):
 
         if hasattr(stdlib_test_module, "test_main"):
             stdlib_test_module.test_main()  # OLD STYLE
@@ -556,7 +556,7 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
             os.rename(TESTFN, TESTFNBIS)
             os.remove(TESTFNBIS)
             self.assertRaises(IOError, rsfile.rsopen, TESTFN, "R+", buffering=0)
-            self.assertRaises(IOError, rsfile.rsopen, TESTFNBIS, "R+", buffering=0) # on win32 the file remains but in a weird state, awaiting deletion...
+            self.assertRaises(IOError, rsfile.rsopen, TESTFNBIS, "R+", buffering=0) # on windows the file remains but in a weird state, awaiting deletion...
 
         """
         
@@ -598,7 +598,7 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
         self.assertRaises(IOError, rsfile.rsopen, TESTFN, "RB-", buffering=0)
 
         with rsfile.rsopen(TESTFN, "RAEB", buffering=0) as f:
-            os.rename(TESTFN, TESTFN + ".temp") # for win32 platforms...
+            os.rename(TESTFN, TESTFN + ".temp") # for windows platforms...
             os.remove(TESTFN + ".temp")
 
         self.assertRaises(IOError, rsfile.rsopen, TESTFN, "WB+", buffering=0)
@@ -654,7 +654,7 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
                     myfile.seek(0, os.SEEK_END) # to fulfill the expectations of the worker process
 
                     if rsfile.FILE_IMPLEMENTATION == "win32":
-                        cmdline = subprocess.list2cmdline(pre_args + args) # Important for space escaping, with the buggy win32 spawn implementation...
+                        cmdline = subprocess.list2cmdline(pre_args + args) # Important for space escaping, with the buggy windows spawn implementation...
                         retcode = os.spawnl(os.P_WAIT, executable, cmdline)  # 1st argument must be the program itself !
                     else:
                         cmdline = pre_args + args

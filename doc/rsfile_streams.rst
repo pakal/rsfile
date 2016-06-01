@@ -58,7 +58,7 @@ giving a far broader range of possible semantics, as well as some new attributes
 
 Note that the "share-delete" semantic has been on enforced on windows as on unix, which means
 that files opened with this library can still be moved/deleted in the filesystem while they're open.
-However, on win32 it may result in "stale files", which are not really deleted until the last handle to them is closed.
+However, on windows it may result in "stale files", which are not really deleted until the last handle to them is closed.
 
 .. note::
     Rsfile streams implement __getattr__(), so that attributes are searched on wrapped streams if they can't be found on upper streams. Thus, the attributes of RSFileIO listed below, *name, origin and mode*, also exist on buffered

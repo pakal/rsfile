@@ -25,7 +25,7 @@ size() and uid() getters, O_SYNC or (O_CREAT|O_EXCL) semantics ?
 Thanks to thin wrappers to native APIs, rsfile might spare you 
 some headaches, as it offers such things in an object-oriented
 and portable fashion, with the backup of a rather comprehensive
-test suite (which currently passes on win32/linux/freebsd - I'm
+test suite (which currently passes on windows/linux/freebsd - I'm
 building more virtual machines to track platform-specific gotchas).
 
 Power users might be afraid that rsfile is currently 

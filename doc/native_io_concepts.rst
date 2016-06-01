@@ -36,10 +36,10 @@ Open file object
     can end up being shared by several processes.
 
 File descriptor 
-    This type (called C file descriptor on Posix systems, file handle on win32 platforms)
+    This type (called C file descriptor on Posix systems, file handle on windows platforms)
     mostly acts as a "pointer" to an open file object. It is typically an integer used as an index in
     a per-process open file table. Several open file references can target the same open file objects, 
-    via inheritance (when forking) or dedicated duplication functions (dup() on posix, DuplicateHandle() on win32).
+    via inheritance (when forking) or dedicated duplication functions (dup() on posix, DuplicateHandle() on windows).
     Synchronization systems may then be required to avoid race conditions around the common file offset.
     On some platforms, open file references have specific attributes (like permissions, locks, inheritability options...), 
     and the rest of their "state" is the one of the open file they represent.
@@ -82,8 +82,8 @@ So RSFile offers access to low level streams via :meth:`rsfile.fileno` and :meth
 and low level routines may be reached by miscellaneous means (rsbackends module contains the most common ones
 as ctypes or cython bridges).
 
-- :meth:`rsfile.fileno` returns a C/Posix compatible file descriptor (win32 emulates them with more or less success).
-- :meth:`rsfile.handle` returns a more platform-specific file handle, if any (a HANDLE integer on win32, 
+- :meth:`rsfile.fileno` returns a C/Posix compatible file descriptor (windows emulates them with more or less success).
+- :meth:`rsfile.handle` returns a more platform-specific file handle, if any (a HANDLE integer on windows,
   on unix platforms this methdo acts the same as :meth:`rsfile.fileno`.
   
 
@@ -118,7 +118,7 @@ Then, to achieve inheritance, three operations must be done.
 
 Note that if you use libraries like the stdlib's *multiprocessing* package, these last tasks may be transparently
 performed for you, python streams being pickled, transferred, and then restored in the new process, sometimes thanks to some
-low level routines handling the transfer of handle access permissions between processes (eg. win32's DuplicateHandle()).
+low level routines handling the transfer of handle access permissions between processes (eg. windows's DuplicateHandle()).
 
 
 .. rubric::
@@ -228,7 +228,7 @@ Common features
 
 
 
-Win32 LockFile
+Windows LockFile
 #################
 
 
@@ -404,7 +404,7 @@ you've just written) or more than embarrassing (bank files management, database 
 
 That's why operating system offer ways of flushing that kernel cache, to ensure that data gets 
 properly written to the device before starting other operations. Such a flush can be manually triggered
-(posix fsync() call, win32 FlushFileBuffers()...) or enforced for each write on a given open file 
+(posix fsync() call, windows FlushFileBuffers()...) or enforced for each write on a given open file
 (O_SYNC/FILE_WRITE_THROUGH opening flags). 
 
 Note that several variants of that kernel cache flush exist (dsync, rsync, datasync semantics...),
@@ -442,7 +442,7 @@ involved hardware/OS/applications may give you some certainties in this case
 (a good old "unplug the cable violently and check the result" might also help).
 
 Windows
-    The win32 FlushFileBuffers call usually implies both kernel cache and disk 
+    The windows FlushFileBuffers call usually implies both kernel cache and disk
     cache flushing, as well on local storages as on remote filesystems. But this only works 
     if the disk hasn't been configured with option "Turn off Windows write-cache buffer flushing".
 

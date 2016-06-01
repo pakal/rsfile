@@ -151,7 +151,7 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
         if buffering < 0:
             buffering = defs.DEFAULT_BUFFER_SIZE
             try:
-                bs = os.fstat(raw.fileno()).st_blksize # TODO - TO BE IMPROVED, on win32 it uselessly puts to work the libc compatibility layer !
+                bs = os.fstat(raw.fileno()).st_blksize # TODO - TO BE IMPROVED, on windows it uselessly puts to work the libc compatibility layer !
             except (os.error, AttributeError):
                 pass
             else:

@@ -5,7 +5,7 @@ import sys, multiprocessing, threading, functools, collections
 
 from . import rsfile_definitions as defs
 
-if sys.platform == 'win32':
+if sys.platform == 'win32':  # even on 64bits windows OS
     try:
         from .rsfileio_win32 import RSFileIO
         FILE_IMPLEMENTATION = "win32"

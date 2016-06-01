@@ -1,6 +1,13 @@
 #-*- coding: utf-8 -*-
 from __future__ import unicode_literals, print_function
 
+"""
+Reimplementation of raw streams for windows OS, with advanced abilities.
+
+Note that, like in sys.platform or pywin32, "win32" actually means both x86 and x64 platforms.
+"""
+
+
 import sys, os, functools, time, errno, stat, locale
 from array import array
 

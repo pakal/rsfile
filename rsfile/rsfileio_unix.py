@@ -1,13 +1,17 @@
 #-*- coding: utf-8 -*-
 from __future__ import unicode_literals, print_function
 
+"""
+Reimplementation of raw streams for unix-like OS, with advanced abilities.
+"""
+
+
 import sys, os, functools, errno, time, stat, threading, locale
 from .import rsfileio_abstract
 from .import rsfile_definitions as defs
 
 
 from .rsbackend import unix_stdlib as unix
-
 
 
 

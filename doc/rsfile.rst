@@ -14,7 +14,7 @@ poorly object-oriented, full of platform-specific behaviours, and worst of all
 they sometimes rely on castrated implementations, like windows' libc compatibility layer.
 
 That's why RSFile offers more than a simple interfacing/adaptation layer : it 
-also wraps native file objects (like win32 "Handles"), to ensure a maximal flexibility 
+also wraps native file objects (like windows "Handles"), to ensure a maximal flexibility
 of the API.
 
 The main idea behind the design of the API, is that "cross-platform" doesn't mean 
