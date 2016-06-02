@@ -11,6 +11,7 @@ from rsfile.rstest import _worker_process
 import sys
 import os
 import unittest
+from pprint import pprint
 
 import time
 import itertools
@@ -830,30 +831,40 @@ class TestMiscStreams(unittest.TestCase):
             "RWC": "x+",
             "RWN": None,
         }
+
+        suffixes = {
+            "": "",
+            "B": "b",
+            "T": "t"
+        }
+        file_modes = dict((mode1 + suf1, (mode2 + suf2 if mode2 else mode2))
+                          for (mode1, mode2) in file_modes.items()
+                          for (suf1, suf2) in suffixes.items())
+
         file_modes = {"".join(sorted(k)): v
                       for (k, v) in file_modes.items()}
+
+        pprint(file_modes)
 
         def gen_all_combinations(values):
             for L in range(0, len(values) + 1):
                 for subset in itertools.permutations(values, L):
                     yield subset
 
-        adv_flags = list("RAWCN")  # remove deprecated and isolated flags
+        adv_flags = list("RAWCNBT")  # remove deprecated and isolated flags
         for subset in gen_all_combinations(adv_flags):
 
                 selected_adv_flags = "".join(subset)  # the sames flags will come in various orders
-
-                print("----> %r" % selected_adv_flags)
 
                 _selected_adv_flags_normalized = "".join(sorted(selected_adv_flags))
                 is_abnormal_mode = _selected_adv_flags_normalized not in file_modes
                 selected_stdlib_flags = file_modes.get(_selected_adv_flags_normalized, None)
                 del _selected_adv_flags_normalized
 
+                print("----> %r, %r" % (selected_adv_flags, selected_stdlib_flags))
+
                 if is_abnormal_mode:
                     assert selected_stdlib_flags is None
-
-                    ####self.assertRaises(ValueError, adv_parser, TESTFN, selected_adv_flags, fileno=None, handle=None, closefd=None)
 
                     self.assertRaises(ValueError, rsfile.rsopen, TESTFN, selected_adv_flags)  # NOT an OSError
 
@@ -882,40 +893,9 @@ class TestMiscStreams(unittest.TestCase):
                                 %s""" % (selected_stdlib_flags, selected_adv_flags, stdlib_res, adv_res)
                         self.assertEqual(stdlib_res, adv_res, msg)
 
+                    #TODO - test behaviour of ORIGINAL open, to nesure it's conform
 
 
-                        #with rsfile.rsopen(TESTFN, selected_adv_flags) as f:
-                #    pass
-
-        return
-
-        combinations = file_modes
-
-        for (std_mode, adv_mode) in combinations.items():
-            pass
-
-
-
-        filemodes = {
-                    "r": "R+",
-                    "w": "WE",
-                    "a": "A",
-                    "r+": "RW",
-                    "w+": "RWE",
-                    "a+": "RWA"
-                    }
-        suffixes = {
-                    "": "",
-                    "b": "B",
-                    "t": "T"
-                    }
-
-        combinations = dict((mode1 + suf1, mode2 + suf2) for (mode1, mode2) in filemodes.items() for (suf1, suf2) in suffixes.items())
-
-        for (mode1, mode2) in combinations.items():
-
-           aaa
-        aaa
 
     def testReturnedStreamTypes(self):
 
