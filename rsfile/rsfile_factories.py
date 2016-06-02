@@ -236,7 +236,7 @@ def parse_standard_args(name, mode, fileno, handle, closefd): # warning - name c
     write = creating_flag or writing_flag or appending_flag or updating_flag
     append = appending_flag
     must_create = creating_flag
-    must_not_create = read and not write
+    must_not_create = reading_flag and not (creating_flag or writing_flag or appending_flag)
 
     raw_kwargs = dict(path=path,
                     read=read,

@@ -29,6 +29,9 @@ from rsfile.rstest import _utilities
 TESTFN = "@TESTING" # we used our own one, since the test_support version is broken
 
 
+HAS_X_OPEN_FLAG = (sys.version_info >= (3, 3))
+
+
 class TestStreamsRetrocompatibility(unittest.TestCase):
 
     def _determine_stream_capabilities(self, opener, mode):
@@ -36,8 +39,15 @@ class TestStreamsRetrocompatibility(unittest.TestCase):
         Utility that reverse-engineers the REAL behaviour of a stream during and after its creation.
         """
 
+        if "b" in mode.lower():
+            payload = b"ABCDEF"
+            extra_data = b"XXX"
+        else:
+            payload = "ABCDEF"
+            extra_data = "XXX"
+
         (fd, name) = tempfile.mkstemp()
-        os.write(fd, "ABCDEF")
+        os.write(fd, payload)
         os.close(fd)
         assert os.path.getsize(name) == 6
 
@@ -62,30 +72,29 @@ class TestStreamsRetrocompatibility(unittest.TestCase):
 
 
         (fd, name) = tempfile.mkstemp()
-        os.write(fd, "abcde")
+        os.write(fd, payload)
         os.close(fd)
-        assert os.path.getsize(name) == 5
+        assert os.path.getsize(name) == 6
         if must_create:
             os.unlink(name)
 
         with opener(name, mode) as stream:  # MUST succeed
 
             try:
-                data = u"XXX" if hasattr(stream, "_get_encoder") else b"XXX"
 
                 if must_create:
-                    stream.write(u"AbCdE" if hasattr(stream, "_get_encoder") else b"aBcDe")
+                    stream.write(payload)
                     stream.seek(0)  # to check "append" behaviour
 
-                stream.write(data)
+                stream.write(extra_data)
                 stream.flush()
                 write = True
 
                 new_size = os.path.getsize(name)
-                if new_size == 8:
+                if new_size == 9:
                     append = True
                 else:
-                    assert new_size == 5, new_size
+                    assert new_size == 6, new_size
                     append = False
             except EnvironmentError:
                 write = False
@@ -131,7 +140,7 @@ class TestStreamsRetrocompatibility(unittest.TestCase):
             "AN": None,
             "WAN": None,
 
-            "RW": "r+",
+            "RW": None,
             "RWE": "w+",
             "RA": "a+",
             "RAC": None,
@@ -140,7 +149,7 @@ class TestStreamsRetrocompatibility(unittest.TestCase):
             "RAN": None,
             "RWA": "a+",
             "RWC": "x+",
-            "RWN": None,
+            "RWN": "r+",
         }
 
         suffixes = {
@@ -175,7 +184,7 @@ class TestStreamsRetrocompatibility(unittest.TestCase):
             selected_stdlib_flags = file_modes.get(_selected_adv_flags_normalized, None)
             del _selected_adv_flags_normalized
 
-            #print("----> %r, %r" % (selected_adv_flags, selected_stdlib_flags))
+            print("==--> %r, %r" % (selected_adv_flags, selected_stdlib_flags))
 
             if is_abnormal_mode:
                 assert selected_stdlib_flags is None
@@ -232,7 +241,18 @@ class TestStreamsRetrocompatibility(unittest.TestCase):
                 REAL:         %s""" % (theoretical_abilities, real_abilities)
             self.assertEqual(theoretical_abilities, real_abilities, msg)
 
-            #### TODO - test behaviour of ORIGINAL open, to ensure it's conform
+
+            if selected_stdlib_flags:
+
+                if HAS_X_OPEN_FLAG or ("x" not in selected_stdlib_flags):
+
+                    legacy_abilities = self._determine_stream_capabilities(io.open, selected_stdlib_flags)
+
+                    msg = """
+                        THEORETICAL : %s
+                        LEGACY:       %s""" % (theoretical_abilities, legacy_abilities)
+                    self.assertEqual(theoretical_abilities, legacy_abilities, msg)
+
 
         assert idx > 1000, idx  # we've well browsed lots of combinations
 
