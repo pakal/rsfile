@@ -728,7 +728,7 @@ class TestMiscStreams(unittest.TestCase):
         assertCloseOK(io.open(TESTFN, "RWT", buffering=100))
 
 
-    def testMethodForwarding(self): # PAKAL - TODO - buffer reset doesn't work with seek_cur in py26 !!!
+    def testMethodForwarding(self):
 
         def test_new_methods(myfile, raw, char):
 
@@ -837,15 +837,20 @@ class TestMiscStreams(unittest.TestCase):
 
             try:
                 data = u"XXX" if hasattr(stream, "_get_encoder") else b"XXX"
+
+                if must_create:
+                    stream.write(u"AbCdE" if hasattr(stream, "_get_encoder") else b"aBcDe")
+                    stream.seek(0)  # to check "append" behaviour
+
                 stream.write(data)
                 stream.flush()
                 write = True
 
                 new_size = os.path.getsize(name)
-                if not must_create and new_size == 8:
+                if new_size == 8:
                     append = True
                 else:
-                    assert new_size in (3, 5), new_size
+                    assert new_size == 5, new_size
                     append = False
             except EnvironmentError:
                 write = False
@@ -928,65 +933,73 @@ class TestMiscStreams(unittest.TestCase):
         adv_flags = list("RAWCNBT")  # remove deprecated and isolated flags
         for idx, subset in enumerate(gen_all_combinations(adv_flags)):
 
-                selected_adv_flags = "".join(subset)  # the sames flags will come in various orders
+            selected_adv_flags = "".join(subset)  # the sames flags will come in various orders
 
-                _selected_adv_flags_normalized = "".join(sorted(selected_adv_flags))
-                is_abnormal_mode = _selected_adv_flags_normalized not in file_modes
-                selected_stdlib_flags = file_modes.get(_selected_adv_flags_normalized, None)
-                del _selected_adv_flags_normalized
+            _selected_adv_flags_normalized = "".join(sorted(selected_adv_flags))
+            is_abnormal_mode = _selected_adv_flags_normalized not in file_modes
+            selected_stdlib_flags = file_modes.get(_selected_adv_flags_normalized, None)
+            del _selected_adv_flags_normalized
 
-                #print("----> %r, %r" % (selected_adv_flags, selected_stdlib_flags))
+            #print("----> %r, %r" % (selected_adv_flags, selected_stdlib_flags))
 
-                if is_abnormal_mode:
-                    assert selected_stdlib_flags is None
-
-                    self.assertRaises(ValueError, rsfile.rsopen, TESTFN, selected_adv_flags)  # NOT an OSError
-
-                else:
-
-                    try:
-                        with rsfile.rsopen(TESTFN, selected_adv_flags):
-                            pass
-                    except EnvironmentError:  # it's certainly due to file existence constraints
-                        if selected_stdlib_flags:
-                            # ALSO fails
-                            self.assertRaises(EnvironmentError, rsfile.rsopen, TESTFN, selected_stdlib_flags)
-                    else:
-                        if selected_stdlib_flags:
-                            # ALSO succeeds
-                            with rsfile.rsopen(TESTFN, selected_stdlib_flags):
-                                pass
-
-                    if selected_stdlib_flags:
-
-                        # first we compare abilities on a THEORETICAL level between stdlib and advanced mode
-                        stdlib_res = std_parser(TESTFN, selected_stdlib_flags, None, None, True)
-                        adv_res = adv_parser(TESTFN, selected_adv_flags, None, None, True)
-                        msg = """
-                                %s != %s :
-                                %s
-                                %s""" % (selected_stdlib_flags, selected_adv_flags, stdlib_res, adv_res)
-                        self.assertEqual(stdlib_res, adv_res, msg)
-
-                        # then we compare theoretical abilities with what the stream can ACTUALLY do
-                        theoretical_abilities = dict(
-                            read = stdlib_res[0]["read"],
-                            write = stdlib_res[0]["write"],
-                            append = stdlib_res[0]["append"],
-                            must_create = stdlib_res[0]["must_create"],
-                            must_not_create = stdlib_res[0]["must_not_create"],
-                            truncate = stdlib_res[1]["truncate"]
-                        )
-                        chosen_flags = random.choice((selected_stdlib_flags, selected_adv_flags))
-                        real_abilities = self._determine_stream_capabilities(rsfile.rsopen, chosen_flags)
-
-                        msg = """
-                            THEORETICAL : %s
-                            REAL:         %s""" % (theoretical_abilities, real_abilities)
-                        self.assertEqual(theoretical_abilities, real_abilities, msg)
+            if is_abnormal_mode:
+                assert selected_stdlib_flags is None
+                self.assertRaises(ValueError, rsfile.rsopen, TESTFN, selected_adv_flags)  # NOT an OSError
+                continue
 
 
-                    #TODO - test behaviour of ORIGINAL open, to nesure it's conform
+            try:
+                with rsfile.rsopen(TESTFN, selected_adv_flags):
+                    pass
+            except EnvironmentError:  # it's certainly due to file existence constraints
+                if selected_stdlib_flags:
+                    # ALSO fails
+                    self.assertRaises(EnvironmentError, rsfile.rsopen, TESTFN, selected_stdlib_flags)
+            else:
+                if selected_stdlib_flags:
+                    # ALSO succeeds
+                    with rsfile.rsopen(TESTFN, selected_stdlib_flags):
+                        pass
+
+            adv_res = adv_parser(TESTFN, selected_adv_flags, None, None, True)
+
+            if selected_stdlib_flags:
+
+                # we compare abilities on a THEORETICAL level between stdlib and advanced mode
+                stdlib_res = std_parser(TESTFN, selected_stdlib_flags, None, None, True)
+
+                msg = """
+                        %s != %s :
+                        %s
+                        %s""" % (selected_stdlib_flags, selected_adv_flags, stdlib_res, adv_res)
+                self.assertEqual(stdlib_res, adv_res, msg)
+
+                chosen_flags = random.choice((selected_stdlib_flags, selected_adv_flags))
+
+            else:
+
+                chosen_flags = selected_adv_flags
+
+
+            # we compare theoretical abilities with what the stream can ACTUALLY do
+            theoretical_abilities = dict(
+                read = adv_res[0]["read"],
+                write = adv_res[0]["write"],
+                append = adv_res[0]["append"],
+                must_create = adv_res[0]["must_create"],
+                must_not_create = adv_res[0]["must_not_create"],
+                truncate = adv_res[1]["truncate"]
+            )
+
+            real_abilities = self._determine_stream_capabilities(rsfile.rsopen, chosen_flags)
+
+            msg = """
+                THEORETICAL : %s
+                REAL:         %s""" % (theoretical_abilities, real_abilities)
+            self.assertEqual(theoretical_abilities, real_abilities, msg)
+
+
+            #### TODO - test behaviour of ORIGINAL open, to nesure it's conform
 
         assert idx > 1000, idx  # we've well browsed lots of combinations
 
@@ -1057,12 +1070,12 @@ def test_main():
 
 
 if __name__ == '__main__':
-    #test_main()
+    test_main()
 
     ##_cleanup()
     #test_original_io()
     #run_unittest(TestMiscStreams)
-    TestMiscStreams("testModeEquivalences").testModeEquivalences()
+    #TestMiscStreams("testModeEquivalences").testModeEquivalences()
 
 
 
