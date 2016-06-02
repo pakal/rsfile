@@ -118,10 +118,12 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
                 # DO NOT USE FILE_FLAG_NO_BUFFERING - too many constraints on data alignments
                 # thanks to this flag, no need to "fsync" the file with FlushFileBuffers(), it's immediately stored on the disk
                 # Warning - it seems that for some people, metadata is actually NOT written to disk along with data !!!
+                # we can't use FILE_APPEND_DATA flag, because it prevents use from truncating the file later one
                 
 
             if isinstance(path, bytes):
                 path = path.decode(sys.getfilesystemencoding())  # pywin32 wants unicode
+
 
             args = (
                 path,
@@ -311,7 +313,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         La doc se contredit, est-ce qu'il faut retourner num written ou lancer ioerror ?? PAKAL
         """
 
-        if self._append: # yep, no atomicity around here, as in truncate()
+        if self._append: # yep, no atomicity around here, as in truncate(), since FILE_APPEND_DATA can't be used
             self._inner_seek(0, defs.SEEK_END)
 
         cur_pos = self._inner_tell()
