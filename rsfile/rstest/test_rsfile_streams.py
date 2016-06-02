@@ -13,6 +13,7 @@ import os
 import unittest
 from pprint import pprint
 
+import tempfile
 import time
 import itertools
 import threading
@@ -795,6 +796,76 @@ class TestMiscStreams(unittest.TestCase):
             test_new_methods(myfile, myfile.buffer.raw, "x")
 
 
+    def _determine_stream_capabilities(self, opener, mode):
+        """
+        Utility that reverse-engineers the REAL behaviour of a stream during and after its creation.
+        """
+
+        (fd, name) = tempfile.mkstemp()
+        os.write(fd, "ABCDEF")
+        os.close(fd)
+        assert os.path.getsize(name) == 6
+
+        truncate = False
+        try:
+            stream = opener(name, mode)  # open EXISTING file
+            stream.close()
+            truncate = (os.path.getsize(name) == 0)
+            must_create = False
+        except EnvironmentError:
+            must_create = True
+            must_not_create = False
+        else:
+            os.unlink(name)
+            try:
+                stream = opener(name, mode)  # open UNEXISTING file
+                stream.close()
+                must_not_create = False
+            except EnvironmentError:
+                must_not_create = True
+        assert not (must_create and must_not_create), (must_create, must_not_create)
+
+
+        (fd, name) = tempfile.mkstemp()
+        os.write(fd, "abcde")
+        os.close(fd)
+        assert os.path.getsize(name) == 5
+        if must_create:
+            os.unlink(name)
+
+        with opener(name, mode) as stream:  # MUST succeed
+
+            try:
+                data = u"XXX" if hasattr(stream, "_get_encoder") else b"XXX"
+                stream.write(data)
+                stream.flush()
+                write = True
+
+                new_size = os.path.getsize(name)
+                if not must_create and new_size == 8:
+                    append = True
+                else:
+                    assert new_size in (3, 5), new_size
+                    append = False
+            except EnvironmentError:
+                write = False
+                append = False
+
+            try:
+                stream.read(1)
+                read = True
+            except EnvironmentError:
+                read = False
+
+        assert read or write
+
+        params = dict(read=read,
+                          write=write,
+                          append=append,
+                          must_create=must_create,
+                          must_not_create=must_not_create,
+                          truncate=truncate)
+        return params
 
 
     def testModeEquivalences(self):
@@ -844,7 +915,10 @@ class TestMiscStreams(unittest.TestCase):
         file_modes = {"".join(sorted(k)): v
                       for (k, v) in file_modes.items()}
 
-        pprint(file_modes)
+        stdlib_file_modes = set(file_modes.values()) - set([None])
+        #pprint(stdlib_file_modes)
+
+        assert len(stdlib_file_modes) == 4 * 2 * 3  # 4 access modes, "+" or not, and ""/"b"/"t"
 
         def gen_all_combinations(values):
             for L in range(0, len(values) + 1):
@@ -852,7 +926,7 @@ class TestMiscStreams(unittest.TestCase):
                     yield subset
 
         adv_flags = list("RAWCNBT")  # remove deprecated and isolated flags
-        for subset in gen_all_combinations(adv_flags):
+        for idx, subset in enumerate(gen_all_combinations(adv_flags)):
 
                 selected_adv_flags = "".join(subset)  # the sames flags will come in various orders
 
@@ -861,7 +935,7 @@ class TestMiscStreams(unittest.TestCase):
                 selected_stdlib_flags = file_modes.get(_selected_adv_flags_normalized, None)
                 del _selected_adv_flags_normalized
 
-                print("----> %r, %r" % (selected_adv_flags, selected_stdlib_flags))
+                #print("----> %r, %r" % (selected_adv_flags, selected_stdlib_flags))
 
                 if is_abnormal_mode:
                     assert selected_stdlib_flags is None
@@ -885,6 +959,7 @@ class TestMiscStreams(unittest.TestCase):
 
                     if selected_stdlib_flags:
 
+                        # first we compare abilities on a THEORETICAL level between stdlib and advanced mode
                         stdlib_res = std_parser(TESTFN, selected_stdlib_flags, None, None, True)
                         adv_res = adv_parser(TESTFN, selected_adv_flags, None, None, True)
                         msg = """
@@ -893,8 +968,27 @@ class TestMiscStreams(unittest.TestCase):
                                 %s""" % (selected_stdlib_flags, selected_adv_flags, stdlib_res, adv_res)
                         self.assertEqual(stdlib_res, adv_res, msg)
 
+                        # then we compare theoretical abilities with what the stream can ACTUALLY do
+                        theoretical_abilities = dict(
+                            read = stdlib_res[0]["read"],
+                            write = stdlib_res[0]["write"],
+                            append = stdlib_res[0]["append"],
+                            must_create = stdlib_res[0]["must_create"],
+                            must_not_create = stdlib_res[0]["must_not_create"],
+                            truncate = stdlib_res[1]["truncate"]
+                        )
+                        chosen_flags = random.choice((selected_stdlib_flags, selected_adv_flags))
+                        real_abilities = self._determine_stream_capabilities(rsfile.rsopen, chosen_flags)
+
+                        msg = """
+                            THEORETICAL : %s
+                            REAL:         %s""" % (theoretical_abilities, real_abilities)
+                        self.assertEqual(theoretical_abilities, real_abilities, msg)
+
+
                     #TODO - test behaviour of ORIGINAL open, to nesure it's conform
 
+        assert idx > 1000, idx  # we've well browsed lots of combinations
 
 
     def testReturnedStreamTypes(self):
