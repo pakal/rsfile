@@ -2,7 +2,7 @@
 from __future__ import unicode_literals, print_function
 
 import os, stat
-import rsfile_definitions as defs
+from . import rsfile_definitions as defs
 from .rsfile_streams import *
 
 
@@ -270,7 +270,7 @@ def parse_advanced_args(path, mode, fileno, handle, closefd):
     write = "W" in mode or append
 
     must_create = "C" in mode or "-" in mode
-    must_not_create = "X" in mode or "+" in mode
+    must_not_create = "N" in mode or "+" in mode
 
     synchronized = "S" in mode
     inheritable = "I" in mode

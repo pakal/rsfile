@@ -147,7 +147,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
             raise defs.BadValueTypeError("File must be opened at least in 'read', 'write' or 'append' mode.")
 
         if must_create and must_not_create :
-            raise defs.BadValueTypeError("File can't be wanted both existing and unexisting.")
+            raise defs.BadValueTypeError("File can't be wanted both as existing and unexisting.")
 
         if not closefd and not (fileno or handle):
             raise defs.BadValueTypeError("Cannot use closefd=False without providing a descriptor to wrap.")

@@ -16,7 +16,7 @@ from _pyio import open as original_pyio_open
 
 
 STDLIB_OPEN_FLAGS = set("xarw+btU")
-ADVANCED_OPEN_FLAGS = set("RAW+-XCSIEBT")
+ADVANCED_OPEN_FLAGS = set("RAW+-CNSIEBT")  # + and - are only left for retrocompatibility
 
 
 # beware, using C-backed IO doesn't work ATM because of class layout conflicts

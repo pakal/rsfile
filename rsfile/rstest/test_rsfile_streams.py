@@ -1,6 +1,7 @@
 #-*- coding: utf-8 -*-
 from __future__ import unicode_literals, print_function
 
+import rsfile.rsfile_definitions as defs
 
 from rsfile.rstest import _utilities
 _utilities.patch_test_supports()
@@ -797,8 +798,92 @@ class TestMiscStreams(unittest.TestCase):
 
     def testModeEquivalences(self):
 
-        parser1 = rsfile.parse_standard_args
-        parser2 = rsfile.parse_advanced_args
+        std_parser = rsfile.parse_standard_args
+        adv_parser = rsfile.parse_advanced_args
+
+        file_modes = {
+            "R": "r",
+            "RN": "r",
+            "RC": None,  # makes little sense, but possible
+
+            "W": None,
+            "WE": "w",
+            "WN": None,
+            "WEN": None,
+            "WC": "x",
+
+            "A": "a",
+            "WA": "a",
+            "AC": None,
+            "WAC": None,
+            "AN": None,
+            "WAN": None,
+
+            "RW": "r+",
+            "RWE": "w+",
+            "RA": "a+",
+            "RAC": None,
+            "RWAC": None,
+            "RWAN": None,
+            "RAN": None,
+            "RWA": "a+",
+            "RWC": "x+",
+            "RWN": None,
+        }
+        file_modes = {"".join(sorted(k)): v
+                      for (k, v) in file_modes.items()}
+
+        def gen_all_combinations(values):
+            for L in range(0, len(values) + 1):
+                for subset in itertools.permutations(values, L):
+                    yield subset
+
+        adv_flags = list("RAWCN")  # remove deprecated and isolated flags
+        for subset in gen_all_combinations(adv_flags):
+
+                selected_adv_flags = "".join(subset)  # the sames flags will come in various orders
+
+
+                _selected_adv_flags_normalized = "".join(sorted(selected_adv_flags))
+                is_abnormal_mode = _selected_adv_flags_normalized not in file_modes
+                selected_stdlib_flags = file_modes.get(_selected_adv_flags_normalized, None)
+                del _selected_adv_flags_normalized
+
+                if is_abnormal_mode:
+                    assert selected_stdlib_flags is None
+
+                    print("----> %r" % selected_adv_flags)
+
+                    ####self.assertRaises(ValueError, adv_parser, TESTFN, selected_adv_flags, fileno=None, handle=None, closefd=None)
+
+                    self.assertRaises(ValueError, rsfile.rsopen, TESTFN, selected_adv_flags)  # NOT an OSError
+
+                else:
+
+                    try:
+                        with rsfile.rsopen(TESTFN, selected_adv_flags):
+                            pass
+                    except EnvironmentError:  # it's certainly due to file existence constraints
+                        if selected_stdlib_flags:
+                            # ALSO fails
+                            self.assertRaises(EnvironmentError, rsfile.rsopen, TESTFN, selected_stdlib_flags)
+                    else:
+                        if selected_stdlib_flags:
+                            # ALSO succeeds
+                            with rsfile.rsopen(TESTFN, selected_stdlib_flags):
+                                pass
+
+                        #with rsfile.rsopen(TESTFN, selected_adv_flags) as f:
+                #    pass
+
+        return
+
+        combinations = file_modes
+
+        for (std_mode, adv_mode) in combinations.items():
+            pass
+
+
 
         filemodes = {
                     "r": "R+",
@@ -818,14 +903,14 @@ class TestMiscStreams(unittest.TestCase):
 
         for (mode1, mode2) in combinations.items():
 
-            res1 = parser1(TESTFN, mode1, None, None, True)
-            res2 = parser2(TESTFN, mode2, None, None, True)
+            res1 = std_parser(TESTFN, mode1, None, None, True)
+            res2 = adv_parser(TESTFN, mode2, None, None, True)
             msg = """
                     %s != %s :
                     %s
                     %s""" % (mode1, mode2, res1, res2)
             self.assertEqual(res1, res2, msg)
-
+        aaa
 
     def testReturnedStreamTypes(self):
 
@@ -893,12 +978,12 @@ def test_main():
 
 
 if __name__ == '__main__':
-    test_main()
+    #test_main()
 
     ##_cleanup()
     #test_original_io()
     #run_unittest(TestMiscStreams)
-    ##TestMiscStreams("testModeEquivalences").testModeEquivalences()
+    TestMiscStreams("testModeEquivalences").testModeEquivalences()
 
 
 
