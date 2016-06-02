@@ -144,7 +144,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
             raise defs.BadValueTypeError("File must provide path, fileno or handle value, and only one of these.")
 
         if not read and not write:
-            raise defs.BadValueTypeError("File must be opened at least in 'read', 'write' or 'append' mode.")
+            raise defs.BadValueTypeError("File can't be both non-writable and non-readable.")
 
         if must_create and must_not_create :
             raise defs.BadValueTypeError("File can't be wanted both as existing and unexisting.")

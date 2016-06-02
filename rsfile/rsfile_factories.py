@@ -121,6 +121,8 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
     else:
         raise defs.BadValueTypeError("bad mode string %r : it must contain only lower case (standard mode) or upper case (advanced mode) characters" % mode)
 
+    if extended_kwargs["binary"] and extended_kwargs["text"]:
+        raise defs.BadValueTypeError("can't have text and binary mode at once")
     if extended_kwargs["binary"] and encoding is not None:
         raise defs.BadValueTypeError("binary mode doesn't take an encoding argument")
     if extended_kwargs["binary"] and errors is not None:
@@ -201,7 +203,6 @@ def parse_standard_args(name, mode, fileno, handle, closefd): # warning - name c
     if not mode or modes - defs.STDLIB_OPEN_FLAGS or len(mode) > len(modes):
         raise defs.BadValueTypeError("invalid mode: %r" % mode)
 
-
     # raw analysis
     creating_flag = "x" in modes
     reading_flag = "r" in modes or "U" in modes
@@ -218,8 +219,6 @@ def parse_standard_args(name, mode, fileno, handle, closefd): # warning - name c
             raise defs.BadValueTypeError("can't use U and writing mode at once")
         reading_flag = True # we enforce reading 
 
-    if text and binary:
-        raise defs.BadValueTypeError("can't have text and binary mode at once")
     if creating_flag + reading_flag + writing_flag + appending_flag != 1:
         raise defs.BadValueTypeError("must have exactly one of create/read/write/append mode flags")
 
@@ -241,8 +240,9 @@ def parse_standard_args(name, mode, fileno, handle, closefd): # warning - name c
 
     raw_kwargs = dict(path=path,
                     read=read,
-                    write=write, append=append,
-                    must_create=creating_flag,
+                    write=write,
+                    append=append,
+                    must_create=must_create,
                     must_not_create=must_not_create,
                     synchronized=False,
                     inheritable=False,  # was changed in python stdlib, no more inheritability by default!

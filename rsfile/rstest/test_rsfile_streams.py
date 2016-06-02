@@ -802,7 +802,7 @@ class TestMiscStreams(unittest.TestCase):
         adv_parser = rsfile.parse_advanced_args
 
         file_modes = {
-            "R": "r",
+            "R": None,
             "RN": "r",
             "RC": None,  # makes little sense, but possible
 
@@ -843,6 +843,7 @@ class TestMiscStreams(unittest.TestCase):
 
                 selected_adv_flags = "".join(subset)  # the sames flags will come in various orders
 
+                print("----> %r" % selected_adv_flags)
 
                 _selected_adv_flags_normalized = "".join(sorted(selected_adv_flags))
                 is_abnormal_mode = _selected_adv_flags_normalized not in file_modes
@@ -851,8 +852,6 @@ class TestMiscStreams(unittest.TestCase):
 
                 if is_abnormal_mode:
                     assert selected_stdlib_flags is None
-
-                    print("----> %r" % selected_adv_flags)
 
                     ####self.assertRaises(ValueError, adv_parser, TESTFN, selected_adv_flags, fileno=None, handle=None, closefd=None)
 
@@ -872,6 +871,18 @@ class TestMiscStreams(unittest.TestCase):
                             # ALSO succeeds
                             with rsfile.rsopen(TESTFN, selected_stdlib_flags):
                                 pass
+
+                    if selected_stdlib_flags:
+
+                        stdlib_res = std_parser(TESTFN, selected_stdlib_flags, None, None, True)
+                        adv_res = adv_parser(TESTFN, selected_adv_flags, None, None, True)
+                        msg = """
+                                %s != %s :
+                                %s
+                                %s""" % (selected_stdlib_flags, selected_adv_flags, stdlib_res, adv_res)
+                        self.assertEqual(stdlib_res, adv_res, msg)
+
+
 
                         #with rsfile.rsopen(TESTFN, selected_adv_flags) as f:
                 #    pass
@@ -903,13 +914,7 @@ class TestMiscStreams(unittest.TestCase):
 
         for (mode1, mode2) in combinations.items():
 
-            res1 = std_parser(TESTFN, mode1, None, None, True)
-            res2 = adv_parser(TESTFN, mode2, None, None, True)
-            msg = """
-                    %s != %s :
-                    %s
-                    %s""" % (mode1, mode2, res1, res2)
-            self.assertEqual(res1, res2, msg)
+           aaa
         aaa
 
     def testReturnedStreamTypes(self):
