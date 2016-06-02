@@ -32,9 +32,51 @@ TESTFN = "@TESTING" # we used our own one, since the test_support version is bro
 HAS_X_OPEN_FLAG = (sys.version_info >= (3, 3))
 
 
+# this maps advanced modes to standard open() modes
+FILE_MODES_CORRELATION = {
+    "R": None,
+    "RN": "r",
+    "RC": None,  # makes little sense, but possible
+
+    "W": None,
+    "WE": "w",
+    "WN": None,
+    "WEN": None,
+    "WC": "x" if HAS_X_OPEN_FLAG else None,
+
+    "A": "a",
+    "AE": None,
+    "WA": "a",
+    "WAE": None,
+    "AC": None,
+    "WAC": None,
+    "AN": None,
+    "ANE": None,
+    "WAN": None,
+    "WANE": None,
+
+    "RW": None,
+    "RWE": "w+",
+    "RA": "a+",
+    "RAE": None,
+    "RAC": None,
+    "RWAC": None,
+    "RWAE": None,
+    "RWAN": None,
+    "RWANE": None,
+    "RAN": None,
+    "RANE": None,
+    "RWA": "a+",
+    "RWC": "x+" if HAS_X_OPEN_FLAG else None,
+    "RWN": "r+",
+    "RWNE": None,
+}
+
+
 class TestStreamsRetrocompatibility(unittest.TestCase):
 
-    def _determine_stream_capabilities(self, opener, mode):
+    @staticmethod
+    def determine_stream_capabilities(opener, mode):
         """
         Utility that reverse-engineers the REAL behaviour of a stream during and after its creation.
         """
@@ -82,8 +124,9 @@ class TestStreamsRetrocompatibility(unittest.TestCase):
 
             try:
 
-                if must_create:
+                if must_create or truncate:
                     stream.write(payload)
+                    stream.flush()
                     stream.seek(0)  # to check "append" behaviour
 
                 stream.write(extra_data)
@@ -122,35 +165,7 @@ class TestStreamsRetrocompatibility(unittest.TestCase):
         std_parser = rsfile.parse_standard_args
         adv_parser = rsfile.parse_advanced_args
 
-        file_modes = {
-            "R": None,
-            "RN": "r",
-            "RC": None,  # makes little sense, but possible
-
-            "W": None,
-            "WE": "w",
-            "WN": None,
-            "WEN": None,
-            "WC": "x",
-
-            "A": "a",
-            "WA": "a",
-            "AC": None,
-            "WAC": None,
-            "AN": None,
-            "WAN": None,
-
-            "RW": None,
-            "RWE": "w+",
-            "RA": "a+",
-            "RAC": None,
-            "RWAC": None,
-            "RWAN": None,
-            "RAN": None,
-            "RWA": "a+",
-            "RWC": "x+",
-            "RWN": "r+",
-        }
+        file_modes = FILE_MODES_CORRELATION
 
         suffixes = {
             "": "",
@@ -167,14 +182,15 @@ class TestStreamsRetrocompatibility(unittest.TestCase):
         stdlib_file_modes = set(file_modes.values()) - set([None])
         # pprint(stdlib_file_modes)
 
-        assert len(stdlib_file_modes) == 4 * 2 * 3  # 4 access modes, "+" or not, and ""/"b"/"t"
+        # Combinations: 4 access modes, "+" or not, and ""/"b"/"t"
+        assert len(stdlib_file_modes) == (4 if HAS_X_OPEN_FLAG else 3) * 2 * 3, len(stdlib_file_modes)
 
         def gen_all_combinations(values):
             for L in range(0, len(values) + 1):
                 for subset in itertools.permutations(values, L):
                     yield subset
 
-        adv_flags = list("RAWCNBT")  # remove deprecated and isolated flags
+        adv_flags = list("RAWCNEBT")  # remove deprecated and isolated flags
         for idx, subset in enumerate(gen_all_combinations(adv_flags)):
 
             selected_adv_flags = "".join(subset)  # the sames flags will come in various orders
@@ -234,7 +250,7 @@ class TestStreamsRetrocompatibility(unittest.TestCase):
                 truncate = adv_res[1]["truncate"]
             )
 
-            real_abilities = self._determine_stream_capabilities(rsfile.rsopen, chosen_flags)
+            real_abilities = self.determine_stream_capabilities(rsfile.rsopen, chosen_flags)
 
             msg = """
                 THEORETICAL : %s
@@ -244,18 +260,38 @@ class TestStreamsRetrocompatibility(unittest.TestCase):
 
             if selected_stdlib_flags:
 
-                if HAS_X_OPEN_FLAG or ("x" not in selected_stdlib_flags):
+                legacy_abilities = self.determine_stream_capabilities(io.open, selected_stdlib_flags)
 
-                    legacy_abilities = self._determine_stream_capabilities(io.open, selected_stdlib_flags)
-
-                    msg = """
-                        THEORETICAL : %s
-                        LEGACY:       %s""" % (theoretical_abilities, legacy_abilities)
-                    self.assertEqual(theoretical_abilities, legacy_abilities, msg)
+                msg = """
+                    THEORETICAL : %s
+                    LEGACY:       %s""" % (theoretical_abilities, legacy_abilities)
+                self.assertEqual(theoretical_abilities, legacy_abilities, msg)
 
 
         assert idx > 1000, idx  # we've well browsed lots of combinations
 
+
+
+def display_open_modes_correlations_table():
+
+    file_modes_correlation = FILE_MODES_CORRELATION
+
+    stdlib_modes = sorted(m for m in file_modes_correlation.values() if m)
+
+    correlations = []
+
+    for stdlib_mode in stdlib_modes:
+
+        print("Analysing stdlib mode %r" % stdlib_mode)
+
+        advanced_modes = [k for (k, v) in file_modes_correlation.items()]
+        advanced_mode = min(advanced_modes, key=len)
+
+        abilities = TestStreamsRetrocompatibility.determine_stream_capabilities(io.open, stdlib_mode)
+
+        correlations.append((stdlib_mode, advanced_mode, abilities))
+
+    return correlations
 
 
 def test_main():
@@ -276,5 +312,6 @@ def test_main():
 
 
 if __name__ == '__main__':
+    #pprint(display_open_modes_correlations_table())
     test_main()
 

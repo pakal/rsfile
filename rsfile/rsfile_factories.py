@@ -121,6 +121,9 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
     else:
         raise defs.BadValueTypeError("bad mode string %r : it must contain only lower case (standard mode) or upper case (advanced mode) characters" % mode)
 
+    if extended_kwargs["truncate"] and raw_kwargs["must_create"]:
+        raise defs.BadValueTypeError("Can't truncate file opened in exclusive creation")
+
     if extended_kwargs["binary"] and extended_kwargs["text"]:
         raise defs.BadValueTypeError("can't have text and binary mode at once")
     if extended_kwargs["binary"] and encoding is not None:
