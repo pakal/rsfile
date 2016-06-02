@@ -6,6 +6,7 @@ import rsfile_definitions as defs
 from .rsfile_streams import *
 
 
+
 def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newline=None, fileno=None, handle=None, closefd=True, opener=None,
            locking=True, timeout=None, thread_safe=True, mutex=None, permissions=0o777):
 
@@ -197,7 +198,7 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
 def parse_standard_args(name, mode, fileno, handle, closefd): # warning - name can be a fileno here ...
 
     modes = set(mode)
-    if not mode or modes - set("xarwb+tU") or len(mode) > len(modes):
+    if not mode or modes - defs.STDLIB_OPEN_FLAGS or len(mode) > len(modes):
         raise defs.BadValueTypeError("invalid mode: %r" % mode)
 
 
@@ -219,10 +220,8 @@ def parse_standard_args(name, mode, fileno, handle, closefd): # warning - name c
 
     if text and binary:
         raise defs.BadValueTypeError("can't have text and binary mode at once")
-    if creating_flag + reading_flag + writing_flag + appending_flag > 1:
-        raise defs.BadValueTypeError("can't have create/read/write/append mode flags at once")
-    if not (creating_flag or reading_flag or writing_flag or appending_flag):
-        raise defs.BadValueTypeError("must have one of create/read/write/append mode flags")
+    if creating_flag + reading_flag + writing_flag + appending_flag != 1:
+        raise defs.BadValueTypeError("must have exactly one of create/read/write/append mode flags")
 
     # real semantic
     if isinstance(name, (int, long)):
@@ -260,9 +259,8 @@ def parse_standard_args(name, mode, fileno, handle, closefd): # warning - name c
 
 def parse_advanced_args(path, mode, fileno, handle, closefd):
 
-
     modes = set(mode)
-    if modes - set("RAW+-SIEBT") or len(mode) > len(modes):
+    if modes - set(defs.ADVANCED_OPEN_FLAGS) or len(mode) > len(modes):
         raise defs.BadValueTypeError("invalid mode: %r" % mode)
 
     path = path # must be None or a string
@@ -271,8 +269,8 @@ def parse_advanced_args(path, mode, fileno, handle, closefd):
     append = "A" in mode
     write = "W" in mode or append
 
-    must_create = "-" in mode
-    must_not_create = "+" in mode
+    must_create = "C" in mode or "-" in mode
+    must_not_create = "X" in mode or "+" in mode
 
     synchronized = "S" in mode
     inheritable = "I" in mode

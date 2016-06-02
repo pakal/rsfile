@@ -269,6 +269,8 @@ class TestRawFileViaWrapper(unittest.TestCase):
             self.assertRaises(IOError, f.read, 10)
             self.assertRaises(IOError, f.readinto, sys.stdout)
 
+        #TODO - complete this !!!!!!!!!!!!!!!
+
 
     def testDirectoryOpening(self):
 
@@ -802,7 +804,7 @@ class TestMiscStreams(unittest.TestCase):
                     "r": "R+",
                     "w": "WE",
                     "a": "A",
-                    "r+": "RW+",
+                    "r+": "RW",
                     "w+": "RWE",
                     "a+": "RWA"
                     }
@@ -896,7 +898,7 @@ if __name__ == '__main__':
     ##_cleanup()
     #test_original_io()
     #run_unittest(TestMiscStreams)
-    #TestMiscStreams("testMethodForwarding").testMethodForwarding()
+    ##TestMiscStreams("testModeEquivalences").testModeEquivalences()
 
 
 
