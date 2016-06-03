@@ -51,5 +51,6 @@ setup(name='RSFile',
       # "rstest", "rstest.stdlib" TODO - can't be included atm because they use __file__, incompatible with EGGS
       packages=("rsfile", "rsfile.rsbackend", "rsfile.rstest", "rsfile.rstest.stdlib"),
       cmdclass={'build_py': build_py},
+      zip_safe=False,  # tests refer to __file__...
      )
 
