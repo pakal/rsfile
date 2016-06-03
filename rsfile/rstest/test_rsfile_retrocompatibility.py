@@ -106,15 +106,19 @@ class TestStreamsRetrocompatibility(unittest.TestCase):
         Utility that reverse-engineers the REAL behaviour of a stream during and after its creation.
         """
 
+        os_payload = b"ABCDEF"
+
         if "b" in mode.lower():
+            text = False
             payload = b"ABCDEF"
             extra_data = b"XXX"
         else:
+            text = True
             payload = "ABCDEF"
             extra_data = "XXX"
 
-        (fd, name) = tempfile.mkstemp()
-        os.write(fd, payload)
+        (fd, name) = tempfile.mkstemp(text=text)
+        os.write(fd, os_payload)
         os.close(fd)
         assert os.path.getsize(name) == 6
 
@@ -139,7 +143,7 @@ class TestStreamsRetrocompatibility(unittest.TestCase):
 
 
         (fd, name) = tempfile.mkstemp()
-        os.write(fd, payload)
+        os.write(fd, os_payload)
         os.close(fd)
         assert os.path.getsize(name) == 6
         if must_create:
@@ -330,7 +334,7 @@ def test_main():
                     pass
 
     backends = _utilities.launch_rsfile_tests_on_backends(_launch_test_on_single_backend)
-    print("** RSFILE_STREAMS Test Suite has been run on backends %s **" % backends)
+    print("** RSFILE_RETROCOMPATIBILITY Test Suite has been run on backends %s **" % backends)
 
 
 if __name__ == '__main__':
@@ -345,6 +349,9 @@ if __name__ == '__main__':
         data = [[d[i] for i in ordering]
                 for d in data]
         print(tabulate(data, headers=ordering, tablefmt="rst", numalign="left", stralign="left"))
+
+        all_advanced_modes = sorted(FILE_MODES_CORRELATION.keys())
+        print ("\nAuthorized advanced open modes:\n%s" % all_advanced_modes)
     except ImportError:
-        pass
+        print("Python-tabulate not installed, skipping display of file modes tables")
 
