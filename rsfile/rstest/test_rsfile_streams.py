@@ -133,9 +133,6 @@ def test_original_io():
     test_io.PyMiscIOTest.test_attributes = dummyfunc
     test_io.PyIOTest.test_destructor = dummyfunc
 
-    # we do not handle "opener" argument of rsopen, for now
-    test_io.PyIOTest.test_opener = dummyfunc
-
     # very corner case with subprocesses, doesn't apply monkey-patching properly
     test_io.PyTextIOWrapperTest.test_create_at_shutdown_with_encoding = dummyfunc
     test_io.PyTextIOWrapperTest.test_create_at_shutdown_without_encoding = dummyfunc

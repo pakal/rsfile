@@ -23,11 +23,11 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
 
     The ``buffering``, ``encoding``, ``errors``, and ``newline`` arguments have the same meaning as in :func:`io.open`.
 
-    ``fileno`` and ``handle``, mutually exclusive, allow you to provide a C-style file descriptor or an OS-specific handle to be wrapped.
+    ``fileno`` and ``handle``, mutually exclusive, allow you to provide a C-style file descriptor or an OS-specific handle to be wrapped. Please ensure, of course, that these raw streams are compatible with the ``mode`` requested.
+
+    ``opener`` is supported, and must be return a ``mode``-compatible C-style file descriptor, like in the stdlib, not an OS-specific handle.
 
     ``closefd`` (boolean) may only be False when wrapping a fileno or a handle, and in this case this wrapped raw stream will not be closed when the file object is closed.
-
-    ``opener`` ##FIXME CHECK STATIS OF THIS
  
     .. note:: 
             For backward compatibility, when using standard modes, it is still possible to provide 
@@ -138,8 +138,14 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
     else:
         raise defs.BadValueTypeError("bad mode string %r : it must contain only lower case (standard mode) or upper case (advanced mode) characters" % mode)
 
+    if opener:
+        if raw_kwargs["fileno"]:
+            raise defs.BadValueTypeError("can't provide both fileno and opener")
+        raw_kwargs["fileno"] = opener(name, mode)  # we give it the original "name" as parameter, not the normalized path
+        raw_kwargs["path"] = None  # irrelevant in this case
+
     if extended_kwargs["truncate"] and not (raw_kwargs["write"] or raw_kwargs["append"]):
-        raise defs.BadValueTypeError("Can't truncate a non-writable file")
+        raise defs.BadValueTypeError("wan't truncate a non-writable file")
 
     if extended_kwargs["binary"] and extended_kwargs["text"]:
         raise defs.BadValueTypeError("can't have text and binary mode at once")

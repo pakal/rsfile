@@ -49,7 +49,9 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         
         These parameters determine if a new raw file stream will be opened from the filesystem, or
         if an existing one will be wrapped by the new RSFileIo instance.
-        
+
+        # FIXME - SEND TO OPEN() DOCS INSTEAD, IT'S REDUNDANT
+
         - *path* (unicode/bytes or None): The path of the regular file to be opened. 
           If ``fileno`` or ``handle`` is provided, ``path`` is only used as additional 
           information. 
@@ -168,7 +170,6 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
 
         self._synchronized = synchronized
         self._inheritable = inheritable
-
 
         name = None # 'name' : descriptor exposed just for retrocompatibility !!!
         if path is not None:
