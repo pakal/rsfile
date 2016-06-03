@@ -33,6 +33,7 @@ HAS_X_OPEN_FLAG = (sys.version_info >= (3, 3))
 
 
 # this maps advanced modes to standard open() modes
+# we don't list here redundant flags, or binary/text/inheritable/synchronised stuffs
 FILE_MODES_CORRELATION = {
     "R": None,
     "RN": "r",
@@ -46,31 +47,54 @@ FILE_MODES_CORRELATION = {
 
     "A": "a",
     "AE": None,
-    "WA": "a",
-    "WAE": None,
     "AC": None,
-    "WAC": None,
     "AN": None,
     "ANE": None,
-    "WAN": None,
-    "WANE": None,
 
     "RW": None,
     "RWE": "w+",
     "RA": "a+",
     "RAE": None,
     "RAC": None,
-    "RWAC": None,
-    "RWAE": None,
-    "RWAN": None,
-    "RWANE": None,
     "RAN": None,
     "RANE": None,
-    "RWA": "a+",
     "RWC": "x+" if HAS_X_OPEN_FLAG else None,
     "RWN": "r+",
     "RWNE": None,
 }
+
+def complete_and_normalize_possible_modes(file_modes):
+    """
+    We add all possible file_modes, except for advanced flags "I" and "S".
+    """
+
+    file_modes = file_modes.copy()
+
+    # we add redundant (useless) but accepted forms: "W" when "A", and "E", when "C"
+    for k, v in file_modes.items():
+        if "A" in k:
+            assert "W" not in k, k  # initial data must be DRY
+            file_modes[k + "W"] = v
+    for k, v in file_modes.items():
+        if "C" in k:  # EVEN if file not writable, eg. "RCE" is weird but possible
+            assert "E" not in k, k  # initial data must be DRY
+            file_modes[k + "E"] = v
+
+    suffixes = {
+        "": "",
+        "B": "b",
+        "T": "t"
+    }
+    # we add binary/text suffixes
+    file_modes = dict((mode1 + suf1, (mode2 + suf2 if mode2 else mode2))
+                      for (mode1, mode2) in file_modes.items()
+                      for (suf1, suf2) in suffixes.items())
+
+    file_modes = {"".join(sorted(k)): v
+                  for (k, v) in file_modes.items()}
+
+    return file_modes
+
 
 
 class TestStreamsRetrocompatibility(unittest.TestCase):
@@ -93,7 +117,7 @@ class TestStreamsRetrocompatibility(unittest.TestCase):
         os.close(fd)
         assert os.path.getsize(name) == 6
 
-        truncate = False
+        truncate = False  # always remains false if exclusive creation is used
         try:
             stream = opener(name, mode)  # open EXISTING file
             stream.close()
@@ -165,19 +189,7 @@ class TestStreamsRetrocompatibility(unittest.TestCase):
         std_parser = rsfile.parse_standard_args
         adv_parser = rsfile.parse_advanced_args
 
-        file_modes = FILE_MODES_CORRELATION
-
-        suffixes = {
-            "": "",
-            "B": "b",
-            "T": "t"
-        }
-        file_modes = dict((mode1 + suf1, (mode2 + suf2 if mode2 else mode2))
-                          for (mode1, mode2) in file_modes.items()
-                          for (suf1, suf2) in suffixes.items())
-
-        file_modes = {"".join(sorted(k)): v
-                      for (k, v) in file_modes.items()}
+        file_modes = complete_and_normalize_possible_modes(FILE_MODES_CORRELATION)
 
         stdlib_file_modes = set(file_modes.values()) - set([None])
         # pprint(stdlib_file_modes)
@@ -200,7 +212,8 @@ class TestStreamsRetrocompatibility(unittest.TestCase):
             selected_stdlib_flags = file_modes.get(_selected_adv_flags_normalized, None)
             del _selected_adv_flags_normalized
 
-            print("==--> %r, %r" % (selected_adv_flags, selected_stdlib_flags))
+            if False:  # USEFUL LOGGING when debugging open modes
+                print("==--> %r, %r" % (selected_adv_flags, selected_stdlib_flags))
 
             if is_abnormal_mode:
                 assert selected_stdlib_flags is None
@@ -284,12 +297,15 @@ def display_open_modes_correlations_table():
 
         print("Analysing stdlib mode %r" % stdlib_mode)
 
-        advanced_modes = [k for (k, v) in file_modes_correlation.items()]
+        advanced_modes = [k for (k, v) in file_modes_correlation.items() if v == stdlib_mode]
         advanced_mode = min(advanced_modes, key=len)
 
         abilities = TestStreamsRetrocompatibility.determine_stream_capabilities(io.open, stdlib_mode)
 
-        correlations.append((stdlib_mode, advanced_mode, abilities))
+        abilities["std_mode"] = stdlib_mode
+        abilities["adv_mode"] = advanced_mode
+
+        correlations.append(abilities)
 
     return correlations
 
@@ -312,6 +328,11 @@ def test_main():
 
 
 if __name__ == '__main__':
-    #pprint(display_open_modes_correlations_table())
+    """
+    from tabulate import tabulate
+    data = display_open_modes_correlations_table()
+    print (tabulate(data, headers="keys"))
+    """
+    #pprint(data)
     test_main()
 

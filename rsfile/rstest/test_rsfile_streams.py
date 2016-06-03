@@ -862,12 +862,12 @@ def test_main():
 
 
 if __name__ == '__main__':
-    #test_main()
+    test_main()
 
     ##_cleanup()
     #test_original_io()
     #run_unittest(TestMiscStreams)
-    TestMiscStreams("testModeEquivalences").testModeEquivalences()
+    ##TestMiscStreams("testInheritance").testInheritance()
 
 
 

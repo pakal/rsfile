@@ -36,10 +36,9 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
         each operation is highly advised.
         
     
-    If ``locking`` is True, the file will immediately be fully locked on opening, with a 
-    default share mode (exclusive for writable streams, shared for read-only streams) 
+    If ``locking`` is True, the file will immediately be fully locked on opening, with an automatically determined share mode (exclusive for writable streams, shared for read-only streams),
     and the ``timeout`` argument provided. This is particularly useful is the file is opened in 
-    "truncation" mode, as it prevents this truncation from happening without inter-process protection.
+    "truncation" mode, as it prevents this truncation from happening without inter-process protection. FIXME IS THAT SURE ???????
     Note that it is still possible to abort that locking with a call to :meth:`unlock` (without arguments).
 
     If ``thread_safe`` is True, the chain of streams returned by the function will be wrapped into 
@@ -61,26 +60,37 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
     should be combined in the order listed below, for ease of reading. Standard and advanced
     modes may not be mixed together.
     
-    ========= ===============================================================
+    ========= =========================================================================
     Character Meaning
-    ========= ===============================================================
+    ========= =========================================================================
     'R'       Stream is Readable
     'W'       Stream is Writable
     'A'       Stream is in Append mode (implicitly enforces W)
-    '+'       File must already exist (i.e it must not be created)
-    '-'       File must NOT already exist (i.e it must be created)
-    'S'       Stream is Synchronized
-    'I'       Stream is Inheritable
-    'E'       File is Erased on opening
+    'N'       File MUST already exist (i.e it must not be created, was "+" previously)
+    'C'       File must NOT already exist (i.e it must be created, was "-" previously)
+    'S'       Stream is Synchronized, i.e flush() waits for hardware to be written
+    'I'       Stream is Inheritable by children processes
+    'E'       File is Erased on opening (ignored when "C" is set)
     'B'       Stream is in Binary mode
     'T'       Stream is in Text mode (default)
-    ========= ===============================================================
-    
+    ========= =========================================================================
+
+    Any combination of R, W, and A is possible.
+
+    N and C flags are mutually exclusive, if none is set then the file will be opened
+    whatever its current existence status.
+
+    S and I flags may be applied to any kind of opening mode.
+
+    E requires the stream to be writable (W or A), except if C is set (because then we're sure that the file will be empty on opening).
+
+    B and T are mutually exclusive.
+
     .. note:: 
-        The '+' flag doesn't work on NFS shares with a linux kernel < 2.6.5, race conditions may occur.
+        The C flag doesn't work well on NFS shares with a linux kernel < 2.6.5, race conditions may occur.
     
     ========= =====================
-    Mode Equivalences
+    Mode Equivalences  TODO FIXME UPDATE ME
     ===============================
     'r'           'R+'
     'w'           'WE'
@@ -121,8 +131,8 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
     else:
         raise defs.BadValueTypeError("bad mode string %r : it must contain only lower case (standard mode) or upper case (advanced mode) characters" % mode)
 
-    if extended_kwargs["truncate"] and raw_kwargs["must_create"]:
-        raise defs.BadValueTypeError("Can't truncate file opened in exclusive creation")
+    if extended_kwargs["truncate"] and not (raw_kwargs["write"] or raw_kwargs["append"]):
+        raise defs.BadValueTypeError("Can't truncate a non-writable file")
 
     if extended_kwargs["binary"] and extended_kwargs["text"]:
         raise defs.BadValueTypeError("can't have text and binary mode at once")
@@ -138,14 +148,13 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
     raw = RSFileIO(**raw_kwargs)
     result = raw
     try:
-        if extended_kwargs["truncate"] and not raw.writable():
-            raise defs.BadValueTypeError("Can't truncate file opened in read-only mode")
 
         if locking:
             #print "we enforce file locking with %s - %s" %(shared, timeout)
             raw.lock_file(timeout=timeout)
 
         if extended_kwargs["truncate"]:
+            # NOW that we've potentially locked the file, we may truncate
             raw.truncate(0)
 
         if buffering is None:
@@ -241,6 +250,9 @@ def parse_standard_args(name, mode, fileno, handle, closefd): # warning - name c
     must_create = creating_flag
     must_not_create = reading_flag and not (creating_flag or writing_flag or appending_flag)
 
+    if must_create:
+        truncate = False  # ignored
+
     raw_kwargs = dict(path=path,
                     read=read,
                     write=write,
@@ -281,6 +293,9 @@ def parse_advanced_args(path, mode, fileno, handle, closefd):
     truncate = "E" in mode # for "Erase"  
     binary = "B" in modes
     text = "T" in modes
+
+    if must_create:
+        truncate = False  # ignored
 
     raw_kwargs = dict(path=path,
                     read=read,
