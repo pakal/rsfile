@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
-"""RockSolidTools' file I/O implementation
+"""
+FIXME
+
+RockSolidTools' file I/O implementation
 
 RSFile aims at providing python with a cross-platform, reliable, and
 comprehensive file I/O API (that is, file stream manipulation, not
@@ -51,6 +54,6 @@ setup(name='RSFile',
       # "rstest", "rstest.stdlib" TODO - can't be included atm because they use __file__, incompatible with EGGS
       packages=("rsfile", "rsfile.rsbackend", "rsfile.rstest", "rsfile.rstest.stdlib"),
       cmdclass={'build_py': build_py},
-      zip_safe=False,  # tests refer to __file__...
+      zip_safe=False,  # tests refer to "__file__", so let's be safe if we one day use setuptools...
      )
 
