@@ -289,18 +289,23 @@ def display_open_modes_correlations_table():
 
     file_modes_correlation = FILE_MODES_CORRELATION
 
-    stdlib_modes = sorted(m for m in file_modes_correlation.values() if m)
+    _ref_stdlib_modes = set(m for m in file_modes_correlation.values() if m)
+    sorted_stdlib_modes = ["r", "r+", "w", "w+", "a", "a+"] + (["x", "x+"] if HAS_X_OPEN_FLAG else [])
+    assert set(sorted_stdlib_modes) == _ref_stdlib_modes  # sanity check
 
     correlations = []
 
-    for stdlib_mode in stdlib_modes:
+    for stdlib_mode in sorted_stdlib_modes:
 
-        print("Analysing stdlib mode %r" % stdlib_mode)
+        #print("Analysing stdlib mode %r" % stdlib_mode)
 
         advanced_modes = [k for (k, v) in file_modes_correlation.items() if v == stdlib_mode]
         advanced_mode = min(advanced_modes, key=len)
 
         abilities = TestStreamsRetrocompatibility.determine_stream_capabilities(io.open, stdlib_mode)
+
+        abilities = {k: ("true" if v else " ")
+                      for (k, v) in abilities.items()}
 
         abilities["std_mode"] = stdlib_mode
         abilities["adv_mode"] = advanced_mode
@@ -328,11 +333,17 @@ def test_main():
 
 
 if __name__ == '__main__':
-    """
-    from tabulate import tabulate
-    data = display_open_modes_correlations_table()
-    print (tabulate(data, headers="keys"))
-    """
-    #pprint(data)
+
     test_main()
+
+    try:
+        from tabulate import tabulate  # requires "pip install tabulate"
+        data = display_open_modes_correlations_table()
+        # pprint(data)
+        ordering = "std_mode adv_mode read write append must_create must_not_create truncate".split()
+        data = [[d[i] for i in ordering]
+                for d in data]
+        print(tabulate(data, headers=ordering, tablefmt="rst", numalign="left", stralign="left"))
+    except ImportError:
+        pass
 
