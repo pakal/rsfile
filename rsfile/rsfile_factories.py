@@ -7,26 +7,31 @@ from .rsfile_streams import *
 
 
 
-def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newline=None, fileno=None, handle=None, closefd=True, opener=None,
+def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newline=None,
+           fileno=None, handle=None, closefd=True, opener=None,
            locking=True, timeout=None, thread_safe=True, mutex=None, permissions=0o777):
 
     """
-    This function is a factory similar to :func:`io.open`, which returns chains of I/O streams with
-    a focus on security and concurrency. If you need high performance file operations, use standard io.open() instead.
+    This function is a factory similar to :func:`io.open` (alias of the builtin "open()"), and returns chains of I/O streams with a focus on security and concurrency. If you need high performance file operations, use standard io.open() instead.
+
+    See the `open() builtin documentation <https://docs.python.org/3/library/functions.html#open>`
     
     ``name`` is the path to the file, in case no existing fileno or handle is provided for wrapping 
     through the ``fileno``/``handle`` arguments.
 
     ``mode`` is the access mode of the stream, it can be given either as a standard mode string, or as an advanced mode string (see :ref:`file opening modes<file_opening_modes>`).
-    
-    ``closefd`` (boolean) may only be False when wrapping a fileno or a handle, and in this case this wrapped
-    raw stream will not be closed when the file object is closed.
+
+    The ``buffering``, ``encoding``, ``errors``, and ``newline`` arguments have the same meaning as in :func:`io.open`.
+
+    ``fileno`` and ``handle``, mutually exclusive, allow you to provide a C-style file descriptor or an OS-specific handle to be wrapped.
+
+    ``closefd`` (boolean) may only be False when wrapping a fileno or a handle, and in this case this wrapped raw stream will not be closed when the file object is closed.
+
+    ``opener`` ##FIXME CHECK STATIS OF THIS
  
     .. note:: 
             For backward compatibility, when using standard modes, it is still possible to provide 
-            a fileno for wrapping directly as the ``name`` argument, but this way of proceeding is deprecated.
-
-    The ``buffering``, ``encoding``, ``errors``, and ``newline`` arguments have the same meaning as in :func:`io.open`.
+            a fileno for wrapping directly as the ``name`` argument, but this way of doing is deprecated.
     
     .. warning::
     

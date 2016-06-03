@@ -33,6 +33,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
                  ):
 
         """
+        # TODO UPDATE THIS DOC
         
         This class is an improved version of the raw stream :class:`io.FileIO`, relying on native OS primitives, 
         and offering much more control over the behaviour of the file stream.
@@ -134,7 +135,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
 
 
 
-        # HERE WE CHECK EVERYTHING !!! PAKAL
+        # HERE WE CHECK EVERYTHING !!!
 
         if path is not None and not isinstance(path, (bytes, unicode)):
             raise defs.BadValueTypeError("If provided, path must be a string.")
