@@ -20,13 +20,6 @@ import threading
 import random
 import multiprocessing, subprocess
 
-from array import array
-from weakref import proxy
-
-
-
-from UserList import UserList
-
 
 import rsfile
 
@@ -44,7 +37,7 @@ rsfile.monkey_patch_io_module(_pyio)  # (almost) pure python version
 rsfile.monkey_patch_open_builtin()
 
 
-from test import test_support
+from test import test_support  # NOW ONLY we can import it
 
 
 

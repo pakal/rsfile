@@ -5,9 +5,10 @@ from __future__ import unicode_literals, print_function
 BEWARE - in this test, we DO NOT monkey patch the stdlib, so that we can compare the original io and rsfile.
 """
 
-
 import rsfile.rsfile_definitions as defs
 
+from rsfile.rstest import _utilities
+_utilities.patch_test_supports()
 
 import sys
 import os
@@ -19,11 +20,11 @@ import time
 import itertools
 import random
 
-from test import test_support
-
 import io
 import rsfile
-from rsfile.rstest import _utilities
+
+
+from test import test_support  # NOW ONLY we can import it
 
 
 TESTFN = "@TESTING" # we used our own one, since the test_support version is broken
