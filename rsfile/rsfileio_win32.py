@@ -203,7 +203,8 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         """
         (dwFileAttributes, ftCreationTime, ftLastAccessTime, 
          ftLastWriteTime, dwVolumeSerialNumber, nFileSizeHigh, 
-         nFileSizeLow, nNumberOfLinks, nFileIndexHigh, nFileIndexLow) """
+         nFileSizeLow, nNumberOfLinks, nFileIndexHigh, nFileIndexLow)
+        """
         
         handle_info = win32.GetFileInformationByHandle(self._handle)
         device = handle_info.dwVolumeSerialNumber
@@ -212,8 +213,8 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         if device <= 0 or inode <= 0: # File info  might be incomplete, according to MSDN
             raise win32.error(win32.ERROR_NOT_SUPPORTED, "Impossible to retrieve win32 device/file-id information") # Pakal - to be unified
         
-        self._uid = (device, inode)
-        return self._uid
+        _uid = (device, inode)
+        return _uid
         
     
     @_win32_error_converter    

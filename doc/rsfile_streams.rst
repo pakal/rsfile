@@ -29,7 +29,9 @@ io.IOBase abstract class, with the new methods and semantics described below in 
 
     .. rubric::
         **ADDED METHODS**
-    
+
+    .. automethod:: fileno
+
     .. automethod:: handle
 
     .. automethod:: uid

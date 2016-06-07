@@ -106,26 +106,35 @@ class RSIOBase(object):
 
 
     def uid(self):
-        """Returns a (device, inode) tuple, identifying unambiguously the stream inode.
+        """Returns a tuple of (device, inode) integers, identifying unambiguously the stream.
 
-        Several file objects refer to the same disk file if
+        Different file objects refer to the same disk file if
         and only if they have the same uid.
 
-        Raises IOError if it is impossible to retrieve this information (on some network
+        Raises OSError if it is impossible to retrieve this information (on some network
         or virtual filesystems, or for unnamed streams...).
 
-        Nota : a file path can't be used as an unique identifier, since it is often possible to delete/recreate
-        a file, while streams born from that path are still in use.
+        Nota : a file path can't be used as an unique identifier,
+        since it is often possible to delete/recreate
+        a file, while other streams born from that same path are still in use.
         """
         self._unsupported("uid")
+
+
+    def fileno(self):
+        """Returns the C-style file descriptor (an integer).
+
+        Rsfile streams always expose a file descriptor. However, on Windows, this file descriptor is just a wrapper around the native Handle, and it shouldn't be relied upon too much.
+        """
+        self._unsupported("fileno")
 
 
     def handle(self):
         """Returns the native file handle associated with the stream.
 
-        On most systems, it's the same as fileno.
+        On most (*nix-like) systems, it's the same as fileno (an integer).
 
-        On windows, it's a specific Handle value. In this case the file descriptor (obtained by fileno() method) is just a (buggy) wrapper around this native Handle, and this file descriptor shouldn't be relied upon too much.
+        On windows, it's a specific Handle value, which is also an integer.
         """
 
 

@@ -379,7 +379,10 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
     def testNewAccessors(self):
         with io.open(TESTFN, 'wb', buffering=0) as f:
 
+            assert not f._uid
             (dev, inode) = f.uid()
+
+            assert f._uid == (dev, inode)  # caching occurs
 
             self.assertTrue(dev)
             assert isinstance(dev, (int, long))

@@ -189,8 +189,8 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
     @_unix_error_converter
     def _inner_uid(self):
         stats = unix.fstat(self._fileno)
-        self._uid = (stats.st_dev, stats.st_ino)
-        return self._uid
+        _uid = (stats.st_dev, stats.st_ino)
+        return _uid
 
     @_unix_error_converter
     def _inner_times(self):

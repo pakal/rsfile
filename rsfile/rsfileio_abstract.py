@@ -354,7 +354,9 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         if self._uid is not None:
             return self._uid
         else:
-            return self._inner_uid()
+            self._uid = self._inner_uid()
+            assert self._uid, self._uid
+            return self._uid
 
     def times(self):
         self._checkClosed()
