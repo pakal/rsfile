@@ -380,8 +380,12 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
         with io.open(TESTFN, 'wb', buffering=0) as f:
 
             (dev, inode) = f.uid()
+
             self.assertTrue(dev)
+            assert isinstance(dev, (int, long))
+
             self.assertTrue(inode)
+            assert isinstance(inode, (int, long))
 
             f.write(b"hhhh")
 
