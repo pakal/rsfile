@@ -863,7 +863,19 @@ class TestMiscStreams(unittest.TestCase):
         self.assertEqual(mytext, "abcdefghijklmnopqr")
 
 
+    def testDeprecatedRSOpenFlags(self):
 
+        other_args = dict(fileno=None, handle=None, closefd=None)
+
+        resplus1 = rsfile.parse_advanced_args("dummy", "W+", **other_args)
+        resplus2 = rsfile.parse_advanced_args("dummy", "WN", **other_args)
+        assert resplus1 == resplus2, (resplus1, resplus2)
+
+        resminus1 = rsfile.parse_advanced_args("dummy", "W-", **other_args)
+        resminux2 = rsfile.parse_advanced_args("dummy", "WC", **other_args)
+        assert resminus1 == resminux2, (resminus1, resminux2)
+
+        assert resplus1 != resminus1, (resplus1, resminus1)
 
 
 def test_main():
