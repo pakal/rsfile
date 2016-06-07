@@ -413,13 +413,12 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
     def readinto(self, buffer):
         """Reads up to len(b) bytes into b.
 
-        Inefficient, as several copies can be required to obtain the result - use read() instead.
+        Inefficient in RSFile, as several copies can be required to obtain the result - use read() instead.
     
         Returns number of bytes read (0 for EOF).
         """
         self._checkClosed()
         self._checkReadable()
-
 
         mybytes = self._inner_read(len(buffer))
         byteslen = len(mybytes)
@@ -520,7 +519,10 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         self._checkClosed() # that raw stream should have no buffering except the kernel's one, which gets flushed by sync calls
 
     def sync(self, metadata=True, full_flush=True):
-        """Synchronizes file data between kernel cache and physical device. 
+        """
+        OUTDATED DOC!!!!!! see rsiobase
+
+        Synchronizes file data between kernel cache and physical device.
         
         If ``metadata`` is False, and if the platform supports it (win32 and Mac OS X don't), 
         this sync is a "datasync", i.e only data and file sizes are written to disk, not 

@@ -72,20 +72,29 @@ class RSIOBase(object):
 
 
     def sync(self, metadata=True, full_flush=True):
-        """Synchronizes file data between kernel cache and physical device.
+        """Pushes file (meta)data from application to physical device, through
+        kernel cache and other layers of caching.
 
-        If ``metadata`` is False, and if the platform supports it (win32 and Mac OS X don't),
+        If ``full_flush`` is True (only works on OSX for now), RSFileIO will
+        try to ensure that data is really written to permanent storage, since
+        disk devices might else keep data in their cache for out-of-order writing.
+        If full flush is successful, metadata gets written as well.
+
+        If no full flush took place, if ``metadata`` is False,
+        and if the platform supports it (win32 and OSX don't),
         this sync is a "datasync", i.e only data and file sizes are written to disk, not
         file times and other metadata (this can improve performance, at the cost of some
-        incoherency in filesystem state).
+        incoherence in filesystem state).
 
-        If ``full_flush`` is True, RSFileIO will whenever possible force the flushing of device
-        caches too.
+        If None of the above works, a standard sync() is attempted, i.e pushing both data and metadata up to the disk device.
+
+        Note that the file's parent directory is not necessarily updated synchronously, so
+        some risks of data loss may remain.
 
         For a constant synchronization between the kernel cache and the disk oxyde,
-        CF the "synchronized" argument at stream opening.
+        see the "synchronized" argument at stream opening.
 
-        Raises an IOError if no sync operation is available for the stream.
+        Raises an IOError if no sync operation is possible on the stream.
         """
         self._unsupported("sync")
 

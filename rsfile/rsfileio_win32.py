@@ -121,7 +121,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
             if synchronized:
                 flagsAndAttributes |= win32.FILE_FLAG_WRITE_THROUGH 
                 # DO NOT USE FILE_FLAG_NO_BUFFERING - too many constraints on data alignments
-                # thanks to this flag, no need to "fsync" the file with FlushFileBuffers(), it's immediately stored on the disk
+                # thanks to this FILE_FLAG_WRITE_THROUGH flag, no need to "fsync" the file with FlushFileBuffers(), it's immediately stored on the disk
                 # Warning - it seems that for some people, metadata is actually NOT written to disk along with data !!!
                 # we can't use FILE_APPEND_DATA flag, because it prevents use from truncating the file later one
                 

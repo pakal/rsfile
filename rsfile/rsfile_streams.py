@@ -36,6 +36,7 @@ class _buffer_forwarder_mixin(object):
         return self.raw.size()
 
     def sync(self, *args, **kwargs):
+        self.flush()
         return self.raw.sync(*args, **kwargs)
 
     def lock_file(self, *args, **kwargs):
@@ -88,7 +89,6 @@ class _text_forwarder_mixin(object):
         return self.buffer.times()
 
     def size(self):
-        self.flush()
         return self.buffer.size()
 
     def sync(self, *args, **kwargs):

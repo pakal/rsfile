@@ -71,8 +71,10 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
     'N'       File MUST already exist (i.e it must not be created, was "+" previously)
     'C'       File must NOT already exist (i.e it must be created, was "-" previously)
 
-    'S'       Stream is Synchronized (flush() tries to ensure data reaches the disk before returning)
-    'I'       Stream is Inheritable by children processes (by default it's not)
+    'S'       Stream is Synchronized (flush() tries to ensure that file metadata and data reach
+              the disk device before returning, even though the disk itself might have a cache)
+
+    'I'       Stream is Inheritable by children processes (by default, it's not)
 
     'E'       File is Erased on opening (ignored when "C" is set, since new file will be empty anyway)
 
