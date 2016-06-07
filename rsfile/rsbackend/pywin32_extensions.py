@@ -13,7 +13,7 @@ from pywintypes import *
 # USE THESE ONES ! They're safe concerning bad file descriptors !
 from msvcrt import open_osfhandle as _open_osfhandle, get_osfhandle as _get_osfhandle 
 
-
+from .raw_win32_defines import ERROR_NOT_SUPPORTED
 
 from rsfile.rsbackend import _utilities
 
@@ -55,7 +55,11 @@ from ctypes.wintypes import FILETIME
 
 
 def GetFileInformationByHandle(handle):
-    """ pywin32 FILETIME structure is buggy !"""
+    """
+    Note that pywin32 FILETIME structure is buggy,
+    and here nFileSizeHigh/nFileSizeLow return 0 on FAT32
+    whereas on ctypes backend they have a proper value.
+    """
     
     info = BY_HANDLE_FILE_INFORMATION()
     
@@ -69,7 +73,10 @@ def GetFileInformationByHandle(handle):
     info.nNumberOfLinks,
     info.nFileIndexHigh,
     info.nFileIndexLow) = win32file.GetFileInformationByHandle(handle)
-    
+
+    ##print(">>>>>>", info.__dict__)
+
+    # to workaround bugs, we don't deal with "PyTime" objects, we fallback to stdlib...
     mystat = os.fstat(_open_osfhandle(handle, 0))
     info.ftCreationTime = FILETIME(*_utilities.python_timestamp_to_win32_filetime(mystat.st_ctime))
     info.ftLastAccessTime = FILETIME(*_utilities.python_timestamp_to_win32_filetime(mystat.st_atime))

@@ -12,7 +12,7 @@ from . import raw_win32_ctypes as win32api
 from .raw_win32_ctypes import GetLastError, OVERLAPPED, FILETIME, BY_HANDLE_FILE_INFORMATION, SECURITY_ATTRIBUTES
 
 
-from .raw_win32_defines import (ERROR_IO_PENDING, ERROR_MORE_DATA,
+from .raw_win32_defines import (ERROR_IO_PENDING, ERROR_MORE_DATA, ERROR_NOT_SUPPORTED,
                                 GENERIC_READ, GENERIC_WRITE, FILE_SHARE_WRITE, OPEN_ALWAYS,
                                 FILE_ATTRIBUTE_NORMAL, FILE_BEGIN, LOCKFILE_EXCLUSIVE_LOCK,
                                 FILE_SHARE_READ, OPEN_EXISTING, CREATE_NEW, FILE_CURRENT,
@@ -267,7 +267,7 @@ def GetFileInformationByHandle(handle):
     
     info = BY_HANDLE_FILE_INFORMATION()
     
-    res = win32api.GetFileInformationByHandle(handle, ctypes.byref(info))
+    res = win32api.GetFileInformationByHandle(handle, ctypes.byref(info))  # side effects
     
     if not res:
         raise ctypes.WinError()     

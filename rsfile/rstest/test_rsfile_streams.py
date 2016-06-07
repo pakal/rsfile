@@ -19,7 +19,7 @@ import itertools
 import threading
 import random
 import multiprocessing, subprocess
-
+from datetime import datetime, timedelta
 
 import rsfile
 
@@ -377,6 +377,7 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
 
 
     def testNewAccessors(self):
+
         with io.open(TESTFN, 'wb', buffering=0) as f:
 
             assert not f._uid
@@ -401,10 +402,19 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
         time.sleep(1)
 
         with io.open(TESTFN, 'rb', buffering=0) as stream:
-            self.assertEqual(int(stream.times().access_time), int(os.fstat(stream.fileno()).st_atime))
-            self.assertEqual(int(stream.times().modification_time), int(os.fstat(stream.fileno()).st_mtime))
+            times = stream.times()
+            self.assertEqual(int(times.access_time), int(os.fstat(stream.fileno()).st_atime))
+            self.assertEqual(int(times.modification_time), int(os.fstat(stream.fileno()).st_mtime))
 
-        """ TO DEBUG NATIVE FILETIME INFO
+            access_datetime = datetime.fromtimestamp(times.access_time)
+            modification_datetime = datetime.fromtimestamp(times.modification_time)
+
+            now = datetime.now()  # local time
+
+            assert now - timedelta(seconds=10) <= access_datetime <= now
+            assert now - timedelta(seconds=10) <= modification_datetime <= now
+
+        """ USEFUL TO DEBUG NATIVE FILETIME INFO
         print ("---")
         print (time())
         print (strftime("%a, %d %b %Y %H:%M:%S +0000", localtime(time())))
@@ -418,6 +428,7 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
         print (int(f.times().modification_time))
         print (int(os.fstat(f.fileno()).st_mtime))
         """
+
 
     def testCloseFdAndOrigins(self):
 

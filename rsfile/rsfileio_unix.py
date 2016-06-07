@@ -195,7 +195,8 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
     @_unix_error_converter
     def _inner_times(self):
         stats = unix.fstat(self._fileno)
-        return defs.FileTimes(access_time=stats.st_atime, modification_time=stats.st_mtime)
+        return defs.FileTimes(access_time=stats.st_atime,
+                              modification_time=stats.st_mtime)
 
     @_unix_error_converter
     def _inner_size(self):

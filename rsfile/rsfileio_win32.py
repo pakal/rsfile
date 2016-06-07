@@ -36,7 +36,8 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         def wrapper(self, *args, **kwds):
             try:
                 return f(self, *args, **kwds)
-            except win32.error as e: # WARNING - this is not a subclass of OSERROR !!!!!!!!!!!!!
+            except win32.error as e: # WARNING - this is not always a subclass of OSERROR
+
                 traceback = sys.exc_info()[2]
                 #print repr(e)str(e[1])+" - "+str(e[2
                 
@@ -46,8 +47,10 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
                 else:
                     errno = utilities.winerror_to_errno(e.winerror)
                 
-                # we must convert to unicode the local error message           
-                if isinstance(e.strerror, unicode):
+                # we must convert to unicode the local error message
+                if not e.strerror:
+                    strerror = "<no error msg>"
+                elif isinstance(e.strerror, unicode):
                     strerror = e.strerror
                 else:
                     strerror = e.strerror.decode(WIN32_MSG_ENCODING, 'replace')
@@ -210,8 +213,8 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         device = handle_info.dwVolumeSerialNumber
         inode = utilities.double_dwords_to_pyint(handle_info.nFileIndexLow, handle_info.nFileIndexHigh)
         
-        if device <= 0 or inode <= 0: # File info  might be incomplete, according to MSDN
-            raise win32.error(win32.ERROR_NOT_SUPPORTED, "Impossible to retrieve win32 device/file-id information") # Pakal - to be unified
+        if device <= 0 or inode <= 0: # File info  might be incomplete, according to MSDN, eg. on FAT32
+            raise win32.error(win32.ERROR_NOT_SUPPORTED, "RsfileInnerUid", "Impossible to retrieve win32 device/file-id information")
         
         _uid = (device, inode)
         return _uid
@@ -250,10 +253,12 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
 
         handle_info = win32.GetFileInformationByHandle(self._handle)
         
-        return defs.FileTimes(access_time = utilities.win32_filetime_to_python_timestamp(handle_info.ftLastAccessTime.dwLowDateTime,
-                                                                                    handle_info.ftLastAccessTime.dwHighDateTime), 
-                         modification_time = utilities.win32_filetime_to_python_timestamp(handle_info.ftLastWriteTime.dwLowDateTime,
-                                                                                           handle_info.ftLastAccessTime.dwHighDateTime)) 
+        return defs.FileTimes(access_time = utilities.win32_filetime_to_python_timestamp(
+                                                 handle_info.ftLastAccessTime.dwLowDateTime,
+                                                 handle_info.ftLastAccessTime.dwHighDateTime),
+                              modification_time = utilities.win32_filetime_to_python_timestamp(
+                                                      handle_info.ftLastWriteTime.dwLowDateTime,
+                                                      handle_info.ftLastWriteTime.dwHighDateTime))
         
 
     @_win32_error_converter    

@@ -112,7 +112,7 @@ class RSIOBase(object):
         and only if they have the same uid.
 
         Raises OSError if it is impossible to retrieve this information (on some network
-        or virtual filesystems, or for unnamed streams...).
+        or virtual filesystems, for unnamed streams, or on FAT32...).
 
         Nota : a file path can't be used as an unique identifier,
         since it is often possible to delete/recreate
