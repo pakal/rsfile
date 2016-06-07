@@ -469,6 +469,7 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
             self.assertNotEqual(copy1.handle(), f.fileno())
         else:
             self.assertEqual(copy1.handle(), f.fileno())
+        self.assertEqual(copy1.name, f.fileno())
         copy1.write(b"bbb")
 
         copy2 = io.open(mode='AB', buffering=0, fileno=f.fileno(), closefd=True)
@@ -503,6 +504,7 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
             self.assertNotEqual(copy1.fileno(), f.handle())
         else:
             self.assertEqual(copy1.fileno(), f.handle())
+        self.assertEqual(copy1.name, f.handle())
         copy1.write(b"bbb")
 
         copy2 = io.open(mode='AB', buffering=0, handle=f.handle(), closefd=True) # We trick the functools.partial object there...
@@ -870,7 +872,7 @@ def test_main():
         # So get rid of it no matter what.
         try:
             test_support.run_unittest(TestRawFileViaWrapper, TestRawFileSpecialFeatures, TestMiscStreams)
-            ########test_original_io()
+            test_original_io()
         finally:
             if os.path.exists(TESTFN):
                 try:

@@ -319,7 +319,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         """
         Contains the path, fileno, or handle of the stream, 
         depending on the way the stream was created.
-        To interpret this attribute, refer to the :attr:`origin` property.
+        To interpret this attribute safely, refer to the :attr:`origin` property.
         """
         return self._name
     @name.setter
@@ -328,9 +328,11 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
 
     @property
     def origin(self):
-        """Returns a string indicating the origin of the stream, 
+        """
+        Returns a string indicating the origin of the stream,
         as well as the meaning of its :attr:`name`.
-        Possible values are 'path', 'fileno' and 'handle'."""
+        Possible values are 'path', 'fileno' and 'handle'.
+        """
         return self._origin
 
     @property
