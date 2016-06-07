@@ -5,16 +5,15 @@ import sys, multiprocessing, threading, functools, collections
 
 from . import rsfile_definitions as defs
 
-if sys.platform == 'win32':  # even on 64bits windows OS
+if defs.RSFILE_IMPLEMENTATION == "windows":  # even on 64bits windows OS
     try:
         from .rsfileio_win32 import RSFileIO
-        FILE_IMPLEMENTATION = "win32"
     except Exception as e:
-        raise ImportError("No win32 backend available : %s" % e)
+        raise ImportError("No windows backend available : %s" % e)
 else:
+    assert defs.RSFILE_IMPLEMENTATION == "unix"
     try:
         from .rsfileio_unix import RSFileIO
-        FILE_IMPLEMENTATION = "unix"
     except Exception as e:
         raise ImportError("No unix backend available : %s" % e)
 

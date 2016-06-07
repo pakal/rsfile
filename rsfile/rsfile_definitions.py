@@ -15,6 +15,15 @@ from io import open as original_io_open
 from _pyio import open as original_pyio_open
 
 
+if sys.platform == 'win32':  # even on 64bits windows OS
+    RSFILE_IMPLEMENTATION = "windows"
+else:
+    RSFILE_IMPLEMENTATION = "unix"
+
+
+
+
+
 STDLIB_OPEN_FLAGS = set("xarw+btU")
 ADVANCED_OPEN_FLAGS = set("RAW+-CNSIEBT")  # + and - are only left for retrocompatibility
 

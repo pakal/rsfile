@@ -412,7 +412,7 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
         print (int(os.fstat(f.fileno()).st_mtime))
         """
 
-    def testCloseFd(self):
+    def testCloseFdAndOrigins(self):
 
         f = io.open(TESTFN, 'wb', buffering=0) # low-level default python open()
         f.write(b"aaa")
@@ -630,7 +630,7 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
                 with rsfile.RSFileIO(TESTFN, inheritable=inheritance, **kwargs) as myfile:
 
 
-                    if rsfile.FILE_IMPLEMENTATION == "win32":
+                    if defs.RSFILE_IMPLEMENTATION == "windows":
                         kwargs["handle"] = int(myfile.handle()) # we transform the PyHandle into an integer to ensure serialization
                     else:
                         kwargs["fileno"] = myfile.fileno() # already an integer
@@ -648,7 +648,7 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
 
                     myfile.seek(0, os.SEEK_END) # to fulfill the expectations of the worker process
 
-                    if rsfile.FILE_IMPLEMENTATION == "win32":
+                    if defs.RSFILE_IMPLEMENTATION == "windows":
                         cmdline = subprocess.list2cmdline(pre_args + args) # Important for space escaping, with the buggy windows spawn implementation...
                         retcode = os.spawnl(os.P_WAIT, executable, cmdline)  # 1st argument must be the program itself !
                     else:
