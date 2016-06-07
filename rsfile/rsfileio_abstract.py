@@ -220,7 +220,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
                 if stat.S_ISDIR(st_mode):
                     self._fileno = None  # disown file descriptor
                     raise IOError(errno.EISDIR, "Can't wrap a directory in FileIO")
-                is_regular = stat.S_ISREG(st_mode)  #FIXME - contradicts the rejecion of unix inner opener
+                is_regular = stat.S_ISREG(st_mode)
                 seekable = is_regular
             else:
                 pass  # if we only have a handle, we're on windows, so no such pipe
