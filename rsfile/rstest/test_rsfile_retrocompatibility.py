@@ -30,7 +30,7 @@ from test import test_support  # NOW ONLY we can import it
 TESTFN = "@TESTING" # we used our own one, since the test_support version is broken
 
 
-HAS_X_OPEN_FLAG = (sys.version_info >= (3, 3))
+HAS_X_OPEN_FLAG = defs.HAS_X_OPEN_FLAG
 
 
 # this maps advanced modes to standard open() modes

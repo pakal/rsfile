@@ -46,7 +46,16 @@ io.IOBase abstract class, with the new methods and semantics described below in 
     
     .. automethod:: unlock_file
 
-    
+
+    .. rubric::
+        **IMPROVED OR ADDED ATTRIBUTES**
+
+    .. autoattribute:: name
+
+    .. autoattribute:: origin
+
+    .. autoattribute:: mode
+
  
     
 
@@ -67,20 +76,6 @@ However, on windows it may result in "stale files", which are not really deleted
     and text streams from Rsfile.
 
 
-.. autoclass:: RSFileIO
-
-	.. rubric::
-		**SPECIFIC OR MODIFIED ATTRIBUTES**
-	
-	.. autoattribute:: name
-	
-	.. autoattribute:: origin
-	
-	.. autoattribute:: mode
-	
-	
-	
-	
 	
 ..	
 	:show-inheritance:

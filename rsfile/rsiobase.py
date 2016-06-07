@@ -254,7 +254,35 @@ class RSIOBase(object):
         in a more efficient and safer manner. 
         """
         self._unsupported("unlock_file")
-        
+
+
+
+    @property
+    def mode(self):
+        """
+        At the moment, this property behaves like its sibling from the stdlib io module.
+
+        On a binary stream, it recomputes the mode from the raw stream attributes,
+        except that it does't distinguish "rb+" from "wb+" ("rb+" is always returned).
+
+        If the file is opened in text mode however, its "mode" attribute is exactly that which was passed open().
+        """
+
+    @property
+    def origin(self):
+        """
+        Returns a string indicating the origin of the stream,
+        as well as the meaning of its :attr:`name`.
+        Possible values are 'path', 'fileno' and 'handle'.
+        """
+
+    @property
+    def name(self):
+        """
+        Contains the path, fileno, or handle of the stream,
+        depending on the way the stream was created.
+        To interpret this attribute safely, refer to the :attr:`origin` property.
+        """
 
 io_module.IOBase.register(RSIOBase)
 

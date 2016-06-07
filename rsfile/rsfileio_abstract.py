@@ -289,14 +289,16 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
 
 
     @property
-    def mode(self):  # TODO - improve this
-        """
-        TODO CHANGED UPDATED
-        At the moment, this property behaves like its sibling from the stdlib io module, 
-        i.e it computes and returns one of "rb", "wb" and "rb+" for binary streams, 
-        and the actual opening mode for text streams. This might change in the future.
-        """
-        # we mimic the _fileio.c implementation, that's weird but well...
+    def mode(self):
+
+        # see _fileio.c reference implementation
+
+        if defs.HAS_X_OPEN_FLAG:
+            if self._must_create:
+                if self.writable() and self.readable():
+                    return "xb+"
+                else:
+                    return "xb"
         if self._append:
             if self.readable():
                 return "ab+"
@@ -307,7 +309,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
                 if self._must_not_create:
                     return "rb+"
                 else:
-                    return "rb+"  #FIXME - py2.7 returns this instead of wb+ ...
+                    return "rb+"  #WARNING - python stdlib returns this instead of wb+... let it be
             else:
                 return "wb"
         else:
@@ -316,23 +318,13 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
 
     @property
     def name(self):
-        """
-        Contains the path, fileno, or handle of the stream, 
-        depending on the way the stream was created.
-        To interpret this attribute safely, refer to the :attr:`origin` property.
-        """
         return self._name
     @name.setter
     def name(self, value):
-        self._name = value
+        self._name = value  #used to please the stdlib tests...
 
     @property
     def origin(self):
-        """
-        Returns a string indicating the origin of the stream,
-        as well as the meaning of its :attr:`name`.
-        Possible values are 'path', 'fileno' and 'handle'.
-        """
         return self._origin
 
     @property

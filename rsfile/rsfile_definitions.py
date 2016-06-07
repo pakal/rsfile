@@ -20,7 +20,7 @@ if sys.platform == 'win32':  # even on 64bits windows OS
 else:
     RSFILE_IMPLEMENTATION = "unix"
 
-
+HAS_X_OPEN_FLAG = (sys.version_info >= (3, 3))
 
 
 
