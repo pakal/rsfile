@@ -262,7 +262,7 @@ class TestRawFileViaWrapper(unittest.TestCase):
             self.assertRaises(IOError, f.read, 10)
             self.assertRaises(IOError, f.readinto, sys.stdout)
 
-        #TODO - complete this !!!!!!!!!!!!!!!
+        #TODO - complete this !!!!!!!!!!!!!!! or NOT ??
 
 
     def testDirectoryOpening(self):
@@ -693,27 +693,90 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
 
     def testSynchronization(self):
 
-        kargs = dict(path=TESTFN,
-                     read=False,
-                     write=True, append=True,
-                     must_not_create=False, must_create=False, # only used on file opening
-                     synchronized=True)
+        # beware - randomization!
+        buffering = random.choice([None, -1, 0, 100])
+        synchronized = random.choice((True, False))
+
+        combinations = [dict(metadata=True, full_flush=True),
+                        dict(metadata=False, full_flush=True),
+                        dict(metadata=True, full_flush=False),
+                        dict(metadata=False, full_flush=False)]
+        kwargs = dict(name=TESTFN,
+                      mode="WB" + ("S" if synchronized else ""),
+                      buffering=buffering)
 
         string = b"abcdefghijklmnopqrstuvwxyz" * 1014 * 1024
-        f = rsfile.RSFileIO(**kargs)
-        self.assertEqual(f._synchronized, True)
+
+        #print("kwargs", kwargs)
+        f = rsfile.rsopen(**kwargs)
+        self.assertEqual(f._synchronized, synchronized)
         res = f.write(string)
         self.assertEqual(res, len(string))
 
-        f.sync(metadata=True, full_flush=True)
-        f.sync(metadata=False, full_flush=True)
-        f.sync(metadata=True, full_flush=False)
-        f.sync(metadata=False, full_flush=False)
+        for kwargs in combinations:
+            f.sync(**kwargs)
+
+        N = 200
+
+        # NO SYNC
+        a = time.time()
+        for i in range(N):
+            f.write(b"a")
+            f.flush()
+        b = time.time()
+        res1 = b - a
+
+        # LIGHTEST SYNC
+        a = time.time()
+        for i in range(N):
+            f.write(b"b")
+            f.sync(metadata=False, full_flush=False)
+        b = time.time()
+        res2 = b - a
+
+        assert res2 > 1.1 * res1, (res1, res2)  # it takes time to datasync()
+
+        # HEAVIEST SYNC
+        a = time.time()
+        for i in range(N):
+            f.write(b"c")
+            f.sync(metadata=True, full_flush=True)
+        b = time.time()
+        res3 = b - a
+        if defs.RSFILE_IMPLEMENTATION == "windows":
+            assert res3 > 1.1 * res1, (res1, res3)  # same as datasync
+        else:
+            assert res3 > 1.1 * res2, (res2, res3)  # heavier than datasync, on linux/osx
 
         f.close()
 
         # We have no easy way to check that the stream is REALLY in sync mode, except manually crashing the computer...
 
+        top_level_breakage = random.choice((True, False))
+
+        with rsfile.rsopen(TESTFN, "wt", thread_safe=False) as f:
+            for kwargs in combinations:
+                f.sync(**kwargs)
+
+            def broken(*args, **kwargs):
+                ABCD
+
+            if top_level_breakage:
+                f.flush = broken
+            else:
+                f.buffer.flush = broken
+
+            try:
+                #print("-------------->BEFORE", f.flush)
+                for kwargs in combinations:
+                    self.assertRaises(NameError, f.sync, **kwargs)  # sync implies flush!
+            finally:
+                if top_level_breakage:
+                    del f.flush
+                else:
+                    del f.buffer.flush
+            #print("-------------->AFTER", f.flush)
+            pass
 
 
 class TestMiscStreams(unittest.TestCase):

@@ -89,9 +89,11 @@ class _text_forwarder_mixin(object):
         return self.buffer.times()
 
     def size(self):
+        self.flush()  # security
         return self.buffer.size()
 
     def sync(self, *args, **kwargs):
+        self.flush()  # security
         return self.buffer.sync(*args, **kwargs)
 
     def lock_file(self, *args, **kwargs):

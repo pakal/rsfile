@@ -436,7 +436,8 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
     def write(self, buffer):
         """Writes the given buffer data to the IO stream.
 
-        Returns the number of bytes written, which may be less than len(b).
+        Returns the number of bytes written, which may be less than len(b), or None if
+        write couldn't be done on non-blocking device.
         
         Accepted buffer types are bytes, bytearray, array.array, and memoryview (the last two being inefficient to write).
         """
@@ -448,14 +449,14 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
             raise defs.BadValueTypeError("can't write unicode to binary stream")
 
         if isinstance(buffer, memoryview):
-            buffer = buffer.tobytes() # TO BE IMPROVED - try to avoid copies !!
+            buffer = buffer.tobytes() #TODO TO BE IMPROVED - try to avoid copies !!
         elif isinstance(buffer, array):
-            buffer = buffer.tostring() # To be improved hell a lot...
+            buffer = buffer.tostring() #TODO To be improved hell a lot...
 
         res = self._inner_write(buffer)
         #assert res == len(buffer), str(res, len(buffer)) # NOOO - we might have less than that actually if disk full !
 
-        assert res != 0, "Abnormal state, 0 bytes written to raw stream, write() should return None instead, in this case"
+        assert not (len(buffer) and res == 0), "Abnormal state, 0 bytes from buffer were written to raw stream, write() should return None instead, in this case"
         if res is not None and (res < 0 or res > len(buffer)):
             raise RuntimeError("Madness - %d bytes written instead of max %d for buffer '%r'" % (res, len(buffer), buffer))
 
