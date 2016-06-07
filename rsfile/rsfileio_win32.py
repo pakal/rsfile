@@ -64,10 +64,12 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         
         # # # real opening of the file stream # # #
         if handle is not None:
+            assert fileno is None
             self._handle = int(handle)
             #print "FILE OPENED VIA HANDLE ", handle
             
         elif fileno is not None:
+            assert handle is None
             self._fileno = fileno
             #print "FILE OPENED VIA FILENO ", fileno
             import msvcrt
@@ -232,11 +234,13 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
                 flags = os.O_RDONLY
             # NEVER use flag os.O_TEXT, we're in raw IO here !
             self._fileno = win32._open_osfhandle(self._handle, flags)
-            
+
+        assert self._fileno
         return self._fileno    
 
 
     def _inner_handle(self):
+        assert self._handle
         return self._handle
     
     

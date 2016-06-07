@@ -68,9 +68,11 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
 
 
         if handle is not None:
+            assert fileno is None
             self._fileno = self._handle = handle
 
         elif fileno is not None:
+            assert handle is None
             self._fileno = self._handle = fileno
 
         else: #we open the file with low level posix IO - the unix "open()"  function
@@ -176,9 +178,11 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
 
 
     def _inner_fileno(self):
+        assert self._fileno
         return self._fileno
 
     def _inner_handle(self):
+        assert self._handle
         return self._handle
 
 
