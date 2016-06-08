@@ -1,14 +1,21 @@
 #-*- coding: utf-8 -*-
 from __future__ import unicode_literals, print_function
 
+import sys, os
 
 import win32con, win32api, win32file, pywintypes
 
-from win32con import *
-from win32api import *
-from win32file import *
+from pywintypes import OVERLAPPED, SECURITY_ATTRIBUTES
 
-from pywintypes import *
+from win32file import (FILE_BEGIN, FILE_CURRENT, FILE_END, CreateFile, CloseHandle, FlushFileBuffers,
+                       GetFileInformationByHandle, LockFileEx, UnlockFileEx,
+                       GetFileSize, SetFilePointer, WriteFile, ReadFile, SetEndOfFile,
+                       GENERIC_READ, GENERIC_WRITE, FILE_SHARE_READ, FILE_SHARE_WRITE, FILE_SHARE_DELETE,
+                       OPEN_EXISTING, OPEN_ALWAYS, CREATE_NEW, FILE_ATTRIBUTE_READONLY,
+                       FILE_ATTRIBUTE_NORMAL)
+from win32con import (LOCKFILE_EXCLUSIVE_LOCK, LOCKFILE_FAIL_IMMEDIATELY, FILE_FLAG_WRITE_THROUGH)
+from win32api import error
+
 
 # USE THESE ONES ! They're safe concerning bad file descriptors !
 from msvcrt import open_osfhandle as _open_osfhandle, get_osfhandle as _get_osfhandle 
