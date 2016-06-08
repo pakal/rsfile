@@ -25,6 +25,10 @@ import rsfile
 
 TESTFN = "@TESTING" # we used our own one, since the test_support version is broken
 
+# FORCE THIS TO TRUE if you want to check that fdatasync is faster than fuller fsync
+# linux is often tested in a Virtual Machine for now, so we disable it by default because perfs are incoherent
+CHECK_SYNC_PERFS = (defs.RSFILE_IMPLEMENTATION == "windows")
+
 import io, _io, _pyio
 
 """
@@ -716,41 +720,7 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
         for kwargs in combinations:
             f.sync(**kwargs)
 
-        N = 200
-
-        # NO SYNC
-        a = time.time()
-        for i in range(N):
-            f.write(b"a")
-            f.flush()
-        b = time.time()
-        res1 = b - a
-
-        # LIGHTEST SYNC
-        a = time.time()
-        for i in range(N):
-            f.write(b"b")
-            f.sync(metadata=False, full_flush=False)
-        b = time.time()
-        res2 = b - a
-
-        assert res2 > 1.1 * res1, (res1, res2)  # it takes time to datasync()
-
-        # HEAVIEST SYNC
-        a = time.time()
-        for i in range(N):
-            f.write(b"c")
-            f.sync(metadata=True, full_flush=True)
-        b = time.time()
-        res3 = b - a
-        if defs.RSFILE_IMPLEMENTATION == "windows":
-            assert res3 > 1.1 * res1, (res1, res3)  # same as datasync
-        else:
-            assert res3 > 1.1 * res2, (res2, res3)  # heavier than datasync, on linux/osx
-
         f.close()
-
-        # We have no easy way to check that the stream is REALLY in sync mode, except manually crashing the computer...
 
         top_level_breakage = random.choice((True, False))
 
@@ -777,6 +747,51 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
                     del f.buffer.flush
             #print("-------------->AFTER", f.flush)
             pass
+
+
+        if CHECK_SYNC_PERFS:
+
+            # We have no easy way to check that the stream is REALLY in sync mode, except manually crashing the computer... but we may check if perfs diff, at least
+
+            with rsfile.rsopen(TESTFN, "wb", thread_safe=False) as f:
+
+                N = 10
+
+                # NO SYNC
+                a = time.time()
+                for i in range(N):
+                    f.write(b"a")
+                    f.flush()
+                b = time.time()
+                res1 = b - a
+
+                # LIGHTEST SYNC
+                a = time.time()
+                for i in range(N):
+                    f.write(b"b")
+                    f.sync(metadata=False, full_flush=False)
+                b = time.time()
+                res2 = b - a
+
+                assert res2 > 1.05 * res1, (res1, res2)  # it takes time to datasync()
+
+                # HEAVIEST SYNC
+                a = time.time()
+                for i in range(N):
+                    f.write(b"c")
+                    print("We issue full sync")
+                    f.sync(metadata=True, full_flush=True)
+                    print("STOP")
+                b = time.time()
+                res3 = b - a
+
+                if defs.RSFILE_IMPLEMENTATION == "windows":
+                    assert res3 > 1.05 * res1, (res1, res3)  # same as datasync
+                else:
+                    assert res3 > 1.05 * res2, (res2, res3)  # full sync heavier than datasync, on linux/osx
+
+
+
 
 
 class TestMiscStreams(unittest.TestCase):
@@ -965,7 +980,7 @@ if __name__ == '__main__':
     ##_cleanup()
     #test_original_io()
     #run_unittest(TestMiscStreams)
-    ##TestMiscStreams("testInheritance").testInheritance()
+    #TestRawFileSpecialFeatures("testSynchronization").testSynchronization()
 
 
 

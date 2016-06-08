@@ -162,6 +162,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         if full_flush: # full_flush is more important than metadata
             try:
                 unix.fcntl(self._fileno, unix.F_FULLFSYNC, 0) # Mac OS X only
+                #print("FULLFLUSH_UNIX_DONE")
                 return
             except unix.error:
                 pass
@@ -169,12 +170,14 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         if not metadata and hasattr(unix, "fdatasync"):
             try:
                 # theoretically, file size will properly be updated, if it is necessary to preserve data integrity
-                unix.fdatasync(self._fileno) # not supported on Mac Os X
+                unix.fdatasync(self._fileno) # not supported on Mac OS X
+                #print("FDATASYNC_UNIX_DONE")
                 return
             except unix.error:
                 pass
 
         unix.fsync(self._fileno) # last attempt : metadata flush without full_sync guarantees
+        #print("FSYNC_UNIX_DONE")
 
 
     def _inner_fileno(self):
