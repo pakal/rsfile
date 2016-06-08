@@ -384,10 +384,12 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
 
         with io.open(TESTFN, 'wb', buffering=0) as f:
 
-            assert not f._uid
-            (dev, inode) = f.uid()
+            assert f._uid  # immediately initialized actually, for intre process locks registry...
+            uid = f.uid()
 
-            assert f._uid == (dev, inode)  # caching occurs
+            assert uid is f._uid  # caching occurs
+
+            (dev, inode) = uid
 
             self.assertTrue(dev)
             assert isinstance(dev, (int, long))

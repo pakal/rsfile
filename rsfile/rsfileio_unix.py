@@ -48,10 +48,11 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         """
 
         with rsfileio_abstract.IntraProcessLockRegistry.mutex:
-
-            res = rsfileio_abstract.IntraProcessLockRegistry.uid_has_locks(self._uid)
+            uid = self._uid
+            assert uid, uid
+            res = rsfileio_abstract.IntraProcessLockRegistry.uid_has_locks(uid)
             if not res: # no more locks left for that uid
-                data_list = rsfileio_abstract.IntraProcessLockRegistry.remove_uid_data(self._uid)
+                data_list = rsfileio_abstract.IntraProcessLockRegistry.remove_uid_data(uid)
                 for fd in data_list: # we close all pending file descriptors (which were left opened to prevent fcntl() lock autoremoving)
                     unix.close(fd)
 
@@ -125,8 +126,11 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
                     if not (old_flags & unix.FD_CLOEXEC): # we may use O_CLOEXEC instead (Since Linux 2.6.23)
                         unix.fcntl(self._fileno, unix.F_SETFD, old_flags | unix.FD_CLOEXEC);
 
-            self._lock_registry_inode = self._inner_uid()
-            self._lock_registry_descriptor = self._fileno
+        # WHATEVER the origin of the stream, we initialize these fields:
+        self._lock_registry_inode = self.uid()  # enforces caching of uid
+        assert self._uid, self._uid
+        self._lock_registry_descriptor = self._fileno
+        assert self._lock_registry_descriptor, self._lock_registry_descriptor
 
 
 
@@ -138,10 +142,12 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         """
         if self._closefd:
             with rsfileio_abstract.IntraProcessLockRegistry.mutex:
-                rsfileio_abstract.IntraProcessLockRegistry.add_uid_data(self._uid, self._fileno)
+                uid = self._uid
+                assert uid, uid
+                rsfileio_abstract.IntraProcessLockRegistry.add_uid_data(uid, self._fileno)
                 self._purge_pending_related_file_descriptors()
                 # we assume that there are chances for this to be the only handle pointing this precise file
-                rsfileio_abstract.IntraProcessLockRegistry.try_deleting_uid_entry(self._uid)
+                rsfileio_abstract.IntraProcessLockRegistry.try_deleting_uid_entry(uid)
 
 
 

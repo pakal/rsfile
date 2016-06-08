@@ -201,7 +201,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         self._handle = None # native platform handle other than fileno - if existing
         self._closefd = closefd
 
-        # These two keys are used to identify the file and handle in the intra process lock registry
+        # These two keys are used to identify the file and handle in the intraprocess lock registry
         self._lock_registry_inode = None
         self._lock_registry_descriptor = None
 
@@ -345,12 +345,10 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
 
     def uid(self):
         self._checkClosed()
-        if self._uid is not None:
-            return self._uid
-        else:
+        if self._uid is None:
             self._uid = self._inner_uid()
-            assert self._uid, self._uid
-            return self._uid
+        assert self._uid, self._uid
+        return self._uid
 
     def times(self):
         self._checkClosed()
