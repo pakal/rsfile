@@ -201,10 +201,6 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         self._handle = None # native platform handle other than fileno - if existing
         self._closefd = closefd
 
-        # These two keys are used to identify the file and handle in the intraprocess lock registry
-        self._lock_registry_inode = None
-        self._lock_registry_descriptor = None
-
         if path:
             null_char = ("\0" if isinstance(path, str) else b"\0")
             if null_char in path:
@@ -225,6 +221,11 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
             else:
                 pass  # if we only have a handle, we're on windows, so no such pipe
             self._seekable = seekable
+
+            # These two keys, set by _inner_create_streams(), are used to
+            # identify the file and handle in the intraprocess lock registry
+            assert self._lock_registry_inode, self._lock_registry_inode
+            assert self._lock_registry_descriptor, self._lock_registry_descriptor
 
         except OverflowError as e:
             raise defs.BadValueTypeError(e)  # probably a too big filedescriptor number

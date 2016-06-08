@@ -48,11 +48,9 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         """
 
         with IntraProcessLockRegistry.mutex:
-            uid = self._uid
-            assert uid, uid
-            res = IntraProcessLockRegistry.uid_has_locks(uid)
+            res = IntraProcessLockRegistry.uid_has_locks(self._lock_registry_inode)
             if not res: # no more locks left for that uid
-                data_list = IntraProcessLockRegistry.remove_uid_data(uid)
+                data_list = IntraProcessLockRegistry.remove_uid_data(self._lock_registry_inode)
                 for fd in data_list: # we close all pending file descriptors (which were left opened to prevent fcntl() lock autoremoving)
                     unix.close(fd)
 
@@ -128,9 +126,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
 
         # WHATEVER the origin of the stream, we initialize these fields:
         self._lock_registry_inode = self.uid()  # enforces caching of uid
-        assert self._uid, self._uid
         self._lock_registry_descriptor = self._fileno
-        assert self._lock_registry_descriptor, self._lock_registry_descriptor
 
 
 
@@ -142,12 +138,10 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         """
         if self._closefd:
             with IntraProcessLockRegistry.mutex:
-                uid = self._uid
-                assert uid, uid
-                IntraProcessLockRegistry.add_uid_data(uid, self._fileno)
+                IntraProcessLockRegistry.add_uid_data(self._lock_registry_inode, self._lock_registry_descriptor)
                 self._purge_pending_related_file_descriptors()
                 # we assume that there are chances for this to be the only handle pointing this precise file
-                IntraProcessLockRegistry.try_deleting_uid_entry(uid)
+                IntraProcessLockRegistry.try_deleting_uid_entry(self._lock_registry_inode)
 
 
 

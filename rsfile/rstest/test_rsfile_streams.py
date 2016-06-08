@@ -384,7 +384,9 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
 
         with io.open(TESTFN, 'wb', buffering=0) as f:
 
-            assert f._uid  # immediately initialized actually, for intre process locks registry...
+            # immediately initialized on unix actually, for intra process locks registry...
+            assert bool(f._uid) == (defs.RSFILE_IMPLEMENTATION != "windows")
+
             uid = f.uid()
 
             assert uid is f._uid  # caching occurs

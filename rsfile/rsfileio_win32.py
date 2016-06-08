@@ -150,9 +150,8 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
 
         # WHATEVER the origin of the stream, we initialize these fields:
         self._lock_registry_inode = self._handle # we don't care about real inode uid, since win32 already distinguishes which handle owns a lock
-        assert self._handle, self._handle
         self._lock_registry_descriptor = self._handle
-        assert self._lock_registry_descriptor, self._lock_registry_descriptor
+
 
 
     @_win32_error_converter
