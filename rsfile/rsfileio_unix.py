@@ -12,7 +12,7 @@ from .import rsfile_definitions as defs
 
 
 from .rsbackend import unix_stdlib as unix
-
+from .rsfile_registries import IntraProcessLockRegistry
 
 
 UNIX_MSG_ENCODING = locale.getpreferredencoding()
@@ -47,12 +47,12 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         Returns True iff this uid has no more locks left and data left, i/e really closing descriptors is OK.
         """
 
-        with rsfileio_abstract.IntraProcessLockRegistry.mutex:
+        with IntraProcessLockRegistry.mutex:
             uid = self._uid
             assert uid, uid
-            res = rsfileio_abstract.IntraProcessLockRegistry.uid_has_locks(uid)
+            res = IntraProcessLockRegistry.uid_has_locks(uid)
             if not res: # no more locks left for that uid
-                data_list = rsfileio_abstract.IntraProcessLockRegistry.remove_uid_data(uid)
+                data_list = IntraProcessLockRegistry.remove_uid_data(uid)
                 for fd in data_list: # we close all pending file descriptors (which were left opened to prevent fcntl() lock autoremoving)
                     unix.close(fd)
 
@@ -141,13 +141,13 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         # Todo - is that still true ?
         """
         if self._closefd:
-            with rsfileio_abstract.IntraProcessLockRegistry.mutex:
+            with IntraProcessLockRegistry.mutex:
                 uid = self._uid
                 assert uid, uid
-                rsfileio_abstract.IntraProcessLockRegistry.add_uid_data(uid, self._fileno)
+                IntraProcessLockRegistry.add_uid_data(uid, self._fileno)
                 self._purge_pending_related_file_descriptors()
                 # we assume that there are chances for this to be the only handle pointing this precise file
-                rsfileio_abstract.IntraProcessLockRegistry.try_deleting_uid_entry(uid)
+                IntraProcessLockRegistry.try_deleting_uid_entry(uid)
 
 
 
