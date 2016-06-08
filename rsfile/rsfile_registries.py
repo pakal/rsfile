@@ -102,6 +102,7 @@ class IntraProcessLockRegistryClass(object):
         """
         Returns True iff the entry existed before the call.
         """
+        assert uid, uid
         if self._lock_registry.has_key(uid):
             return True
         else:
@@ -113,7 +114,9 @@ class IntraProcessLockRegistryClass(object):
     
     def _try_locking_range(self, uid, new_handle, new_length, new_start, new_shared):
         # unprotected method - beware
-        
+        assert uid, uid
+        assert new_handle, new_handle
+
         new_end = (new_start+new_length) if new_length else None # None -> infinity
 
         #print (">Thread %s handle %s TRYING TO TAKE lock with %s" % (threading.current_thread().name, new_handle, (new_shared, new_start, new_end)))        
@@ -149,7 +152,9 @@ class IntraProcessLockRegistryClass(object):
         """
         Returns True if there are not locks left for that uid
         """
-        
+        assert uid, uid
+        assert new_handle, new_handle
+
         # unprotected method - beware
         if not self._ensure_entry_exists(uid, create=False):
             return True
@@ -175,6 +180,8 @@ class IntraProcessLockRegistryClass(object):
     
     
     def register_file_lock(self, uid, handle, length, offset, blocking, shared, timeout):
+        assert uid, uid
+        assert handle, handle
         with self.mutex:
             
             self._check_forking()
@@ -197,7 +204,9 @@ class IntraProcessLockRegistryClass(object):
               
               
     
-    def unregister_file_lock(self, uid, handle, length, offset):  
+    def unregister_file_lock(self, uid, handle, length, offset):
+        assert uid, uid
+        assert handle, handle
         with self.mutex:  
             
             self._check_forking()
@@ -207,6 +216,8 @@ class IntraProcessLockRegistryClass(object):
 
     
     def remove_file_locks(self, uid, new_handle):
+        assert uid, uid
+        assert new_handle, new_handle
         with self.mutex:  
             
             self._check_forking()
@@ -232,6 +243,7 @@ class IntraProcessLockRegistryClass(object):
         """
         Returns True iff an entry existed and could be deleted.
         """
+        assert uid, uid
         with self.mutex:  
             
             self._check_forking()
@@ -247,6 +259,8 @@ class IntraProcessLockRegistryClass(object):
         
     
     def add_uid_data(self, uid, data):
+        assert uid, uid
+        assert data, data
         with self.mutex:  
             
             self._check_forking()
@@ -263,6 +277,7 @@ class IntraProcessLockRegistryClass(object):
             
     
     def remove_uid_data(self, uid):
+        assert uid, uid
         with self.mutex:  
             
             self._check_forking()
@@ -280,6 +295,7 @@ class IntraProcessLockRegistryClass(object):
                 
     
     def uid_has_locks(self, uid):
+        assert uid, uid
         with self.mutex:  
             
             self._check_forking()        
