@@ -350,6 +350,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
             self._unique_id = self._inner_unique_id()
         assert self._unique_id, self._unique_id
         return self._unique_id
+    uid = unique_id  # deprecated alias
 
     def times(self):
         self._checkClosed()

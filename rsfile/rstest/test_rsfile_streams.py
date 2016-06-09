@@ -390,6 +390,7 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
             unique_id = f.unique_id()
 
             assert unique_id is f._unique_id  # caching occurs
+            assert f.uid() == unique_id  # retrocompatibility alias
 
             (dev, inode) = unique_id
 
