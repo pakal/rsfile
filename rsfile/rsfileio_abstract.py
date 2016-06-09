@@ -199,7 +199,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         self._unique_id = None # unique identifier of the file, eg. (device, inode) pair
         self._fileno = None # C style file descriptor, might be created only on request
         self._handle = None # native platform handle other than fileno - if existing
-        self._closefd = closefd
+        self._closefd = closefd # set BEFORE creating streams
 
         if path:
             null_char = ("\0" if isinstance(path, str) else b"\0")
@@ -214,7 +214,8 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
                 # we bypass Rsfile for file descriptors that are pipes, devices, directories, symlinks etc.
                 st_mode = os.fstat(self._fileno).st_mode  # might raise
                 if stat.S_ISDIR(st_mode):
-                    self._fileno = None  # disown file descriptor
+                    assert fileno or handle, (fileno, handle)  # it must NOT be a newly created file object, else bug
+                    self._closefd = False  # disown file descriptor
                     raise IOError(errno.EISDIR, "Can't wrap a directory in FileIO")
                 is_regular = stat.S_ISREG(st_mode)
                 seekable = is_regular
@@ -244,7 +245,6 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
                     defs.io_module.RawIOBase.close(self) # we first mark the stream as closed... it flushes, also.
                 finally:
                     # even if implicit flush() failed, we properly close underlying streams
-
 
                     with IntraProcessLockRegistry.mutex:
                         # safety mechanisms for fcntl() and its Unlock-All-On-Single-Close semantic

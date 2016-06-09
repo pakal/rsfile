@@ -139,9 +139,8 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
                 flagsAndAttributes,
                 None # hTemplateFile  
                 )
-                
-            
-            handle = win32.CreateFile(*args)
+
+            handle = win32.CreateFile(*args)  # should raise if it's a DIRECTORY
             #print ">>>File opened : ", path
             
             self._handle = int(handle)

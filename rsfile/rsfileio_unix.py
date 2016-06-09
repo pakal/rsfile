@@ -107,7 +107,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
 
             self._fileno = self._handle = unix.open(strname, flags, permissions)
 
-            # on unix we must prevent the opening of directories or pipes !
+            # on unix we must prevent the opening of directories or pipes via paths !
             stats = unix.fstat(self._fileno).st_mode
             if stat.S_ISDIR(stats):
                 raise IOError(errno.EISDIR, "RSFile can't open directories", self.name)
