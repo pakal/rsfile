@@ -369,6 +369,75 @@ class TestRawFileViaWrapper(unittest.TestCase):
         self.assertEqual(string, b"i" * nbytes + b"j" * nbytes)
 
 
+    @unittest.skipIf(os.name == 'nt', "test only works on a POSIX-like system")
+    def testPipesBehaviour(self):
+
+
+        r, w = os.pipe()
+
+        import fcntl
+        # make reader nonblocking, else read() would keep waiting for more data
+        fcntl.fcntl(r, fcntl.F_SETFL, os.O_NONBLOCK)
+
+        with io.open(w, "w") as writer, io.open(r, "r") as reader:
+
+            self.assertEqual(reader.name, r)
+            self.assertEqual(writer.name, w)
+            self.assertEqual(reader.origin, "fileno")
+            self.assertEqual(writer.origin, "fileno")
+            self.assertEqual(reader.mode, "r")
+            self.assertEqual(writer.mode, "w")
+
+            self.assertEqual(reader.fileno(), r)
+            self.assertEqual(reader.handle(), r)
+            self.assertEqual(writer.fileno(), w)
+            self.assertEqual(writer.handle(), w)
+
+            self.assertEqual(writer.size(), 0)
+            self.assertEqual(reader.size(), 0)
+
+            old_times = writer.times()
+
+            time.sleep(1.2)
+            writer.write("aé")
+            writer.flush()
+
+            # PIPES can't be sync'ed!
+            self.assertRaises(IOError, writer.sync)
+            self.assertRaises(IOError, reader.sync)
+
+            self.assertEqual(writer.size(), 0)
+            self.assertEqual(reader.size(), 0)
+
+            res = reader.read()
+            assert res == "aé"
+
+            self.assertEqual(writer.size(), 0)
+            self.assertEqual(reader.size(), 0)
+
+            unique_id = writer.unique_id()
+            assert unique_id and all(unique_id), unique_id
+            self.assertEqual(reader.unique_id(), unique_id)  #same PIPE
+
+            times = writer.times()
+            assert times, times
+            self.assertEqual(reader.times(), times)
+            self.assertNotEqual(reader.times(), old_times)
+
+            self.assertRaises(IOError, writer.truncate)
+            self.assertRaises(IOError, reader.truncate)
+            self.assertRaises(IOError, writer.tell)
+            self.assertRaises(IOError, reader.tell)
+            self.assertRaises(IOError, writer.seek, 0)
+            self.assertRaises(IOError, reader.seek, 0)
+
+            self.assertRaises(IOError, writer.lock_file)
+            self.assertRaises(IOError, reader.lock_file)
+            self.assertRaises(IOError, writer.unlock_file)
+            self.assertRaises(IOError, reader.unlock_file)
+
+        print ("FINISHED")
+
 
 
 class TestRawFileSpecialFeatures(unittest.TestCase):
@@ -985,13 +1054,13 @@ def test_main():
 
 
 if __name__ == '__main__':
-    test_main()
+    #test_main()
 
     ##_cleanup()
     #test_original_io()
     #run_unittest(TestMiscStreams)
     #TestRawFileSpecialFeatures("testSynchronization").testSynchronization()
-
+    TestRawFileViaWrapper("testPipesBehaviour").testPipesBehaviour()
 
 
 
