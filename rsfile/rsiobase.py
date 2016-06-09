@@ -22,7 +22,7 @@ class RSIOBase(object):
     ### IMPROVED METHODS ###
 
     def truncate(self, size=None, zero_fill=True):
-        """Truncates file to ``size`` bytes.
+        """Truncates regular file to ``size`` bytes.
 
         ``size`` defaults to the current IO position as reported by tell().
 
@@ -144,7 +144,7 @@ class RSIOBase(object):
     def lock_file(self, timeout=None, length=None, offset=None, whence=os.SEEK_SET, shared=None):
         
         """
-        Locks the whole file or a portion of it, depending on the arguments provided.
+        Locks the whole regular file or a portion of it, depending on the arguments provided.
 
         The strength of the locking depends on the underlying platform. 
         On windows, all file locks (using LockFile()) are mandatory, i.e even programs 
@@ -234,16 +234,15 @@ class RSIOBase(object):
         to automatically release the lock. However, it is advised that you don't release locks 
         if you close the stream just after that; letting the close() operation release the locks
         is as efficient, and on unix it prevents other threads from taking locks in the short time
-        between unlocking and stream closing (thus allowing the system to safely free handle resources
-        in spite of the unsafe fcntl() semantic).
-        
+        between unlocking and stream closing (thus allowing the system to safely free handle resources in spite of the unsafe fcntl() semantic).
+
         """
         self._unsupported("lock_file")
 
 
     def unlock_file(self, length=None, offset=0, whence=os.SEEK_SET):
         """
-        Unlocks a file portion previously locked through the same native handle. 
+        Unlocks a portion of regular file previously locked through the same native handle.
         
         The specifications of the locked area (absolute offset and length) must 
         be the same as those used when calling locking methods,

@@ -65,7 +65,6 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         # Note : opening broken links works if we're in "w" mode, and raises error in "r" mode,
         # like for normal unexisting files.
 
-
         if handle is not None:
             assert fileno is None
             self._fileno = self._handle = handle
@@ -105,15 +104,13 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
                 flags |= unix.O_CREAT # by default - we create the file iff it doesn't exists
             # TODO - TWEAK INHERITABILITY HERE WITH FLAGS ??? like O_CLOEXEC
 
+            #print("Creating unix stream with context", locals())
             self._fileno = self._handle = unix.open(strname, flags, permissions)
 
-            # on unix we must prevent the opening of directories or pipes via paths !
+            # on unix we must prevent the opening of directories, but not named fifos or other special files
             stats = unix.fstat(self._fileno).st_mode
             if stat.S_ISDIR(stats):
                 raise IOError(errno.EISDIR, "RSFile can't open directories", self.name)
-            if not stat.S_ISREG(stats):
-                raise IOError(errno.EINVAL, "RSFile can only open regular files", self.name)
-            #FIXME TODO close just-opened stream then ?????????
 
             if hasattr(os, "set_inheritable"):
                 os.set_inheritable(self._fileno, inheritable)

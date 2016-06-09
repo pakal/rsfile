@@ -372,71 +372,96 @@ class TestRawFileViaWrapper(unittest.TestCase):
     @unittest.skipIf(os.name == 'nt', "test only works on a POSIX-like system")
     def testPipesBehaviour(self):
 
+        named_fifo = "named_fifo_%s" % random.randint(1, 10000)  # local file
+        os.mkfifo(named_fifo)
+        namedr = os.open(named_fifo, os.O_NONBLOCK)  # important not to block
 
-        r, w = os.pipe()
+        use_fileno_for_named_writer = random.choice((True, False))
+        if use_fileno_for_named_writer:
+            namedw = os.open(named_fifo, os.O_WRONLY)
+        else:
+            namedw = named_fifo
+
+        piper, pipew = os.pipe()
 
         import fcntl
         # make reader nonblocking, else read() would keep waiting for more data
-        fcntl.fcntl(r, fcntl.F_SETFL, os.O_NONBLOCK)
+        fcntl.fcntl(piper, fcntl.F_SETFL, os.O_NONBLOCK)
 
-        with io.open(w, "w") as writer, io.open(r, "r") as reader:
+        for (case, r, w) in [("anonymous", piper, pipew), ("named", namedr, namedw)]:
 
-            self.assertEqual(reader.name, r)
-            self.assertEqual(writer.name, w)
-            self.assertEqual(reader.origin, "fileno")
-            self.assertEqual(writer.origin, "fileno")
-            self.assertEqual(reader.mode, "r")
-            self.assertEqual(writer.mode, "w")
+            #print("Testing pipe of type %s" % case)
 
-            self.assertEqual(reader.fileno(), r)
-            self.assertEqual(reader.handle(), r)
-            self.assertEqual(writer.fileno(), w)
-            self.assertEqual(writer.handle(), w)
+            with io.open(w, "w") as writer, io.open(r, "r") as reader:
 
-            self.assertEqual(writer.size(), 0)
-            self.assertEqual(reader.size(), 0)
+                self.assertEqual(reader.name, r)
+                self.assertEqual(writer.name, w)
+                self.assertEqual(reader.origin, "fileno")
+                self.assertEqual(writer.origin, "path" if (case == "named" and not use_fileno_for_named_writer) else "fileno")
+                self.assertEqual(reader.mode, "r")
+                self.assertEqual(writer.mode, "w")
 
-            old_times = writer.times()
+                self.assertEqual(reader.fileno(), r)
+                self.assertEqual(reader.handle(), r)
 
-            time.sleep(1.2)
-            writer.write("aé")
-            writer.flush()
+                if not (case == "named" and not use_fileno_for_named_writer):
+                    self.assertEqual(writer.fileno(), w)
+                    self.assertEqual(writer.handle(), w)
 
-            # PIPES can't be sync'ed!
-            self.assertRaises(IOError, writer.sync)
-            self.assertRaises(IOError, reader.sync)
+                self.assertEqual(writer.size(), 0)
+                self.assertEqual(reader.size(), 0)
 
-            self.assertEqual(writer.size(), 0)
-            self.assertEqual(reader.size(), 0)
+                old_times = writer.times()
 
-            res = reader.read()
-            assert res == "aé"
+                time.sleep(1.2)
+                writer.write("aé")
+                writer.flush()
 
-            self.assertEqual(writer.size(), 0)
-            self.assertEqual(reader.size(), 0)
+                # PIPES can't be sync'ed!
+                self.assertRaises(IOError, writer.sync)
+                self.assertRaises(IOError, reader.sync)
 
-            unique_id = writer.unique_id()
-            assert unique_id and all(unique_id), unique_id
-            self.assertEqual(reader.unique_id(), unique_id)  #same PIPE
+                self.assertEqual(writer.size(), 0)
+                self.assertEqual(reader.size(), 0)
 
-            times = writer.times()
-            assert times, times
-            self.assertEqual(reader.times(), times)
-            self.assertNotEqual(reader.times(), old_times)
+                res = reader.read()
+                assert res == "aé"
 
-            self.assertRaises(IOError, writer.truncate)
-            self.assertRaises(IOError, reader.truncate)
-            self.assertRaises(IOError, writer.tell)
-            self.assertRaises(IOError, reader.tell)
-            self.assertRaises(IOError, writer.seek, 0)
-            self.assertRaises(IOError, reader.seek, 0)
+                self.assertEqual(writer.size(), 0)
+                self.assertEqual(reader.size(), 0)
 
-            self.assertRaises(IOError, writer.lock_file)
-            self.assertRaises(IOError, reader.lock_file)
-            self.assertRaises(IOError, writer.unlock_file)
-            self.assertRaises(IOError, reader.unlock_file)
+                unique_id = writer.unique_id()
+                assert unique_id and all(unique_id), unique_id
+                self.assertEqual(reader.unique_id(), unique_id)  #same PIPE
 
-        print ("FINISHED")
+                times = writer.times()
+                assert times, times
+                self.assertEqual(reader.times(), times)
+                self.assertNotEqual(reader.times(), old_times)
+
+                writer.buffer.raw.truncate(0)
+                self.assertRaises(IOError, reader.buffer.raw.truncate)
+
+                writer.truncate(0)
+                self.assertRaises(IOError, reader.buffer.raw.truncate, 0)
+
+                self.assertRaises(IOError, writer.truncate)  # fails because "relative truncation"
+                self.assertRaises(IOError, reader.truncate)
+                self.assertRaises(IOError, writer.truncate, 10)  # fails because "not full truncation"
+                self.assertRaises(IOError, reader.truncate, 10)
+
+                self.assertRaises(IOError, writer.tell)
+                self.assertRaises(IOError, reader.tell)
+                self.assertRaises(IOError, writer.seek, 0)
+                self.assertRaises(IOError, reader.seek, 0)
+
+                self.assertRaises(IOError, writer.lock_file)
+                self.assertRaises(IOError, reader.lock_file)
+                self.assertRaises(IOError, writer.unlock_file)
+                self.assertRaises(IOError, reader.unlock_file)
+
+        os.unlink(named_fifo)
+        #print ("FINISHED")
 
 
 
@@ -1054,13 +1079,13 @@ def test_main():
 
 
 if __name__ == '__main__':
-    #test_main()
+    test_main()
 
     ##_cleanup()
     #test_original_io()
     #run_unittest(TestMiscStreams)
     #TestRawFileSpecialFeatures("testSynchronization").testSynchronization()
-    TestRawFileViaWrapper("testPipesBehaviour").testPipesBehaviour()
+    #TestRawFileViaWrapper("testPipesBehaviour").testPipesBehaviour()
 
 
 

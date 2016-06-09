@@ -159,7 +159,7 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
         raise defs.BadValueTypeError("binary mode doesn't take a newline argument")
 
     raw_kwargs['permissions'] = permissions
-
+    #print("We get RSFileIO", RSFileIO)
     raw = RSFileIO(**raw_kwargs)
     result = raw
     try:
@@ -170,7 +170,7 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
 
         if extended_kwargs["truncate"]:
             # NOW that we've potentially locked the file, we may truncate
-            raw.truncate(0)
+            raw.truncate(0)  # does nothing on PIPES
 
         if buffering is None:
             buffering = -1
