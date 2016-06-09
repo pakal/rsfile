@@ -204,7 +204,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
     
     
     @_win32_error_converter         
-    def _inner_uid(self):
+    def _inner_unique_id(self):
         """
         See docs for GetFileInformationByHandle and BY_HANDLE_FILE_INFORMATION:
 
@@ -224,10 +224,10 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         inode = utilities.double_dwords_to_pyint(handle_info.nFileIndexLow, handle_info.nFileIndexHigh)
 
         if device <= 0 or inode <= 0:
-            raise win32.error(win32.ERROR_NOT_SUPPORTED, "RsfileInnerUid", "Impossible to retrieve win32 device/file-id information")
+            raise win32.error(win32.ERROR_NOT_SUPPORTED, "RsfileInnerUniqueId", "Impossible to retrieve win32 device/file-id information")
         
-        _uid = (device, inode)
-        return _uid
+        _unique_id = (device, inode)
+        return _unique_id
         
     
     @_win32_error_converter    

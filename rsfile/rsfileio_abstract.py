@@ -196,7 +196,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
                 self._path = os.path.abspath(path)
         """
 
-        self._uid = None # unique identifier of the file, eg. (device, inode) pair
+        self._unique_id = None # unique identifier of the file, eg. (device, inode) pair
         self._fileno = None # C style file descriptor, might be created only on request
         self._handle = None # native platform handle other than fileno - if existing
         self._closefd = closefd
@@ -346,10 +346,10 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
 
     def unique_id(self):
         self._checkClosed()
-        if self._uid is None:
-            self._uid = self._inner_uid()
-        assert self._uid, self._uid
-        return self._uid
+        if self._unique_id is None:
+            self._unique_id = self._inner_unique_id()
+        assert self._unique_id, self._unique_id
+        return self._unique_id
 
     def times(self):
         self._checkClosed()
@@ -702,7 +702,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
     def _inner_handle(self):
         self._unsupported("handle")
 
-    def _inner_uid(self):
+    def _inner_unique_id(self):
         self._unsupported("unique_id")
 
     def _inner_times(self):

@@ -48,9 +48,9 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         """
 
         with IntraProcessLockRegistry.mutex:
-            res = IntraProcessLockRegistry.uid_has_locks(self._lock_registry_inode)
+            res = IntraProcessLockRegistry.unique_id_has_locks(self._lock_registry_inode)
             if not res: # no more locks left for that unique_id
-                data_list = IntraProcessLockRegistry.remove_uid_data(self._lock_registry_inode)
+                data_list = IntraProcessLockRegistry.remove_unique_id_data(self._lock_registry_inode)
                 for fd in data_list: # we close all pending file descriptors (which were left opened to prevent fcntl() lock autoremoving)
                     unix.close(fd)
 
@@ -138,10 +138,10 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         """
         if self._closefd:
             with IntraProcessLockRegistry.mutex:
-                IntraProcessLockRegistry.add_uid_data(self._lock_registry_inode, self._lock_registry_descriptor)
+                IntraProcessLockRegistry.add_unique_id_data(self._lock_registry_inode, self._lock_registry_descriptor)
                 self._purge_pending_related_file_descriptors()
                 # we assume that there are chances for this to be the only handle pointing this precise file
-                IntraProcessLockRegistry.try_deleting_uid_entry(self._lock_registry_inode)
+                IntraProcessLockRegistry.try_deleting_unique_id_entry(self._lock_registry_inode)
 
 
 
@@ -190,7 +190,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
 
 
     @_unix_error_converter
-    def _inner_uid(self):
+    def _inner_unique_id(self):
         """
         Unix-like systems SHOULD always provide meaningful device/inode values.
 
@@ -198,13 +198,13 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
 
         The st_ino and st_dev fields taken together uniquely identify the file within the system.
 
-        Unless otherwise specified, the structure members st_mode, st_ino, st_dev, st_uid, st_gid, st_atime, st_ctime, and st_mtime shall have meaningful values for all file types defined in IEEE Std 1003.1-2001.
+        Unless otherwise specified, the structure members st_mode, st_ino, st_dev, st_unique_id, st_gid, st_atime, st_ctime, and st_mtime shall have meaningful values for all file types defined in IEEE Std 1003.1-2001.
         """
         stats = unix.fstat(self._fileno)
-        _uid = (stats.st_dev, stats.st_ino)
-        if not all(_uid):
+        _unique_id = (stats.st_dev, stats.st_ino)
+        if not all(_unique_id):
             raise IOError(errno.ENOSYS, "No unique dev/inode identifier available")
-        return _uid
+        return _unique_id
 
     @_unix_error_converter
     def _inner_times(self):

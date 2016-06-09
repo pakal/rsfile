@@ -239,7 +239,7 @@ class IntraProcessLockRegistryClass(object):
 
 
     
-    def try_deleting_uid_entry(self, unique_id):
+    def try_deleting_unique_id_entry(self, unique_id):
         """
         Returns True iff an entry existed and could be deleted.
         """
@@ -258,7 +258,7 @@ class IntraProcessLockRegistryClass(object):
         
         
     
-    def add_uid_data(self, unique_id, data):
+    def add_unique_id_data(self, unique_id, data):
         assert unique_id, unique_id
         assert data, data
         with self.mutex:  
@@ -276,7 +276,7 @@ class IntraProcessLockRegistryClass(object):
             
             
     
-    def remove_uid_data(self, unique_id):
+    def remove_unique_id_data(self, unique_id):
         assert unique_id, unique_id
         with self.mutex:  
             
@@ -294,7 +294,7 @@ class IntraProcessLockRegistryClass(object):
                 
                 
     
-    def uid_has_locks(self, unique_id):
+    def unique_id_has_locks(self, unique_id):
         assert unique_id, unique_id
         with self.mutex:  
             

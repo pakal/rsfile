@@ -385,11 +385,11 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
         with io.open(TESTFN, 'wb', buffering=0) as f:
 
             # immediately initialized on unix actually, for intra process locks registry...
-            assert bool(f._uid) == (defs.RSFILE_IMPLEMENTATION != "windows")
+            assert bool(f._unique_id) == (defs.RSFILE_IMPLEMENTATION != "windows")
 
             unique_id = f.unique_id()
 
-            assert unique_id is f._uid  # caching occurs
+            assert unique_id is f._unique_id  # caching occurs
 
             (dev, inode) = unique_id
 
@@ -604,7 +604,7 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
             with rsfile.rsopen(TESTFN, "RBH", buffering=0) as g: # hidden file -> deleted on opening
                 self.assertTrue(os.path.exists(TESTFN))
                 self.assertEqual(f.unique_id(), g.unique_id())
-                old_uid = f.unique_id()
+                old_unique_id = f.unique_id()
             # Here, Delete On Close takes effect
             fullpath = os.path.join(os.getcwd(), TESTFN)
             self.assertFalse(os.path.exists(fullpath))
