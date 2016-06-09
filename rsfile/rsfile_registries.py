@@ -112,22 +112,22 @@ class IntraProcessLockRegistryClass(object):
             
             
     
-    def _try_locking_range(self, unique_id, new_handle, new_length, new_start, new_shared):
+    def _try_locking_range(self, unique_id, handle, new_length, new_start, new_shared):
         # unprotected method - beware
         assert unique_id, unique_id
-        assert new_handle, new_handle
+        assert handle, handle
 
         new_end = (new_start+new_length) if new_length else None # None -> infinity
 
-        #print (">Thread %s handle %s TRYING TO TAKE lock with %s" % (threading.current_thread().name, new_handle, (new_shared, new_start, new_end)))        
+        #print (">Thread %s handle %s TRYING TO TAKE lock with %s" % (threading.current_thread().name, handle, (new_shared, new_start, new_end)))
 
         
         
         if self._ensure_entry_exists(unique_id, create=True):
             
-            for (handle, shared, start, end) in self._lock_registry[unique_id][1]:
+            for (other_handle, shared, start, end) in self._lock_registry[unique_id][1]:
                 
-                if handle != new_handle and shared == new_shared== True:
+                if other_handle != handle and shared == new_shared== True:
                     continue # there won't be problems with shared locks from different file handles 
                 
                 max_start = max(start, new_start)
@@ -137,23 +137,23 @@ class IntraProcessLockRegistryClass(object):
                     min_end = new_end
                 
                 if min_end is None or max_start < min_end: # areas are overlapping
-                    if handle == new_handle:
+                    if other_handle == handle:
                         raise RuntimeError("Same area of file locked twice by the same file descriptor")
                     else:
                         return False
 
-        #print (">Thread %s handle %s takes lock with %s" % (threading.current_thread().name, new_handle, (new_shared, new_start, new_end)))
-        self._lock_registry[unique_id][1].append((new_handle, new_shared, new_start, new_end)) # we register as owner of this lock inside this process
+        #print (">Thread %s handle %s takes lock with %s" % (threading.current_thread().name, handle, (new_shared, new_start, new_end)))
+        self._lock_registry[unique_id][1].append((handle, new_shared, new_start, new_end)) # we register as owner of this lock inside this process
         return True # no badly overlapping range was found
     
  
     
-    def _try_unlocking_range(self, unique_id, new_handle, new_length, new_start):
+    def _try_unlocking_range(self, unique_id, handle, new_length, new_start):
         """
         Returns True if there are not locks left for that unique_id
         """
         assert unique_id, unique_id
-        assert new_handle, new_handle
+        assert handle, handle
 
         # unprotected method - beware
         if not self._ensure_entry_exists(unique_id, create=False):
@@ -161,11 +161,11 @@ class IntraProcessLockRegistryClass(object):
         
         new_end = (new_start+new_length) if new_length else None # None -> infinity
 
-        #print ("<Thread %s handle %s wants to remove lock with %s" % (threading.current_thread().name, new_handle, (new_start, new_end)))
+        #print ("<Thread %s handle %s wants to remove lock with %s" % (threading.current_thread().name, handle, (new_start, new_end)))
 
         locks = self._lock_registry[unique_id][1]
-        for index, (handle, shared, start, end) in enumerate(locks):
-            if (handle == new_handle and start == new_start and end == new_end):
+        for index, (other_handle, shared, start, end) in enumerate(locks):
+            if (other_handle == handle and start == new_start and end == new_end):
                 del locks[index]
                 #print ("THREAD %s NOTIFYING %s" % ( threading.current_thread().name, unique_id))
                 self._lock_registry[unique_id][0].notify_all() # we awake potential waiters - ALL of them
@@ -215,9 +215,9 @@ class IntraProcessLockRegistryClass(object):
 
 
     
-    def remove_file_locks(self, unique_id, new_handle):
+    def remove_file_locks(self, unique_id, handle):
         assert unique_id, unique_id
-        assert new_handle, new_handle
+        assert handle, handle
         with self.mutex:  
             
             self._check_forking()
@@ -228,7 +228,7 @@ class IntraProcessLockRegistryClass(object):
             removed_locks = []
             remaining_locks = []
             for record in self._lock_registry[unique_id][1]:
-                if record[0] == new_handle:
+                if record[0] == handle:
                     removed_locks.append(record)
                 else:
                     remaining_locks.append(record)
