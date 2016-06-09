@@ -191,12 +191,28 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
 
     @_unix_error_converter
     def _inner_uid(self):
+        """
+        Unix-like systems SHOULD always provide meaningful device/inode values.
+
+        According to specs: http://pubs.opengroup.org/onlinepubs/009695399/basedefs/sys/stat.h.html
+
+        The st_ino and st_dev fields taken together uniquely identify the file within the system.
+
+        Unless otherwise specified, the structure members st_mode, st_ino, st_dev, st_uid, st_gid, st_atime, st_ctime, and st_mtime shall have meaningful values for all file types defined in IEEE Std 1003.1-2001.
+        """
         stats = unix.fstat(self._fileno)
         _uid = (stats.st_dev, stats.st_ino)
+        if not all(_uid):
+            raise IOError(errno.ENOSYS, "No unique dev/inode identifier available")
         return _uid
 
     @_unix_error_converter
     def _inner_times(self):
+        """
+        See STAT() docs:
+
+        Not all of the Linux file systems implement all of the time fields. Some file system types allow mounting in such a way that file and/or directory accesses do not cause an update of the st_atime field. (See noatime, nodiratime, and relatime in mount(8), and related information in mount(2).) In addition, st_atime is not updated if a file is opened with the O_NOATIME; see open(2).
+        """
         stats = unix.fstat(self._fileno)
         return defs.FileTimes(access_time=stats.st_atime,
                               modification_time=stats.st_mtime)
