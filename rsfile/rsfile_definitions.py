@@ -55,5 +55,6 @@ class FileTimes(object):
     def __init__(self, access_time, modification_time):
         self.access_time = access_time
         self.modification_time = modification_time
-
-
+    def __repr__(self):
+        return "<FileTimes access_time=%s modification_time=%s>" % \
+               (self.access_time, self.modification_time)

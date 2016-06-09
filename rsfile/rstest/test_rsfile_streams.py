@@ -840,7 +840,11 @@ class TestMiscStreams(unittest.TestCase):
 
             myfile.sync()
             myfile.uid()
-            myfile.times().access_time
+            times = myfile.times()
+            assert times.access_time > 0
+            assert times.modification_time > 0
+            times_repr = repr(times)
+            assert "FileTimes" in times_repr and "access" in times_repr and "modification" in times_repr
             myfile.size()
 
             myfile.mode # Pakal - todo - check how it works !!!
