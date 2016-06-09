@@ -4,27 +4,19 @@ from __future__ import unicode_literals, print_function
 
 ## THIS CLASS IS CURRENTLY ONLY USED FOR DOCUMENTATION PURPOSE ##
 
-### Based on trunk _pyio from python3.4 ! ###
-
-
-import os
-import abc
-
-from .rsfile_definitions import io_module
-
-
 
 class RSIOBase(object):
-    __metaclass__ = abc.ABCMeta
 
     """
     This abstract base class is used to document the additional features of rsfile streams,
     compared to that of the stdlib `io.IOBase` subclasses.
 
-    Unless stated otherwise, all
-    methods and attributes specified in the docs of the `io` module also exist in rsfile sreams,
-    with a compatible behaviour.
+    Unless stated otherwise, all methods and attributes specified in the docs
+    of the `io` module also exist in rsfile sreams, with a compatible behaviour.
     """
+
+    def _unsupported(selfself, name):
+        raise NotImplementedError(name)
 
 
     ### IMPROVED METHODS ###
@@ -47,6 +39,7 @@ class RSIOBase(object):
         """
         self._unsupported("truncate")
 
+
     def close(self):
         """
         Flushes and closes the IO object. This method has no effect if the file is already closed.
@@ -58,7 +51,7 @@ class RSIOBase(object):
         are held by the process on the target disk file. This is a workaround to prevent fctnl
         locks on that file from all becoming stale in the process, due to the fctnl semantic.
         """
-
+        self._unsupported("close")
 
 
     ### NEW METHODS ###
@@ -94,7 +87,7 @@ class RSIOBase(object):
         For a constant synchronization between the kernel cache and the disk oxyde,
         see the "synchronized" argument at stream opening.
 
-        Raises an IOError if no sync operation is possible on the stream.
+        Raises IOError if no sync operation is possible on the stream (eg. for pipes).
         """
         self._unsupported("sync")
 
@@ -145,6 +138,7 @@ class RSIOBase(object):
 
         On windows, it's a specific Handle value, which is also an integer.
         """
+        self._unsupported("handle")
 
 
     def lock_file(self, timeout=None, length=None, offset=None, whence=os.SEEK_SET, shared=None):
@@ -276,6 +270,8 @@ class RSIOBase(object):
 
         If the file is opened in text mode however, its "mode" attribute is exactly that which was passed open().
         """
+        self._unsupported("mode")
+
 
     @property
     def origin(self):
@@ -284,6 +280,8 @@ class RSIOBase(object):
         as well as the meaning of its :attr:`name`.
         Possible values are 'path', 'fileno' and 'handle'.
         """
+        self._unsupported("origin")
+
 
     @property
     def name(self):
@@ -292,11 +290,7 @@ class RSIOBase(object):
         depending on the way the stream was created.
         To interpret this attribute safely, refer to the :attr:`origin` property.
         """
-
-io_module.IOBase.register(RSIOBase)
-
-
-
+        self._unsupported("name")
 
 
 
