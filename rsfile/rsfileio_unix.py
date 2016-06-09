@@ -44,12 +44,12 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
     @_unix_error_converter
     def _purge_pending_related_file_descriptors(self):
         """
-        Returns True iff this uid has no more locks left and data left, i/e really closing descriptors is OK.
+        Returns True iff this unique_id has no more locks left and data left, i/e really closing descriptors is OK.
         """
 
         with IntraProcessLockRegistry.mutex:
             res = IntraProcessLockRegistry.uid_has_locks(self._lock_registry_inode)
-            if not res: # no more locks left for that uid
+            if not res: # no more locks left for that unique_id
                 data_list = IntraProcessLockRegistry.remove_uid_data(self._lock_registry_inode)
                 for fd in data_list: # we close all pending file descriptors (which were left opened to prevent fcntl() lock autoremoving)
                     unix.close(fd)
@@ -125,7 +125,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
                         unix.fcntl(self._fileno, unix.F_SETFD, old_flags | unix.FD_CLOEXEC);
 
         # WHATEVER the origin of the stream, we initialize these fields:
-        self._lock_registry_inode = self.uid()  # enforces caching of uid
+        self._lock_registry_inode = self.unique_id()  # enforces caching of unique_id
         self._lock_registry_descriptor = self._fileno
 
 

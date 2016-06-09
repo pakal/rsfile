@@ -344,7 +344,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         self._checkClosed()
         return self._inner_handle()
 
-    def uid(self):
+    def unique_id(self):
         self._checkClosed()
         if self._uid is None:
             self._uid = self._inner_uid()
@@ -703,7 +703,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         self._unsupported("handle")
 
     def _inner_uid(self):
-        self._unsupported("uid")
+        self._unsupported("unique_id")
 
     def _inner_times(self):
         self._unsupported("times")

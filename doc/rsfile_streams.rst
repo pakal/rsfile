@@ -34,7 +34,7 @@ io.IOBase abstract class, with the new methods and semantics described below in 
 
     .. automethod:: handle
 
-    .. automethod:: uid
+    .. automethod:: unique_id
 
     .. automethod:: size
 

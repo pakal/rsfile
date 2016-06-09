@@ -114,11 +114,11 @@ class RSIOBase(object):
         self._unsupported("times")
 
 
-    def uid(self):
+    def unique_id(self):
         """Returns a tuple of (device, inode) integers, identifying unambiguously the stream.
 
         Different file objects refer to the same disk file if
-        and only if they have the same uid.
+        and only if they have the same unique_id.
 
         Raises OSError if it is impossible to retrieve this information (on some network
         or virtual filesystems, for unnamed streams...).
@@ -127,7 +127,7 @@ class RSIOBase(object):
         since it is often possible to delete/recreate
         a file, while other streams born from that same path are still in use.
         """
-        self._unsupported("uid")
+        self._unsupported("unique_id")
 
 
     def fileno(self):

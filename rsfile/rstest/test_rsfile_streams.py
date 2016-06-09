@@ -387,11 +387,11 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
             # immediately initialized on unix actually, for intra process locks registry...
             assert bool(f._uid) == (defs.RSFILE_IMPLEMENTATION != "windows")
 
-            uid = f.uid()
+            unique_id = f.unique_id()
 
-            assert uid is f._uid  # caching occurs
+            assert unique_id is f._uid  # caching occurs
 
-            (dev, inode) = uid
+            (dev, inode) = unique_id
 
             self.assertTrue(dev)
             assert isinstance(dev, (int, long))
@@ -603,8 +603,8 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
             
             with rsfile.rsopen(TESTFN, "RBH", buffering=0) as g: # hidden file -> deleted on opening
                 self.assertTrue(os.path.exists(TESTFN))
-                self.assertEqual(f.uid(), g.uid())
-                old_uid = f.uid()
+                self.assertEqual(f.unique_id(), g.unique_id())
+                old_uid = f.unique_id()
             # Here, Delete On Close takes effect
             fullpath = os.path.join(os.getcwd(), TESTFN)
             self.assertFalse(os.path.exists(fullpath))
@@ -839,7 +839,7 @@ class TestMiscStreams(unittest.TestCase):
         def test_new_methods(myfile, raw, char):
 
             myfile.sync()
-            myfile.uid()
+            myfile.unique_id()
             times = myfile.times()
             assert times.access_time > 0
             assert times.modification_time > 0

@@ -149,7 +149,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
                 handle.Detach()
 
         # WHATEVER the origin of the stream, we initialize these fields:
-        self._lock_registry_inode = self._handle # we don't care about real inode uid, since win32 already distinguishes which handle owns a lock
+        self._lock_registry_inode = self._handle # we don't care about real inode unique_id, since win32 already distinguishes which handle owns a lock
         self._lock_registry_descriptor = self._handle
 
 

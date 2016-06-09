@@ -25,8 +25,8 @@ class _buffer_forwarder_mixin(object):
         self.seek(self.tell())
         # # # # self.seek(0, os.SEEK_CUR) # we flush i/o buffers !  # Warning - does not work in Py2.6, buffered seek is buggy there ! # TODO - still true ?
 
-    def uid(self):
-        return self.raw.uid()
+    def unique_id(self):
+        return self.raw.unique_id()
 
     def times(self):
         return self.raw.times()
@@ -82,8 +82,8 @@ class _text_forwarder_mixin(object):
         self.seek(self.tell()) # Pakal - todo - change when io module fixed !!!
         # # # # self.seek(0, os.SEEK_CUR) # we flush i/o buffers !
 
-    def uid(self):
-        return self.buffer.uid()
+    def unique_id(self):
+        return self.buffer.unique_id()
 
     def times(self):
         return self.buffer.times()
