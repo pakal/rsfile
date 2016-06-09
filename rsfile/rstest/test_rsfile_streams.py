@@ -419,6 +419,7 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
 
             now = datetime.now()  # local time
 
+            # these timestamp stuffs might fail in FAT32 an the likes...
             assert now - timedelta(seconds=10) <= access_datetime <= now
             assert now - timedelta(seconds=10) <= modification_datetime <= now
 
@@ -783,9 +784,9 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
                 a = time.time()
                 for i in range(N):
                     f.write(b"c")
-                    print("We issue full sync")
+                    #print("We issue full sync")
                     f.sync(metadata=True, full_flush=True)
-                    print("STOP")
+                    #print("STOP")
                 b = time.time()
                 res3 = b - a
 

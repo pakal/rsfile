@@ -206,16 +206,24 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
     @_win32_error_converter         
     def _inner_uid(self):
         """
-        (dwFileAttributes, ftCreationTime, ftLastAccessTime, 
-         ftLastWriteTime, dwVolumeSerialNumber, nFileSizeHigh, 
-         nFileSizeLow, nNumberOfLinks, nFileIndexHigh, nFileIndexLow)
+        See docs for GetFileInformationByHandle and BY_HANDLE_FILE_INFORMATION:
+
+        Depending on the underlying network features of the operating system and the type of server connected to, the GetFileInformationByHandle function may fail, return partial information, or full information for the given file.
+
+        The identifier that is stored in the nFileIndexHigh and nFileIndexLow members is called the file ID. Support for file IDs is file system-specific. File IDs are not guaranteed to be unique over time, because file systems are free to reuse them. In some cases, the file ID for a file can change over time.
+
+        In the FAT file system, the file ID is generated from the first cluster of the containing directory and the byte offset within the directory of the entry for the file. Some defragmentation products change this byte offset. (Windows in-box defragmentation does not.) Thus, a FAT file ID can change over time. Renaming a file in the FAT file system can also change the file ID, but only if the new file name is longer than the old one.
+
+        handle_info attributes : (dwFileAttributes, ftCreationTime, ftLastAccessTime,
+             ftLastWriteTime, dwVolumeSerialNumber, nFileSizeHigh,
+             nFileSizeLow, nNumberOfLinks, nFileIndexHigh, nFileIndexLow)
         """
         
         handle_info = win32.GetFileInformationByHandle(self._handle)
         device = handle_info.dwVolumeSerialNumber
         inode = utilities.double_dwords_to_pyint(handle_info.nFileIndexLow, handle_info.nFileIndexHigh)
-        
-        if device <= 0 or inode <= 0: # File info  might be incomplete, according to MSDN, eg. on FAT32
+
+        if device <= 0 or inode <= 0:
             raise win32.error(win32.ERROR_NOT_SUPPORTED, "RsfileInnerUid", "Impossible to retrieve win32 device/file-id information")
         
         _uid = (device, inode)
@@ -252,7 +260,11 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
     
     @_win32_error_converter
     def _inner_times(self):
+        """
+        See docs for BY_HANDLE_FILE_INFORMATION:
 
+        Not all file systems can record creation and last access time, and not all file systems record them in the same manner. For example, on a Windows FAT file system, create time has a resolution of 10 milliseconds, write time has a resolution of 2 seconds, and access time has a resolution of 1 day (the access date). On the NTFS file system, access time has a resolution of 1 hour. For more information, see File Times.
+        """
         handle_info = win32.GetFileInformationByHandle(self._handle)
         
         return defs.FileTimes(access_time = utilities.win32_filetime_to_python_timestamp(
