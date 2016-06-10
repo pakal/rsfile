@@ -13,6 +13,7 @@ import os
 import unittest
 from pprint import pprint
 
+import array
 import tempfile
 import time
 import itertools
@@ -472,6 +473,64 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
 
     def tearDown(self):
         _cleanup()
+
+
+    def testReadWriteTypes(self):
+
+        array_type = b"b" if sys.version_info < (3,) else "b"
+
+        with io.open(TESTFN, 'wb') as f:
+            f.write(b"ab")
+            f.write(bytes(b"cd"))
+            f.write(bytearray(b"ef"))
+            f.write(array.array(array_type, [ord(b"g"), ord(b"h")]))
+
+            f.write(memoryview(b"AB"))
+            f.write(memoryview(bytes(b"CD")))
+            f.write(memoryview(bytearray(b"EF")))
+
+            try:
+                f.write(memoryview(array.array(b"b", [ord(b"G"), ord(b"H")])))
+                extra = b"GH"
+            except TypeError:
+                extra = b""
+                pass  # in python2.7, array.array() has no buffer interface
+
+        with io.open(TESTFN, 'rb') as f:
+            result = b"abcdefghABCDEF" + extra
+
+            self.assertEquals(f.read(), result)
+            f.seek(0)
+            self.assertEquals(f.read(), result)
+            f.seek(0)
+
+            target = array.array(array_type, b" "*20)
+            assert len(target) == 20, target
+            f.readinto(target)
+            assert len(target) == 20, target
+            self.assertEquals(target.tostring().decode("ascii").strip(), result.decode("ascii"))  # actually BYTES
+
+            f.seek(0)
+
+            target = bytearray(b" "* 20)
+            assert len(target) == 20, target
+            f.readinto(target)
+            assert len(target) == 20, target
+            self.assertEquals(target.decode("ascii").strip(), result.decode("ascii"))
+
+            f.seek(0)
+
+            target = memoryview(bytearray(b" " * 20))
+            assert len(target) == 20, target
+            f.readinto(target)
+            assert len(target) == 20, target
+            self.assertEquals(target.tobytes().decode("ascii").strip(), result.decode("ascii"))
+
+            f.seek(0)
+
+            target = memoryview(bytes(b" " * 20))
+            assert len(target) == 20, target
+            self.assertRaises(TypeError, f.readinto, target)  # READONLY buffer
 
 
     def testNewAccessors(self):
@@ -1084,7 +1143,8 @@ if __name__ == '__main__':
     ##_cleanup()
     #test_original_io()
     #run_unittest(TestMiscStreams)
-    #TestRawFileSpecialFeatures("testSynchronization").testSynchronization()
+    #TestRawFileSpecialFeatures("testReadWriteTypes").testReadWriteTypes()
+    #print("OK DONE")
     #TestRawFileViaWrapper("testPipesBehaviour").testPipesBehaviour()
 
 
