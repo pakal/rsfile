@@ -113,6 +113,7 @@ class TestSafeFile(unittest.TestCase):
                     self.assertEqual(myfile2.enforced_locking_timeout_value, 2)
                     self.assertEqual(myfile2.default_spinlock_delay, 1)
 
+                    # this would deadlock the application, if no enforced timeout...
                     self.assertRaises(rsfile.LockingException, myfile2.lock_file, timeout=1)
 
                     self.assertRaises(rsfile.LockingException, myfile2.lock_file, timeout=3)
