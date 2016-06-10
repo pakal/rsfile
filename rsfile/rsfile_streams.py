@@ -7,7 +7,7 @@ from . import rsfile_definitions as defs
 
 if defs.RSFILE_IMPLEMENTATION == "windows":  # even on 64bits windows OS
     try:
-        from .rsfileio_win32 import RSFileIO
+        from .rsfileio_windows import RSFileIO
     except Exception as e:
         raise ImportError("No windows backend available : %s" % e)
 else:

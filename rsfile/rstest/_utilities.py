@@ -11,28 +11,28 @@ def launch_rsfile_tests_on_backends(test_main):
     backends = []
     
     if sys.platform == 'win32':
-        import rsfile.rsfileio_win32 as rsfileio_win32
+        import rsfile.rsfileio_windows as rsfileio_win32
         
           
         try:
-            import rsfile.rsbackend.pywin32_extensions
+            import rsfile.rsbackend.windows_pywin32
         except ImportError:
             pass
         else:
             print ("<Launching test on pywin32 extensions backend !>\n")
             assert rsfileio_win32.win32
-            rsfileio_win32.win32 = rsfile.rsbackend.pywin32_extensions
+            rsfileio_win32.win32 = rsfile.rsbackend.windows_pywin32
             test_main()
             backends.append("pywin32_extensions")
         
         try:
-            import rsfile.rsbackend.pywin32_ctypes
+            import rsfile.rsbackend.windows_ctypes
         except ImportError:
             pass
         else:
             print ("<Launching test on win32 ctypes backend !>\n")
             assert rsfileio_win32.win32
-            rsfileio_win32.win32 = rsfile.rsbackend.pywin32_ctypes
+            rsfileio_win32.win32 = rsfile.rsbackend.windows_ctypes
             test_main()
             backends.append("pywin32_ctypes")
 

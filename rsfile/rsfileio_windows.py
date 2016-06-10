@@ -17,9 +17,9 @@ from .rsbackend import _utilities as utilities
 
 
 try:
-    from .rsbackend import pywin32_extensions as win32
+    from .rsbackend import windows_pywin32 as win32
 except ImportError:
-    from .rsbackend import pywin32_ctypes as win32
+    from .rsbackend import windows_ctypes as win32
         
 
 WIN32_MSG_ENCODING = locale.getpreferredencoding()

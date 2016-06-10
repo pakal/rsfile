@@ -96,7 +96,7 @@ beginning of the file. The default for length is 0 which
 means to lock to the end of the file. The default for whence is also 0.
 """
 
-from unix_defines import * # constants
+from raw_unix_defines import * # constants
 
 
 
