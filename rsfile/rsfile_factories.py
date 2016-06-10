@@ -146,8 +146,12 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
         raw_kwargs["fileno"] = opener(name, mode)  # we give it the original "name" as parameter, not the normalized path
         raw_kwargs["path"] = None  # irrelevant in this case
 
-    if extended_kwargs["truncate"] and not (raw_kwargs["write"] or raw_kwargs["append"]):
-        raise defs.BadValueTypeError("wan't truncate a non-writable file")
+    if extended_kwargs["truncate"]:
+        if not (raw_kwargs["write"] or raw_kwargs["append"]):
+            raise defs.BadValueTypeError("can't truncate a non-writable file")
+        if raw_kwargs["fileno"] or raw_kwargs["handle"]:
+            # IMPORTANT: when wrapping an existing stream, we dont NOT truncate it, to respect with the stdlib behaviour
+            extended_kwargs["truncate"] = False
 
     if extended_kwargs["binary"] and extended_kwargs["text"]:
         raise defs.BadValueTypeError("can't have text and binary mode at once")

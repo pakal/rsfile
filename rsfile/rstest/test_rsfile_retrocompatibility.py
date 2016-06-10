@@ -289,6 +289,26 @@ class TestStreamsRetrocompatibility(unittest.TestCase):
         assert idx > 1000, idx  # we've well browsed lots of combinations
 
 
+    def testMiscStreamBehavioursRetrocompatibility(self):
+
+        filename = "TESTFILE"
+
+        for opener in (rsfile.rsopen, io.open):
+
+            # BEWARE: wrapped stream must NOT be truncated despite the "w" mode
+
+            #print("Trying with", opener)
+            fd = os.open(filename, os.O_WRONLY|os.O_CREAT|os.O_TRUNC)
+            self.assertEqual(os.fstat(fd).st_size, 0)
+            os.write(fd, b"abcd")
+            self.assertEqual(os.fstat(fd).st_size, 4)
+
+            with opener(fd, "w", closefd=True) as f:
+                if hasattr(f, "size"):
+                    self.assertEqual(f.size(), 4)
+                self.assertEqual(os.fstat(fd).st_size, 4)
+
+
 
 def display_open_modes_correlations_table():
 
