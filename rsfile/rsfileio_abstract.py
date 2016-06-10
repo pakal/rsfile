@@ -478,7 +478,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
             if size is None:
                 size = self.tell()
             elif size < 0:
-                raise IOError(22, "Invalid argument : truncation size must be None or positive integer, not '%s'" % size)
+                raise IOError(errno.EINVAL, "Invalid argument : truncation size must be None or positive integer, not '%s'" % size)
 
             current_size = self.size()
             if size == current_size:
@@ -627,7 +627,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
                                                               length, abs_offset, low_level_blocking, shared, self.enforced_locking_timeout_value)
 
             if not res:
-                check_timeout(IOError(100, "Current process has already locked this byte range")) # TODO CHANGE errno.EPERM
+                check_timeout(IOError(errno.EAGAIN, "Current process has already locked this byte range")) # TODO CHANGE errno.EPERM
                 continue
 
             try:

@@ -138,7 +138,7 @@ class IntraProcessLockRegistryClass(object):
                 
                 if min_end is None or max_start < min_end: # areas are overlapping
                     if other_handle == handle:
-                        raise RuntimeError("Same area of file locked twice by the same file descriptor")
+                        raise RuntimeError("Same area of file locked twice by the same file descriptor")  # we don't merge lock areas
                     else:
                         return False
 
