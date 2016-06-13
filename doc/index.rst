@@ -1,58 +1,48 @@
-.. RockSolidTools documentation master file, created by Pascal Chambon
 
-Welcome to RockSolidTools' documentation!
-==========================================
-
-This mini-framework aims at providing cross-platform (unix/linux/mac/windows) object-oriented APIs for widely needed functionalities
-like I/O streams, filesystem operations, inter-process communication, and generic transactional systems.
-
-The focus is currently set on security and code robustness more than on execution speed, on comprehensive testing and documentation
-more than on code optimization. 
-
-RockSolidTools currently features three packages : **rsbackends** (a set of bridges to
-native OS APIs - you shouldn't have to use it directly) and **rsfile** (a partial reimplementation 
-of the standard io module, with advanced features), plus an optional **rstest** package to validate these. 
+RSFile package |version|
+========================
 
 
-..
-    However, on the long term cython augmentations might be developed in parallel, and compensate
-    the slowness of these pure-python modules compared to stdlib C extensions.
+RSFile aims at providing python with a cross-platform, reliable, and comprehensive file 
+I/O API (that is, file stream manipulation, not filesystem operations like shutil does).
+Features include shared/exclusive file record locking, cache synchronization, advanced opening flags, 
+and handy stat getters (size, inode...). 
 
-    But below is an optimistic (megalomaniac?) dependency diagram of what RockSolidTools might 
-    eventually contain.
+Stdlib file stream APIs suffer indeed from their history and C/unix origins : 
+they are scattered all over lots of modules (os, stat, fnctl, tempfile...), 
+poorly object-oriented, full of platform-specific behaviours, and worst of all 
+they sometimes rely on castrated implementations, like windows' libc compatibility layer.
+
+That's why RSFile offers more than a simple interfacing/adaptation layer : it 
+also wraps native file objects (like windows "Handles"), to ensure a maximal flexibility
+of the API.
+
+The main idea behind the design of the API, is that "cross-platform" doesn't mean 
+"lowest denominator", and that "high level" doesn't mean "poor". That's why, even though 
+RSFile can transparently replace python's built-in file object, it also provides 
+lots of additional methods and parameters to finely tweak the streams you need : file chunk 
+locking, timeout handling, disk synchronization, atomic file creation, handle inheritance, 
+thread safety...
+
+This modules currently provides pure-python reimplementations of parts of the stdlib **io** modules,
+and is compliant with stdlib test suites.
+It mainly relies on stdlib modules and ctypes extensions (on windows, if pywin32 is available, it is used instead).
+
+
+.. note::
+    The stdlib io module is still slightly suffering from it youth, so if you encounter problems with 
+    RSFile (or, more likely, with running its test suite), consider upgrading to the latest stable minor version 
+    of your python major version. 
     
-    .. image:: rsModulesDiagram.png
-        :width: 600
-
-
-.. rubric::
-	**Browse the documentation:**
+    ..
+        Furthermore, early python 2.6 versions a problems with "from __future__ import unicode_literals", preventing
+        the use of the "\*\*kwargs" construct (and of rsfile) in some cases, with a weird error "*<funcname>() keyword 
+        arguments must be strings*". Just update your python distribution if this problem occurs.
 
 .. toctree::
-	:maxdepth: 4
-	
-	rsfile.rst	
-
-.. rubric::
-	**Sources, downloads, bugs:**
-
-All is in the `Bitbucket Repository <http://bitbucket.org/pchambon/python-rock-solid-tools/>`_.
-	
-.. rubric::
-	**Contacts:**
-
-.. image:: email_pythoniks.png  
-
-Any feedback / bug report is highly appreciated; but if you don't feel like subscribing to mailing-lists or bug trackers,
-feel free to send an email at the address above.
-
-
-	
-	
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-
+	:maxdepth: 3
+   
+	rsopen.rst
+	rsfile_streams.rst
+	utilities_options.rst	
+	native_io_concepts.rst
