@@ -12,44 +12,53 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
            locking=True, timeout=None, thread_safe=True, mutex=None, permissions=0o777):
 
     """
-    This function is a factory similar to :func:`io.open` (alias of the builtin "open()"), and returns chains of I/O streams with a focus on security and concurrency. If you need high performance file operations, use standard io.open() instead.
+    This function is a factory retrocompatible with :func:`io.open` (wich is an alias of the "open()" builtin). It returns chains of I/O streams, with a focus on security and concurrency.
 
-    See the `open() builtin documentation <https://docs.python.org/3/library/functions.html#open>`
+    For background information see the `open() builtin documentation <https://docs.python.org/3/library/functions.html#open>`_.
+
+    .. rubric::
+        PARAMETERS
     
-    ``name`` is the path to the file, in case no existing fileno or handle is provided for wrapping 
+    ``name`` is the path to the file, required if no existing fileno or handle is provided for wrapping
     through the ``fileno``/``handle`` arguments.
 
     ``mode`` is the access mode of the stream, it can be given either as a standard mode string, or as an advanced mode string (see :ref:`file opening modes<file_opening_modes>`).
 
-    The ``buffering``, ``encoding``, ``errors``, and ``newline`` arguments have the same meaning as in :func:`io.open`.
+    The ``buffering``, ``encoding``, ``errors``, ``newline`` and ``opener`` arguments have the same meaning as in :func:`io.open`. Note that the ``opener`` callable must return a ``mode``-compatible C-style file descriptor, like in the stdlib, not an OS-specific handle.
 
     ``fileno`` and ``handle``, mutually exclusive, allow you to provide a C-style file descriptor or an OS-specific handle to be wrapped. Please ensure, of course, that these raw streams are compatible with the ``mode`` requested.
 
-    ``opener`` is supported, and must be return a ``mode``-compatible C-style file descriptor, like in the stdlib, not an OS-specific handle.
-
-    ``closefd`` (boolean) may only be False when wrapping a fileno or a handle, and in this case this wrapped raw stream will not be closed when the file object is closed.
+    ``closefd`` (boolean) may only be False when wrapping a fileno or a handle, and in this case this wrapped raw stream will not be closed when the file object gets closed.
  
     .. note:: 
-            For backward compatibility, when using standard modes, it is still possible to provide 
-            a fileno for wrapping directly as the ``name`` argument, but this way of doing is deprecated.
+            For backward compatibility, when using standard modes, it is also possible to provide
+            an integer fileno for wrapping directly as the ``name`` argument.
     
     .. warning::
     
-        Like io.open(), if buffering is 0, this function returns a raw stream, the methods of which
+        Like for io.open(), if buffering is 0, this function returns a raw stream, the methods of which
         only issue one system call. So in this case, checking the number of bytes written/read after 
         each operation is highly advised.
     
     If ``locking`` is True, the whole file will be immediately locked on opening, with an automatically determined share mode (exclusive for writable streams, shared for read-only streams), and the ``timeout`` argument provided.
-    This is particularly useful is the file is opened in "truncation" mode, as it prevents this truncation from happening without inter-process protection.
-    Note that it is still possible to abort that locking later, with a call to :meth:`unlock` (without arguments).
+    This is particularly useful is the file is opened with "truncate" flag, as it prevents this truncation from happening without inter-process protection.
+    It is still possible to abort that locking later, with a call to :meth:`unlock` (without arguments).
 
     If ``thread_safe`` is True, the chain of streams returned by the function will be wrapped into 
     a thread-safe interface ; in this case, if ``mutex`` is provided, it is used as the concurrency lock, 
     else a new lock is created (a multiprocessing RLock() if the stream is inheritable, else a threading RLock().
-    Note that, for performance reasons, there are currently no checks to prevent reentrant calls from occurring on file object methods (eg. calls issued by OS signal handler), unlike the original C-backed io module does by raising RuntimeError. So reentrant calls may cause deadlocks if the file is buffered or thread-safe-wrapped.
+    Note that, for performance reasons, there are currently no checks done to prevent reentrant calls from occurring on file object methods (eg. calls issued by OS signal handler). So reentrant calls may cause deadlocks if the file is buffered or thread-safe-wrapped (the original C-backed io module, on the other hand, prevents these by raising RuntimeError).
 
-    The ``permissions`` argument will simply be forwarded to the lowest level stream, 
-    so as to be applied in case a file creation occurs (note : decimal '511' corresponds to octal '0o777', i.e whole permissions).
+    The ``permissions`` argument must be an integer, eg. a valid combination of :mod:`stat` permission flags.
+    It defaults to octal '777', i.e decimal '511', i.e whole permissions.
+
+    - It is taken into account ONLY when creating a new file, to set its permission flags (on unix,
+      the umask will be applied on these permissions first).
+    - On windows, only the "user-write" flag is meaningful, its absence corresponding to a
+      read-only file (note that contrary to unix, windows folders always behave as
+      if they had a "sticky bit", so read-only files can't be moved/deleted).
+    - These permissions have no influence on the ``open mode`` of the new stream,
+      they only apply to future accesses to the newly created file.
 
     .. _file_opening_modes:
     
@@ -60,7 +69,7 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
     a set of advanced modes is available, as capital-cased flags. These advanced modes
     should be combined in the order listed below, for ease of reading. Standard and advanced
     modes may not be mixed together.
-    
+
     ========= ========================================================================================
     Character Meaning
     ========= ========================================================================================
@@ -68,36 +77,53 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
     'W'       Stream is Writable
     'A'       Stream is in Append mode (implicitly enforces W)
 
-    'N'       File MUST already exist (i.e it must not be created, was "+" previously)
     'C'       File must NOT already exist (i.e it must be created, was "-" previously)
+    'N'       File MUST already exist (i.e it must not be created, was "+" previously)
 
-    'S'       Stream is Synchronized (flush() tries to ensure that file metadata and data reach
-              the disk device before returning, even though the disk itself might have a cache)
+    'S'       Stream is Synchronized (by default, it's not)
 
     'I'       Stream is Inheritable by children processes (by default, it's not)
 
-    'E'       File is Erased on opening (ignored when "C" is set, since new file will be empty anyway)
+    'E'       File is Erased on opening (ignored when "C" is set, new file will be empty anyway)
 
     'B'       Stream is in Binary mode
     'T'       Stream is in Text mode (default)
     ========= ========================================================================================
 
-    Any combination of "R", "W", and "A" is possible.
 
-    "N" and "C" flags are mutually exclusive, if none is set then the file will be opened
-    whatever its current existence status. Old "+" and "-" flags, ambiguous, are deprecated but still supported.
+    Any combination of "R", "W", and "A" is possible, even though "W" is useless is "A" is set.
 
-    "S" and "I" flags may be applied to any kind of opening mode.
+    The following flags are only taken into account when opening a new raw stream, not wrapping an existing fileno or handle.
 
-    "E" requires the stream to be writable (W or A), except if "C" is set (because then we're sure that the file will be empty on opening).
+    By default, RSFile opening follows the "O_CREATE alone" semantic : files are created if not existing, else they're simply opened. "N" and "C" flags,  mutually exclusive, alter this behaviour. The old "+" and "-" flags, ambiguous, are deprecated but still supported.
 
-    "B" and "T" are mutually exclusive.
+    With "C" (exclusive creation): file opening fails if the file already exists.
+    This is the same semantic as (O_CREATE | O_EXCL) flags, which can be used to
+    handle some security issues on unix filesystems. Note that O_EXCL is broken
+    on NFS shares with a linux kernel < 2.6.5, so race conditions may occur in this case.
+    - with "N" (must Not create) : file creation fails if the file doesn't exist already.
 
-    .. note:: 
-        The "C" flag doesn't work well on NFS shares with a linux kernel < 2.6.5, race conditions may occur.
+    If "S" (Synchronized) : opens the stream so that write operations don't return before
+    data gets pushed to physical device. Note that due to potential caching in your hardware, it
+    doesn't fully guarantee that your data will be safe in case of immediate crash. Using this
+    flag for programs running on laptops might increase HDD power consumption, and thus reduce
+    battery life. See also: RSIOBase.sync() XXXXXXXXHERE
 
-    Here is an (autogenerated) table describing the different standard open modes, and their advanced equivalents.
-    That the deprecated "U" flag, as well as binary/text flags, are not mentioned here for clarity. The "x" mode flag was added in python3.3, for exclusive file creation.
+    If "I" (inheritable) : the raw file stream will be inheritable by child processes
+    created via native subprocessing calls (spawn, fork+exec, CreateProcess...). By default, as was
+    enforced in the stdlib since python3.4, streams are not inheritable.
+    Note that sometimes child processes must be made aware of the file descriptors/handles
+    that they own (this can be done through command-line arguments or other IPC means).
+
+    "E" requires the stream to be writable ("W" or "A"), except if "C" is set (because then we're sure that the file will be empty on opening) ; note that this flag is ignored when wrapping an existing fileno/handle.
+
+    "B" and "T" are mutually exclusive, and behave exactly like in :func:`io.open`.
+
+
+    Here is an (autogenerated) table describing the different standard open modes,
+    and their advanced equivalents.
+    The deprecated "U" flag, as well as binary/text flags, are not mentioned here for clarity.
+    The "x" mode flag was added in python3.3, for exclusive file creation.
 
     ==========  ==========  ======  =======  ========  =============  =================  ==========
     std_mode    adv_mode    read    write    append    must_create    must_not_create    truncate

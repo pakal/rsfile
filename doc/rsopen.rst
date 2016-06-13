@@ -1,7 +1,6 @@
 
-RSOpen Factory
-==============
-
+RSOpen() Factory
+==================
 
 .. module:: rsfile
 

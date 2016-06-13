@@ -3,41 +3,19 @@ RSFile package |version|
 ========================
 
 
-RSFile aims at providing python with a cross-platform, reliable, and comprehensive file 
-I/O API (that is, file stream manipulation, not filesystem operations like shutil does).
-Features include shared/exclusive file record locking, cache synchronization, advanced opening flags, 
-and handy stat getters (size, inode...). 
+RSFile provides drop-in replacements for the classes of the ``io`` module, and for the ``open()`` builtin.
 
-Stdlib file stream APIs suffer indeed from their history and C/unix origins : 
-they are scattered all over lots of modules (os, stat, fnctl, tempfile...), 
-poorly object-oriented, full of platform-specific behaviours, and worst of all 
-they sometimes rely on castrated implementations, like windows' libc compatibility layer.
+These new streams aim at providing a cross-platform, reliable, and comprehensive file I/O API, with advanced features like fine-grained opening modes, shared/exclusive file record locking, thread-safety, cache synchronization, file descriptor inheritability, and handy stat getters (size, inode...). Note that it only concerns I/O stream manipulation, not filesystem operations like pathutil or shutil do.
 
-That's why RSFile offers more than a simple interfacing/adaptation layer : it 
-also wraps native file objects (like windows "Handles"), to ensure a maximal flexibility
-of the API.
+RSFile uses utilities scattered over the python stdlib (os, stat, fnctl, _pyio...), and accesses native APIs (like "Handles" on Windows) when it's necessary to achieve robust cross-platform interoperability. In particular, on Windows, it'll make use of ``pywin32`` if available, instead of just relying on stdlib and ``ctypes``.
 
-The main idea behind the design of the API, is that "cross-platform" doesn't mean 
-"lowest denominator", and that "high level" doesn't mean "poor". That's why, even though 
-RSFile can transparently replace python's built-in file object, it also provides 
-lots of additional methods and parameters to finely tweak the streams you need : file chunk 
-locking, timeout handling, disk synchronization, atomic file creation, handle inheritance, 
-thread safety...
+Because RSFile adds multiple layers of securities to I/O streams, and is a pure python package, it is currently 3x to 10x slower than the C-backed ``io`` module from the stdlib. Using both together (one for security-critical file accesses, the other for high throughputs) is possible but with some caveats XXXXXXXXXX.
 
-This modules currently provides pure-python reimplementations of parts of the stdlib **io** modules,
-and is compliant with stdlib test suites.
-It mainly relies on stdlib modules and ctypes extensions (on windows, if pywin32 is available, it is used instead).
-
+Compatibility-wise, RSFile is compliant with the stdlib test suite, except some testcases which check C-extension behaviours or "ResourceWarning" emitting. It may be used on regular files as well as on other stream types (anonymous pipes, named fifos, devices...), although its advanced features only work on "normal", seekable and lockable, files.
 
 .. note::
-    The stdlib io module is still slightly suffering from it youth, so if you encounter problems with 
-    RSFile (or, more likely, with running its test suite), consider upgrading to the latest stable minor version 
-    of your python major version. 
-    
-    ..
-        Furthermore, early python 2.6 versions a problems with "from __future__ import unicode_literals", preventing
-        the use of the "\*\*kwargs" construct (and of rsfile) in some cases, with a weird error "*<funcname>() keyword 
-        arguments must be strings*". Just update your python distribution if this problem occurs.
+    The stdlib io module appeared with python2.6 and was still young on python2.7,
+    so consider upgrading to the latest python2.7.X version to avoid corner-case buglets.
 
 .. toctree::
 	:maxdepth: 3

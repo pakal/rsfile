@@ -74,40 +74,8 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         - *append* (boolean): Open the file in append mode, i.e on most OSes, write operations
           will automatically move the file pointer to the end of file  before actually writing
           (the file pointer is not restored afterwards). ``append`` implicitly forces ``write`` to *True*.
-        
-        .. rubric::
-            File creation parameters
-        
-        These parameters are only taken in account when creating a new raw stream, 
-        not wrapping an existing fileno or handle. 
 
-        By default, RSFileIo opening follows the "O_CREATE alone" semantic (files are created if not existing, else they're simply opened), and are neither synchronized nor inheritable.
-
-        - *must_create* (boolean): File opening fails if the file already exists.
-          This is the same semantic as (O_CREATE | O_EXCL) flags, which can be used to
-          handle some security issues on unix filesystems. Note that O_EXCL is broken
-          on NFS shares with a linux kernel < 2.6.5, so race conditions may occur in this case.        
-        - *must_not_create* (boolean): File creation fails if the file doesn't already exist.
-        - *synchronized* (boolean): Opens the stream so that write operations don't return before
-          data gets pushed to physical device. Note that due to potential caching in your hardware, it
-          doesn't fully guarantee that your data will be safe in case of immediate crash. Using this 
-          flag for programs running on laptops might increase HDD power consumption, and thus reduce
-          battery life.
-        - *inheritable* (boolean): If True, the raw file stream will be inheritable by child processes,
-          at least those created via native subprocessing calls (spawn, fork+exec, CreateProcess...). 
-          Note that streams are always "inheritable" by fork (no close-on-fork semantic is widespread). 
-          Child processes must anyway be aware of the file streams they own, which can be
-          done through command-line arguments or other IPC means.
-        - *permissions* (integer): this shall be a valid combination of :mod:`stat` permission flags, 
-          which will be taken into ONLY when creating a new file, to set its permission flags (on unix,
-          the umask will be applied on these permissions first). Defaults to 0x777.
-                     
-          On windows, only the "user-write" flag is meaningful, its absence corresponding to a 
-          read-only file (note that contrary to unix, windows folders always behave as 
-          if they had a "sticky bit", so read-only files can't be moved/deleted).
-          
-          These permissions have no influence on the ``open mode`` of the new stream,
-          they only apply to future accesses to the newly created file.
+        See RSOpen() docs for the semantic of other parameters.
         """
 
         self.enforced_locking_timeout_value = _default_rsfile_options["enforced_locking_timeout_value"]
