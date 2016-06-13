@@ -29,28 +29,21 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
 
                  synchronized=False,
                  inheritable=False,
-                 permissions=0o777
-                 ):
+                 permissions=0o777):
 
         """
-        # TODO UPDATE THIS DOC
-        
         This class is an improved version of the raw stream :class:`io.FileIO`, relying on native OS primitives, 
         and offering much more control over the behaviour of the file stream.
         
         Hopefully you won't have to deal directly with its constructor, since factory 
-        functions like :func:`rsopen` give you a much easier access to 
-        streams chain, including buffering and encoding aspects.
-        
-    
-        
+        functions like :func:`rsopen` give you a much easier access to streams chain,
+        including buffering and encoding aspects.
+
         .. rubric::
             Target determination parameters
         
         These parameters determine if a new raw file stream will be opened from the filesystem, or
         if an existing one will be wrapped by the new RSFileIo instance.
-
-        # FIXME - SEND TO OPEN() DOCS INSTEAD, IT'S REDUNDANT
 
         - *path* (unicode/bytes or None): The path of the regular file to be opened. 
           If ``fileno`` or ``handle`` is provided, ``path`` is only used as additional 
@@ -63,12 +56,11 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         - *handle* (handle or None): if provided, it must be a native open file
           handle, compatible with the *Mode parameters* requested, and which will be used
           as an underlying raw stream. On unix platforms, it is the same as a ``fileno``, 
-          and on windows it must be a win32 handle (an integer) or a pyHandle instance from pywin32.
-        - *closefd* (boolean): if ``fileno`` or ``handle``, this parameter determines whether or not
-          the wrapped raw file stream will be closed when the instance will be closed or deleted, or if
-          it will be left open. When creating a new rew file stream from ``path``, ``closefd`` must 
+          and on windows it must be a win32 Handle (an integer) or a pyHandle instance from pywin32.
+        - *closefd* (boolean): if ``fileno`` or ``handle`` is given, this parameter determines whether
+          the wrapped raw file stream will be closed when the stream gets closed or deleted, or whether
+          it will be left open. When creating a new raw file stream from ``path``, ``closefd`` must
           necessarily be True.
-        
         
         .. rubric::
             Mode parameters
@@ -77,30 +69,27 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         the stream. The file must necessarily be opened at least with read or write access,
         and can naturally be opened with both.
         
-        - *read* (boolean): Open the file with read access (file truncation is not allowed).
-        - *write* (boolean): Open the file with write access (file truncation is allowed).
-        - *append* (boolean): Open the file in append mode, i.e all write operations
-          will automatically move the file pointer to the end of file 
-          before actually writing (the file pointer is not restored 
-          afterwards). ``append`` implicitly forces ``write`` to *True*.
-        
+        - *read* (boolean): Open the file with read access (doesn't allow file truncation).
+        - *write* (boolean): Open the file with write access (allows file truncation).
+        - *append* (boolean): Open the file in append mode, i.e on most OSes, write operations
+          will automatically move the file pointer to the end of file  before actually writing
+          (the file pointer is not restored afterwards). ``append`` implicitly forces ``write`` to *True*.
         
         .. rubric::
             File creation parameters
         
         These parameters are only taken in account when creating a new raw stream, 
         not wrapping an existing fileno or handle. 
-        
+
+        By default, RSFileIo opening follows the "O_CREATE alone" semantic (files are created if not existing, else they're simply opened), and are neither synchronized nor inheritable.
+
         - *must_create* (boolean): File opening fails if the file already exists.
           This is the same semantic as (O_CREATE | O_EXCL) flags, which can be used to
           handle some security issues on unix filesystems. Note that O_EXCL is broken
           on NFS shares with a linux kernel < 2.6.5, so race conditions may occur in this case.        
-        - *must_not_create* (boolean): File creation fails if the file doesn't already exist. 
-          This is then negation of the O_CREATE semantic, which is the default behaviour
-          of file opening via RSFileIo (i.e, files are created if not existing, else they're 
-          simply opened).
+        - *must_not_create* (boolean): File creation fails if the file doesn't already exist.
         - *synchronized* (boolean): Opens the stream so that write operations don't return before
-          data gets pushed to physical device. Note that due to potential caching in your HDD, it 
+          data gets pushed to physical device. Note that due to potential caching in your hardware, it
           doesn't fully guarantee that your data will be safe in case of immediate crash. Using this 
           flag for programs running on laptops might increase HDD power consumption, and thus reduce
           battery life.
@@ -110,16 +99,15 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
           Child processes must anyway be aware of the file streams they own, which can be
           done through command-line arguments or other IPC means.
         - *permissions* (integer): this shall be a valid combination of :mod:`stat` permission flags, 
-          which will be taken into only when creating a new file, to set its permission flags (on unix, 
-          the umask will be applied on these permissions first).
+          which will be taken into ONLY when creating a new file, to set its permission flags (on unix,
+          the umask will be applied on these permissions first). Defaults to 0x777.
                      
           On windows, only the "user-write" flag is meaningful, its absence corresponding to a 
           read-only file (note that contrary to unix, windows folders always behave as 
           if they had a "sticky bit", so read-only files can't be moved/deleted).
           
-          These permissions have no influence on the ``mode parameters`` of the new stream - you can very well
-          open in read-write mode a new file, giving it no permissions at all.
-
+          These permissions have no influence on the ``open mode`` of the new stream,
+          they only apply to future accesses to the newly created file.
         """
 
         self.enforced_locking_timeout_value = _default_rsfile_options["enforced_locking_timeout_value"]
@@ -136,14 +124,12 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         del kwargs["closefd"] # not needed at inner level
 
 
-
         # HERE WE CHECK EVERYTHING !!!
 
         if path is not None and not isinstance(path, (bytes, unicode)):
             raise defs.BadValueTypeError("If provided, path must be a string.")
 
         if bool(path) + (fileno is not None) + (handle is not None) != 1:
-            #print ("##################", locals())
             raise defs.BadValueTypeError("File must provide path, fileno or handle value, and only one of these.")
 
         if not read and not write:
@@ -158,8 +144,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         # Inner lock used when several field operations are involved, eg. when truncating with zero-fill
         # The rule is : public methods must protect themselves, whereas inner ones are clueless 
         # about multithreading and other concurrency issues ?????
-        self._multi_syscall_lock = threading.Lock() # Pakal - shouldn't it be removed after full locking enforcement ????
-
+        self._multi_syscall_lock = threading.Lock() #FIXME - shouldn't it be removed after full locking enforcement ????
 
         # variables to determine future write/read operations
         self._readable = read
@@ -269,6 +254,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         except:
             pass
 
+
     def __reduce__(self):
         raise defs.BadValueTypeError("RSFileIO is not pickleable")
 
@@ -277,9 +263,12 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         self._checkClosed()
         return self._seekable
 
+
     def readable(self):
         self._checkClosed()
         return self._readable
+
+
     def writable(self):
         self._checkClosed()
         return self._writable
@@ -287,7 +276,6 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
 
 
     # # # Read-only Attributes # # #
-
 
     @property
     def mode(self):
@@ -340,9 +328,11 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         self._checkClosed()
         return self._inner_fileno()
 
+
     def handle(self):
         self._checkClosed()
         return self._inner_handle()
+
 
     def unique_id(self):
         self._checkClosed()
@@ -352,18 +342,22 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         return self._unique_id
     uid = unique_id  # deprecated alias
 
+
     def times(self):
         self._checkClosed()
         return self._inner_times()
+
 
     def size(self): # non standard method    
         self._checkClosed()
         return self._inner_size()
 
+
     def tell(self):
         self._checkClosed()
         res = self._inner_tell()
         return res
+
 
     def seek(self, offset, whence=os.SEEK_SET):
         self._checkClosed()
@@ -381,7 +375,6 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
       
         No limit is set on the amount of data read, so you might
         fill up your RAM with this method.
-        
         """
         chunks = []
         while True:
@@ -395,11 +388,12 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
             # b'' or None
             return data
 
+
     def read(self, n= -1):
         """Reads and returns up to n bytes (a negative value for n means *infinity*).
 
         Returns an empty bytes object on EOF, or None if the object is
-        set not to block and has no data to read.
+        set not to block and has no data ready to be read.
         """
         self._checkClosed()
         self._checkReadable()
@@ -409,13 +403,13 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         return self._inner_read(n)
 
 
-
     def readinto(self, buffer):
         """Reads up to len(b) bytes into b.
 
-        Inefficient in RSFile, as several copies can be required to obtain the result - use read() instead.
+        Inefficient in RSFile, as several data copies can be required
+        to obtain the result - use read() instead.
     
-        Returns number of bytes read (0 for EOF).
+        Returns the number of bytes read (0 for EOF or if len(buffer) == 0).
         """
         self._checkClosed()
         self._checkReadable()
@@ -434,10 +428,10 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
 
 
     def write(self, buffer):
-        """Writes the given buffer data to the IO stream.
+        """Writes the given data to the IO stream.
 
         Returns the number of bytes written, which may be less than len(b), or None if
-        write couldn't be done on non-blocking device.
+        write couldn't be done on a non-blocking device.
         
         Accepted buffer types are bytes, bytearray, array.array, and memoryview (the last two being inefficient to write).
         """
@@ -465,10 +459,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
 
     def truncate(self, size=None, zero_fill=True):
         """
-        Resizes the file to the given size (or the current position), without moving the file pointer. 
-        This resizing can extend or reduce the current file size. In case of extension, the content 
-        of the new file area depends on the platform (on most systems, additional bytes are zero-filled, 
-        on win32 they're undetermined). Returns the new file size.
+        See RSOpen() doc.
         """
 
         with self._multi_syscall_lock: # to be removed, with threadsafe interface ???
@@ -506,41 +497,23 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
                     self._inner_seek(old_pos) #important
             return self.size()
 
+
     def flush(self):
         """
-        Flushes read and/or write buffers, if applicable.
-        
-        These operations ensure that all bytes written get pushed 
-        at least from the application to the kernel I/O cache, and
-        that the file pointer of underlying low level stream becomes 
-        the same as the 'virtual' file position returned by tell().
-        
-        Returns None.
+        See RSOpen() doc.
+
+        That raw stream should have no buffering except that of the kernel,
+        which can be flushed by sync() calls
         """
-        self._checkClosed() # that raw stream should have no buffering except the kernel's one, which gets flushed by sync calls
+        self._checkClosed()
+
 
     def sync(self, metadata=True, full_flush=True):
         """
-        OUTDATED DOC!!!!!! see rsiobase
-
-        Synchronizes file data between kernel cache and physical device.
-        
-        If ``metadata`` is False, and if the platform supports it (win32 and Mac OS X don't), 
-        this sync is a "datasync", i.e only data and file sizes are written to disk, not 
-        file times and other metadata (this can improve performance, but also i).
-        
-        If ``full_flush`` is True, RSFileIO will whenever possible force the flushing of device
-        cache too.
-        
-        For a constant synchronization between the kernel cache and the disk oxyde, 
-        CF the "synchronized" argument at stream opening.
-        
-        Raises an IOError if no sync operation is available for the stream.
-        No return value is expected.
+        See RSOpen() doc.
         """
         self._checkClosed()
         self._inner_sync(metadata, full_flush)
-
 
 
     def _convert_relative_offset_to_absolute(self, offset, whence):
@@ -557,12 +530,14 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
 
         return abs_offset
 
+
     @contextmanager
     def _lock_remover(self, length, offset, whence):
         # we do nothing on __enter__()
         yield
         # we unlock on __exit__()
         self.unlock_file(length=length, offset=offset, whence=whence)
+
 
     def lock_file(self, timeout=None, length=None, offset=None, whence=os.SEEK_SET, shared=None):
 
@@ -584,7 +559,6 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
             raise defs.BadValueTypeError("shared must be None or True/False.")
 
 
-
         if shared is None:
             if self._writable:
                 shared = False
@@ -596,7 +570,8 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
 
         abs_offset = self._convert_relative_offset_to_absolute(offset, whence)
         blocking = timeout is None # here, it means "forever waiting for the lock"
-        low_level_blocking = blocking if (self.enforced_locking_timeout_value is None) else False # we enforce spin-locking if a global timeout exists
+        # we enforce spin-locking if a global timeout exists
+        low_level_blocking = blocking if (self.enforced_locking_timeout_value is None) else False
 
         start_time = time.time()
         def check_timeout(env_error):
@@ -616,7 +591,6 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
                 raise RuntimeError("Locking delay exceeded 'enforced_locking_timeout_value' option (%d s)." % self.enforced_locking_timeout_value)
 
             time.sleep(self.default_spinlock_delay)
-
 
         success = False
 
@@ -655,7 +629,6 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         return self._lock_remover(length, abs_offset, os.SEEK_SET)
 
 
-
     def unlock_file(self, length=None, offset=0, whence=os.SEEK_SET):
 
         self._checkClosed()
@@ -669,7 +642,6 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         if whence not in defs.SEEK_VALUES:
             raise defs.BadValueTypeError("whence must be a valid SEEK_\* value")
 
-
         #import multiprocessing
         #print ("---------->", multiprocessing.current_process().name, " UNLOCKED ", (unix.LOCK_UN, length, abs_offset, os.SEEK_SET))
         abs_offset = self._convert_relative_offset_to_absolute(offset, whence)
@@ -677,7 +649,6 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         with IntraProcessLockRegistry.mutex: # IMPORTANT - keep the registry lock during the whole operation
             IntraProcessLockRegistry.unregister_file_lock(self._lock_registry_inode, self._lock_registry_descriptor, length, abs_offset)
             self._inner_file_unlock(length, abs_offset)
-
 
 
     # # Private methods - no check is made on their argument or the file object state ! # #
@@ -720,18 +691,6 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
 
     def _inner_read(self, n):
         self._unsupported("read")
-        '''
-        # n is necessarily a positive-or-zero integer
-        # default implementation : redirect to readinto()           
-        b = bytearray(n.__index__())
-        n = self._inner_readinto(b)
-        del b[n:]
-        return bytes(b) 
-        
-        => def _inner_readinto(self, buffer):
-            self._unsupported("readinto")
-        '''
-
 
     def _inner_write(self, buffer):
         self._unsupported("write")

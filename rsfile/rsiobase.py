@@ -27,17 +27,34 @@ class RSIOBase(object):
         ``size`` defaults to the current IO position as reported by tell().
 
         Contrary to what the name may suggest, this 'truncation' can as well
-        reduce the file as extend it. In case of reduction, bytes located
-        after the new end of file are discarded. In case of extension, the content
-        of the byte range added depends on ``zero_fill``. If it is True, new bytes
-        will always appear as zeros (but files can then be quite slow on
-        filesystems which don't support sparse files, such as FAT). If it is False,
-        the content of the added bytes is undefined, as the quickest extension method
-        is used.
+        reduce the file as extend it.
+
+        - In case of reduction, bytes located
+          after the new end of file are discarded.
+        - In case of extension, the content
+          of the byte range added depends on ``zero_fill``. If it is True, new bytes
+          will always appear as zeros (but file truncation can then be quite slow on
+          filesystems which don't support sparse files, such as FAT). If it is False,
+          the content of the added bytes is undefined, as the quickest extension method
+          is used.
 
         Returns the new file size.
         """
         self._unsupported("truncate")
+
+
+    def flush(self):
+        """
+        Flushes read and/or write buffers, if applicable.
+
+        These operations ensure that all bytes written get pushed
+        at least from the application to the kernel I/O cache, and
+        that the file pointer of the underlying low level stream becomes
+        the same as the 'virtual' file position returned by tell().
+
+        Returns None.
+        """
+        self._unsupported("flush")
 
 
     def close(self):
@@ -88,6 +105,8 @@ class RSIOBase(object):
         see the "synchronized" argument at stream opening.
 
         Raises IOError if no sync operation is possible on the stream (eg. for pipes).
+
+        No return value is expected.
         """
         self._unsupported("sync")
 
