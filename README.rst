@@ -5,9 +5,14 @@ This lib (currently in version 1.1) is getting updated to support latest python2
 
 Lots of stuffs have been moving in the last years regarding IO streams, exception hierarchies, file descriptor inheritance and all that stuff, so it's time to move towards a version 2.0
 
+
 INSTALLING
 ------------
-TODO
+
+Using pip is recommended, although installing via a checkout of the repository (via setup.py) also works:
+
+$ pip install rsfile
+
 
 
 =======================================
