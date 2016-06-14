@@ -109,11 +109,6 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         if not closefd and not (fileno or handle):
             raise defs.BadValueTypeError("Cannot use closefd=False without providing a descriptor to wrap.")
 
-        # Inner lock used when several field operations are involved, eg. when truncating with zero-fill
-        # The rule is : public methods must protect themselves, whereas inner ones are clueless 
-        # about multithreading and other concurrency issues ?????
-        self._multi_syscall_lock = threading.Lock() #FIXME - shouldn't it be removed after full locking enforcement ????
-
         # variables to determine future write/read operations
         self._readable = read
         self._writable = write # 'append' enforced the value of 'write' to True, just above
@@ -190,23 +185,21 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
 
     def close(self):
 
-        with self._multi_syscall_lock: # we must avoid having several threads entering this # TODO - remove lock
+        if not self.closed:
 
-            if not self.closed:
+            try:
+                defs.io_module.RawIOBase.close(self) # we first mark the stream as closed... it flushes, also.
+            finally:
+                # even if implicit flush() failed, we properly close underlying streams
 
-                try:
-                    defs.io_module.RawIOBase.close(self) # we first mark the stream as closed... it flushes, also.
-                finally:
-                    # even if implicit flush() failed, we properly close underlying streams
+                with IntraProcessLockRegistry.mutex:
+                    # safety mechanisms for fcntl() and its Unlock-All-On-Single-Close semantic
+                    for (handle, shared, start, end) in IntraProcessLockRegistry.remove_file_locks(self._lock_registry_inode, self._lock_registry_descriptor):
+                        #print (">>>>>>>> ", (handle, shared, start, end))
+                        length = None if end is None else (end - start)
+                        self._inner_file_unlock(length, start)
 
-                    with IntraProcessLockRegistry.mutex:
-                        # safety mechanisms for fcntl() and its Unlock-All-On-Single-Close semantic
-                        for (handle, shared, start, end) in IntraProcessLockRegistry.remove_file_locks(self._lock_registry_inode, self._lock_registry_descriptor):
-                            #print (">>>>>>>> ", (handle, shared, start, end))
-                            length = None if end is None else (end - start)
-                            self._inner_file_unlock(length, start)
-
-                        self._inner_close_streams()  # should close the stream even if some operations fail
+                    self._inner_close_streams()  # should close the stream even if some operations fail
 
 
     def __del__(self):
@@ -430,40 +423,39 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         See RSOpen() doc.
         """
 
-        with self._multi_syscall_lock: # to be removed, with threadsafe interface ???
-            self._checkClosed()
-            self._checkWritable() # Important !
+        self._checkClosed()
+        self._checkWritable() # Important !
 
-            if size is None:
-                size = self.tell()
-            elif size < 0:
-                raise IOError(errno.EINVAL, "Invalid argument : truncation size must be None or positive integer, not '%s'" % size)
+        if size is None:
+            size = self.tell()
+        elif size < 0:
+            raise IOError(errno.EINVAL, "Invalid argument : truncation size must be None or positive integer, not '%s'" % size)
+
+        current_size = self.size()
+        if size == current_size:
+            pass  # nothing to be done
+        elif size < current_size:
+            self._inner_reduce(size)
+        else:
+            assert size > current_size, (size, current_size)
+            self._inner_extend(size, zero_fill)
 
             current_size = self.size()
-            if size == current_size:
-                pass  # nothing to be done
-            elif size < current_size:
-                self._inner_reduce(size)
-            else:
-                assert size > current_size, (size, current_size)
-                self._inner_extend(size, zero_fill)
+            if(current_size != size): # no native operation worked for it. so we fill with zeros by ourselves
 
-                current_size = self.size()
-                if(current_size != size): # no native operation worked for it. so we fill with zeros by ourselves
+                assert current_size < size
+                old_pos = self._inner_tell()
+                self._inner_seek(current_size, os.SEEK_SET)
+                bytes_to_write = size - current_size
+                (q, r) = divmod(bytes_to_write, defs.DEFAULT_BUFFER_SIZE)
 
-                    assert current_size < size
-                    old_pos = self._inner_tell()
-                    self._inner_seek(current_size, os.SEEK_SET)
-                    bytes_to_write = size - current_size
-                    (q, r) = divmod(bytes_to_write, defs.DEFAULT_BUFFER_SIZE)
-
-                    for _ in range(q):
-                        padding = b'\0' * defs.DEFAULT_BUFFER_SIZE
-                        self._inner_write(padding)
-                    count = self._inner_write(b'\0' * r)
-                    assert count == r, (count, r)  # no blocking writes for files, theoretically...
-                    self._inner_seek(old_pos) #important
-            return self.size()
+                for _ in range(q):
+                    padding = b'\0' * defs.DEFAULT_BUFFER_SIZE
+                    self._inner_write(padding)
+                count = self._inner_write(b'\0' * r)
+                assert count == r, (count, r)  # no blocking writes for files, theoretically...
+                self._inner_seek(old_pos) #important
+        return self.size()
 
 
     def flush(self):
