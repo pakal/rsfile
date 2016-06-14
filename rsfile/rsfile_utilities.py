@@ -75,7 +75,7 @@ def read_from_file(filename, binary=False, buffering=None, encoding=None, errors
     Returns the whole content of the file ``filename``, as a binary or unicode string 
     depending on the boolean ``binary``.
     
-    Other arguments are the same as in :func:`rsfile.rsopen`.
+    Other arguments are similar to those of :func:`rsfile.rsopen`.
     
     This function may raise *EnvironmentError* exceptions.
     """
@@ -121,7 +121,7 @@ def write_to_file(filename, data, sync=False, must_create=False, must_not_create
     """
     Write the binary or unicode string ``data`` to the file ``filename``.
     
-    Other arguments are the same as in the constructor of :class:`rsfile.RSFileIO` and in :func:`rsfile.rsopen`.
+    Other arguments are similar to those of :func:`rsfile.rsopen`.
     
     This function may raise *EnvironmentError* exceptions.
     """
@@ -151,7 +151,7 @@ def append_to_file(filename, data, sync=False, must_not_create=False,
     """
     Append the binary or unicode string ``data`` to the file ``filename``.
     
-    Other arguments are the same as in the constructor of :class:`rsfile.RSFileIO` and in :func:`rsfile.rsopen`.
+    Other arguments are similar to those of :func:`rsfile.rsopen`.
     
     This function may raise *EnvironmentError* exceptions.
     """
