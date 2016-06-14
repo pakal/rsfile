@@ -1,19 +1,13 @@
 #!/usr/bin/env python
 
-"""
-FIXME
+import sys, os
 
-RockSolidTools' file I/O implementation
+os.chdir(os.path.dirname(os.path.abspath(__file__)))  # security
 
-RSFile aims at providing python with a cross-platform, reliable, and
-comprehensive file I/O API (that is, file stream manipulation, not
-filesystem operations like shutil does).
+from setuptools import setup
 
-Features include shared/exclusive file record locking, cache synchronization,
-advanced opening flags, and handy stat getters (size, inode...).
-
-Tested on py2.7, py3k, on windows and unix-like systems. Should work with IronPython/Jython/PyPy too.
-"""
+def read(fname):
+    return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 classifiers = """\
 Development Status :: 5 - Production/Stable
@@ -27,14 +21,6 @@ Operating System :: Unix
 Operating System :: MacOS :: MacOS X
 """
 
-doclines = [line.strip() for line in __doc__.split("\n")]
-
-import sys, os
-
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
-
-from setuptools import setup
-
 
 setup(
     name='RSFile',
@@ -44,9 +30,9 @@ setup(
     url='http://bitbucket.org/pchambon/python-rock-solid-tools/',
     license="http://www.opensource.org/licenses/mit-license.php",
     platforms=["any"],
-    description=doclines[0],
+    description="RSFile advanced I/O file streams",
     classifiers=filter(None, classifiers.split("\n")),
-    long_description=" ".join(doclines[2:]),
+    long_description=read("README.rst"),
 
     #package_dir={'': 'src'},
     packages=("rsfile", "rsfile.rsbackend", "rsfile.rstest", "rsfile.rstest.stdlib"),
