@@ -64,7 +64,7 @@ def chunk_writer_reader(targetFileName, multiprocessing_lock, character, ioOffse
         
         time.sleep(random.random()/5)
         
-        with io.open(targetFileName,"r+b", buffering=0) as targetFile:
+        with io.open(targetFileName, "r+b", buffering=0) as targetFile:
             
             try:
                 

@@ -4,7 +4,6 @@ Handy Options and Utilities
 
 .. module:: rsfile
 
-.. _rsfile-utilities:
 
 
 RSFile Utilities
@@ -25,8 +24,10 @@ RSFile Options
 .. autofunction:: get_rsfile_options
 
 
-RSFile Hacking
-------------------
+.. _rsfile-patching:
+
+RSFile STDLIB Patching
+------------------------
 
 These monkey-patchers are used massively to test rsfile against the stdlib test suite.
 

@@ -90,7 +90,7 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
     'T'       Stream is in Text mode (default)
     ========= ========================================================================================
 
-    **Except R, W and A, all these flags are only taken into account when opening a new raw stream, not wrapping an existing fileno or handle.**
+    **Except readability/writability, all these flags are only taken into account when opening a new raw stream, not wrapping an existing fileno or handle.**
 
     Any combination of "R", "W", and "A" is possible, even though "W" is useless is "A" is set.
 
@@ -102,8 +102,8 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
       on NFS shares with a linux kernel < 2.6.5, so race conditions may occur in this case.
     - with "N" (must Not create) : file creation fails if the file doesn't exist already.
 
-    If "S" (Synchronized) : opens the stream so that write operations don't return before
-    data gets pushed to physical device. Note that due to potential caching in your hardware, it
+    If "S" (Synchronized) : opens the stream so that write operations don't return before file
+    data *and* metadata get pushed to physical device. Note that due to potential caching in your hardware, it
     doesn't fully guarantee that your data will be safe in case of immediate crash. Using this
     flag for programs running on laptops might increase HDD power consumption, and thus reduce
     battery life. See also the :meth:`sync() <rsfile.rsiobase.RSIOBase.sync>` method of rsfile streams.

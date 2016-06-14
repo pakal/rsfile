@@ -5,6 +5,9 @@ Caveats regarding interoperability
 ==========================================
 
 
+>> DEADLOCKS dangerous, speak about optiosn against that
+>> DDOS too
+
 Due to the strange semantic of fcntl() calls, native handles can't be released
 as long as locks exist on the target file. So if your process constantly opens
 and closes the same files while keeping locks on them, you might eventually
