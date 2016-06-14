@@ -25,8 +25,13 @@ import rsfile
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc']
+extensions = ['sphinx.ext.autodoc', 'sphinx.ext.intersphinx']
+
 autoclass_content = 'both'
+
+# cross-library links - http://www.sphinx-doc.org/en/stable/ext/intersphinx.html
+intersphinx_mapping = {'python': ('https://docs.python.org/3.5', None)}
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
