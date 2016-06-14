@@ -14,8 +14,8 @@ def monkey_patch_io_module(module=None):
     Replaces standard file streams of module *module* (i.e classes FileIO, BufferedReader, BufferedWriter,
     BufferedRandom, and TextIOWrapper), as well as its open() factory, by RSFile versions with compatible signatures.
     
-    By default *module* is the standard *io* module, but you may specify *_pyio* (the stdlib pure python version)
-    or another io implementations to be patched.
+    By default *module* is the standard *io* module, but you may provide *_pyio* (the stdlib pure python version),
+    *_io* (the C extension module behind *io*) instead.
     """
 
     if module is None:
@@ -50,7 +50,7 @@ def monkey_patch_io_module(module=None):
 def monkey_patch_open_builtin():
     """
     Replaces the default open() builtin with a version compatible in signature and semantic (no file locking or
-    thread safety on stream opening), but which returns rsfile streams on invocation.
+    thread safety on stream opening), which returns rsfile streams on invocation.
     """
 
     new_open = BUILTIN_OPEN_FUNC_REPLACEMENT

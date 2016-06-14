@@ -8,13 +8,14 @@ from __future__ import unicode_literals, print_function
 import sys, os
 
 class RSIOBase(object):
-
     """
-    This abstract base class is used to document the additional features of rsfile streams,
-    compared to that of the stdlib `io.IOBase` subclasses.
+    This abstract base class is only used to document the **additional/modified** features of rsfile streams,
+    compared to those of the stdlib `io.IOBase` subclasses. Unless stated otherwise, all methods and attributes documented for the `io` module also exist on rsfile sreams, with a compatible behaviour.
 
-    Unless stated otherwise, all methods and attributes specified in the docs
-    of the `io` module also exist in rsfile sreams, with a compatible behaviour.
+    Advanced streams can be found in the *rsfile* package, as classes named *RSFileIO*, *RSBufferedReader*,
+    *RSBufferedWriter*, *RSBufferedRandom*, *RSTextIOWrapper* and *RSThreadSafeWrapper*.
+    However, you shouldn't have to deal with them directly, since RSOpen() takes care of instantiating them properly. Also note that the signature of RSFileIO differs quite much from its stdlib counterpart, because of its enhanced capabilities.
+
     """
 
     def _unsupported(selfself, name):
@@ -155,7 +156,7 @@ class RSIOBase(object):
     def handle(self):
         """Returns the native file handle associated with the stream.
 
-        On most (*nix-like) systems, it's the same as fileno (an integer).
+        On most (\*nix-like) systems, it's the same as fileno (an integer).
 
         On windows, it's a specific Handle value, which is also an integer.
         """
@@ -167,17 +168,18 @@ class RSIOBase(object):
         """
         Locks the whole regular file or a portion of it, depending on the arguments provided.
 
-        The strength of the locking depends on the underlying platform. 
-        On windows, all file locks (using LockFile()) are mandatory, i.e even programs 
-        which are not using file locks won't be able to access locked 
-        parts of files for reading or writing (depending on the type 
-        of lock used).
-        On posix platforms, most of the time locking is only advisory:
-        unless they use the same type of lock as rsFile
-        (currently, fcntl calls), programs will freely access your files if they have 
-        proper permissions. Note that it is possible to enforce mandatory 
-        locking thanks to some mount options and file flags, 
-        but this practice is highly advised against by unix gurus.
+        The strength of the locking depends on the underlying platform.
+
+        - on windows, all file locks (using LockFile()) are mandatory, i.e even programs
+          which are not using file locks won't be able to access locked
+          parts of files for reading or writing (depending on the type
+          of lock used).
+        - in posix platforms, most of the time locking is only advisory:
+          unless they use the same type of lock as rsFile
+          (currently, fcntl calls), programs will freely access your files if they have
+          proper permissions. Note that it is possible to enforce mandatory
+          locking, thanks to some mount options and file flags,
+          but this practice is advised against.
         
         Native locks have very different semantics depending on the platform, but 
         rsfile enforces a single semantic : *per-handle, non-reentrant locks*.
@@ -188,41 +190,32 @@ class RSIOBase(object):
         can lock/unlock bytes that are protected by the original lock.
         
         *non-reentrant*: no merging/splitting of byte ranges can be performed with
-        this method : the ranges targetted by unlock() calls must be exactly the same
+        this method : the ranges targeted by unlock_file() calls must be exactly the same
         as those previously locked.
         Also, trying to lock the same bytes several times will raise a 
         RuntimeError, even if the sharing mode is not the same (no **atomic** lock 
-        upgrade/downgrade is available in kernels, anyway).
+        upgrade/downgrade is available in kernels anyway, it seems).
         
         This way, rsfile locks act both as inter-process and intra-process locks. 
 
-        .. note: this semantic doesn't tell anything about thread-safety, which must 
-                 be ensured through other means, like a :class:`RSThreadSafeWrapper`. 
-                 Also, nothing is done to detect inter-process or intra-process
-                 deadlocks - that's the responsibility of the programmer.
-        
+        .. note: this semantic doesn't tell anything about thread-safety, which is
+                 ensured through other means, like the :class:`RSThreadSafeWrapper` class.
+
+
         .. warning::
-            
-            Due to the amazing semantic of fcntl() calls, native handles can't be released
-            as long as locks exist on the target file. So if your process constantly opens 
-            and closes the same files while keeping locks on them, you might eventually 
-            run out of process resources.
-            To avoid this, simply plan lock-less moments for this flushing of pending handles, 
-            or reuse the same file objects as much as possible.
-            
-            Note that rsfile protections can't do anything if a third-party functions or C extensions
-            used by the process open the same file without using rsfile's interface  - in this case, 
-            file locks might be silently lost...
-            
+
+           Be sure to read the :ref:`interoperability_caveats`, to be aware of some limitations
+           and dangers born from the different semantics of windows/unix file locks.
+
+
         .. rubric::
             Parameters
         
-        - *timeout* (None or positive integer):  
+        - *timeout* (None or positive integer):
           If timeout is None, the process will block on this operation until it manages to get the lock; 
           else, it must be a number indicating how many seconds
           the operation will wait before raising a timeout IOError
           (thus, timeout=0 means a non-blocking locking attempt).
-    
     
         - *length* (None or positive integer): Specifies how many bytes must be locked.
           If length is None or 0, it means *infinity*, i.e all the bytes after the 
@@ -234,12 +227,13 @@ class RSIOBase(object):
           This position can be beyond the end of file.
         
         - *whence* (SEEK_SET, SEEK_CUR or SEEK_END):
-          Whence is the same as in seek(), and specifies what the offset is 
-          referring to(beginning, current position, or end of file).
+          Whence is the same as in :meth:`io.IOBase.seek`, and specifies what the offset is
+          referring to (beginning, current position, or end of file).
                 
         - *shared* (None or boolean): 
-          If ``shared`` is True, the lock is a "reader", non-exclusive lock, which can be shared by several 
-          processes, but prevents "writer" locks from being taken on the locked portion. 
+          If ``shared`` is True, the lock is a "reader", non-exclusive lock, which can be
+          shared by several "reader" streams, but prevents "writer" locks from being taken
+          on the locked portion.
           The owner of the lock shall himself not attempt to write to the locked area.
           
           If ``shared`` is False, the lock is a "writer", exclusive lock, preventing both writer 
@@ -247,15 +241,17 @@ class RSIOBase(object):
           
           By default, ``shared`` is set to False for writable streams, and to True for others.
           Note that this sharing mode can be compatible with the stream permission, i.e shared locks can only
-          by taken by stream having read access, and exclusive locks are reserve to writable streams. 
-          Thus, this parameter is only useful for read/write streams, which can alternate 
-          shared and exclusive locks depening on their needs.
+          by taken by stream having read access, and exclusive locks are reserved to writable streams.
+          Thus, this parameter is only useful for read/write streams, which can alternate between
+          shared and exclusive locks depending on their needs.
         
         On success, ``lock_file`` returns a context manager for use inside a with statement, 
         to automatically release the lock. However, it is advised that you don't release locks 
-        if you close the stream just after that; letting the close() operation release the locks
-        is as efficient, and on unix it prevents other threads from taking locks in the short time
-        between unlocking and stream closing (thus allowing the system to safely free handle resources in spite of the unsafe fcntl() semantic).
+        if you close the stream just after that: letting the close() operation release the locks
+        is as efficient, and prevents some corner-case bugs with unix fcntl locks (see )
+        on unix it might
+        prevents other threads from taking locks in the short time
+        between unlocking and stream closing (which could).
 
         """
         self._unsupported("lock_file")
@@ -274,7 +270,8 @@ class RSIOBase(object):
         This function will usually be implicitly called thanks to a context manager
         returned by :meth:`lock_file`. But as stated above, don't use it if you plan 
         to close the file immediately - the closing system will handle the unlocking
-        in a more efficient and safer manner. 
+        in a more efficient and safer manner, and it will prevent some corner-case bugs
+        as described in :ref:`interoperability_caveats`.
         """
         self._unsupported("unlock_file")
 
@@ -283,7 +280,7 @@ class RSIOBase(object):
     @property
     def mode(self):
         """
-        At the moment, this property behaves like its sibling from the stdlib io module.
+        At the moment, this property behaves like its sibling from the stdlib io module, and returns a string of *standard* (lowercase) mode flags.
 
         On a binary stream, it recomputes the mode from the raw stream attributes,
         except that it does't distinguish "rb+" from "wb+" ("rb+" is always returned).

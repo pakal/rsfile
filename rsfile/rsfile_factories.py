@@ -40,7 +40,7 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
         only issue one system call. So in this case, checking the number of bytes written/read after 
         each operation is highly advised.
     
-    If ``locking`` is True, the whole file will be immediately locked on opening, with an automatically determined share mode (exclusive for writable streams, shared for read-only streams), and the ``timeout`` argument provided.
+    If ``locking`` is True, the *whole* file will be immediately locked on opening, with an automatically determined share mode (exclusive for writable streams, shared for read-only streams), and the ``timeout`` argument provided (see the :meth:`lock_file() <rsfile.rsiobase.RSIOBase.lock_file>` method for details).
     This is particularly useful is the file is opened with "truncate" flag, as it prevents this truncation from happening without inter-process protection.
     It is still possible to abort that locking later, with a call to :meth:`unlock` (without arguments).
 
@@ -63,7 +63,7 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
     .. _file_opening_modes:
     
     .. rubric::
-        FILE OPENING MODES
+        ADVANCED FILE OPEN MODES
     
     In addition to standard modes as described in the documentation of :func:`io.open`,
     a set of advanced modes is available, as capital-cased flags. These advanced modes
@@ -90,24 +90,23 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
     'T'       Stream is in Text mode (default)
     ========= ========================================================================================
 
+    **Except R, W and A, all these flags are only taken into account when opening a new raw stream, not wrapping an existing fileno or handle.**
 
     Any combination of "R", "W", and "A" is possible, even though "W" is useless is "A" is set.
 
-    The following flags are only taken into account when opening a new raw stream, not wrapping an existing fileno or handle.
+    By default, RSFile opening follows the "O_CREATE alone" semantic : files are created if not existing, else they're simply opened. "C" and "N" flags,  mutually exclusive, alter this behaviour. The old corresponding "-" and "+" flags, ambiguous, are deprecated but still supported.
 
-    By default, RSFile opening follows the "O_CREATE alone" semantic : files are created if not existing, else they're simply opened. "N" and "C" flags,  mutually exclusive, alter this behaviour. The old "+" and "-" flags, ambiguous, are deprecated but still supported.
-
-    With "C" (exclusive creation): file opening fails if the file already exists.
-    This is the same semantic as (O_CREATE | O_EXCL) flags, which can be used to
-    handle some security issues on unix filesystems. Note that O_EXCL is broken
-    on NFS shares with a linux kernel < 2.6.5, so race conditions may occur in this case.
+    - with "C" (exclusive creation): file opening fails if the file already exists.
+      This is the same semantic as (O_CREATE | O_EXCL) flags, which can be used to
+      handle some security issues on unix filesystems. Note that O_EXCL is broken
+      on NFS shares with a linux kernel < 2.6.5, so race conditions may occur in this case.
     - with "N" (must Not create) : file creation fails if the file doesn't exist already.
 
     If "S" (Synchronized) : opens the stream so that write operations don't return before
     data gets pushed to physical device. Note that due to potential caching in your hardware, it
     doesn't fully guarantee that your data will be safe in case of immediate crash. Using this
     flag for programs running on laptops might increase HDD power consumption, and thus reduce
-    battery life. See also: RSIOBase.sync() XXXXXXXXHERE
+    battery life. See also the :meth:`sync() <rsfile.rsiobase.RSIOBase.sync>` method of rsfile streams.
 
     If "I" (inheritable) : the raw file stream will be inheritable by child processes
     created via native subprocessing calls (spawn, fork+exec, CreateProcess...). By default, as was
@@ -115,10 +114,21 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
     Note that sometimes child processes must be made aware of the file descriptors/handles
     that they own (this can be done through command-line arguments or other IPC means).
 
-    "E" requires the stream to be writable ("W" or "A"), except if "C" is set (because then we're sure that the file will be empty on opening) ; note that this flag is ignored when wrapping an existing fileno/handle.
+    "E" requires the stream to be writable ("W" or "A"), except if "C" is set (because then
+    we're sure that the file will be empty on opening) ; note that this flag is ignored
+    when wrapping an existing fileno/handle.
 
     "B" and "T" are mutually exclusive, and behave exactly like in :func:`io.open`.
 
+    .. note::
+
+        The "share-delete" semantic has been on enforced on windows as on unix, which means
+        that files opened with this library can still be moved/deleted in the filesystem while
+        they're open. However, on windows it may result in "stale files", which are not really
+        deleted until the last handle to them is closed.
+
+    .. rubric::
+        MODES COMPATIBILITY TABLE
 
     Here is an (autogenerated) table describing the different standard open modes,
     and their advanced equivalents.

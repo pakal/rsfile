@@ -20,8 +20,8 @@ def set_rsfile_options(**options):
     Sets process-global options for rsfile, according to keyword arguments provided.
     
     .. warning::
-        These options shall not be set from program libraries, only from main scripts, 
-        as they affect the behaviour of rsfile in the whole program.
+        These options shall not be set by libraries, only from main scripts,
+        since they affect the behaviour of rsfile in the whole program.
     
     The following keyword arguments are currently available:
     
@@ -31,7 +31,7 @@ def set_rsfile_options(**options):
       If that timeout is reached, a RuntimeError is raised. This exception is not meant to be caught, as it's
       normally the sign that a deadlock is occurring around the locking of that file. This feature is for 
       debugging purpose only.
-    - *default_spinlock_delay* (positive float, default to 0.1): this value represents the sleeping time between two attempts 
+    - *default_spinlock_delay* (positive float, defaults to 0.1): this value represents the sleeping time between two attempts
       at locking a file, when using :meth:`rsfile.lock_file()` with a non-zero timeout argument. Modify this 
       value with care, as some libraries might expect a sufficient reactivity for file locking operations.
       """
