@@ -1,4 +1,4 @@
-Handy Options and Utilities
+Handy Utilities and Options
 ============================
 
 
@@ -16,6 +16,8 @@ RSFile Utilities
 .. autofunction:: append_to_file
 
 
+.. _rsfile-options:
+
 RSFile Options
 -------------------
 	
@@ -26,7 +28,7 @@ RSFile Options
 
 .. _rsfile-patching:
 
-RSFile STDLIB Patching
+RSFile Stdlib Patching
 ------------------------
 
 These monkey-patchers are used massively to test rsfile against the stdlib test suite.

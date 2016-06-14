@@ -64,11 +64,17 @@ Buffering and caching
 
 
 
-Stream levels
+Stream layers
 ------------------
 
+In languages liek Python, file I/O streams are actually made of numerous layers, among which:
 
-Depending on platforms and APIs used, the stream's settings (access permissions, file locks...) are carried 
+- high level objects (eg. the classes of the :mod:`io` module)
+- file descriptors
+- open file objects
+- disk device
+
+Depending on platforms and APIs used, native stream settings (access permissions, file locks...) are carried
 by file descriptors or by open file objects. In such conditions, obtaining a safe and cross-platform behaviour 
 requires some precautions :
 
@@ -76,21 +82,10 @@ requires some precautions :
   This implies avoiding descriptor duplications, and only sharing streams via their top-most level, i.e python I/O 
   stream objects.
 - Carefully crafting the code, when sharing low level structures is unavoidable, for examples in stream inheritance 
-  operations. Lots of functions and flags are dedicated to customizing stream features in such cases, and RSFile 
-  uses them for you.
+  operations. Operating systems offer lots of functions and flags are available to customize the behaviour of each layer.
 
-In the end, high level object chains like provided by RSFile (and which mimick the `io` module), offer an abstraction which gets rid of most naughty implementation details.
+High level chains like that provided by RSFile (and which mimick the `io` module), offer abstractions which hide most of these implementation details, but not all.
 
-However, experienced developers must still be allowed to retrieve native handles, and
-play with lowel level IO routines as they wish.
-
-So RSFile offers access to low level streams via :meth:`rsfile.fileno` and :meth:`rsfile.handle` methods,
-and low level routines may be reached by miscellaneous means.
-
-- :meth:`rsfile.fileno` returns a C/Posix compatible file descriptor (windows emulates them with more or less success).
-- :meth:`rsfile.handle` returns a more platform-specific file handle, if any (a Handle integer on windows,
-  or the fileno on unix platforms).
-  
 
 
 
@@ -209,7 +204,7 @@ Inter-unrelated-processes locking
 
 Here begins the hard core part. In a dream world, a process having sufficient privileges would simply lock a file for reading
 and writing, perform its I/O operations on it, and then release the locks. But it can't be so simple: a "file"
-is actually made of lots of stream levels, each having different features depending on the platform, and lots of points have 
+is actually made of lots of stream layers, each having different features depending on the platform, and lots of points have
 to be decided, like the extent of the ownership of the lock (is it per-process, per-thread, per file descriptor, per open
 file object ?), the level of enforcement of the locking, or its reentrancy.
 
@@ -321,49 +316,10 @@ descriptors pointing to the same "open file table" entry. So if, while you're pe
 around some important file (eg. /etc/passwd), one of the numerous libraries used in your project silently reads this file
 with a temporary stream, you'll lose all your locks without even knowing it.
 
-So we have to live with this fact : the only unix locks able to work over NFS and to lock bytes ranges, are also the only locks in
-the world able to discreetly run away as soon as they're disturbed by third-party libraries.
+So we have to live with this fact : the only unix locks able to work over NFS and to lock bytes ranges, are also the only locks in the world able to discreetly run away as soon as they're disturbed by third-party libraries.
 
- 
-Semantic of RSFile Locking
-##################################
+RSFile provides workarounds to prevent such unexpected lock losses, see the :ref:`rsfile_locking_semantic` section.
 
-So how does RSFile do, to get a decent cross-platform API from all this ?
-
-It actually relies on LockFile() and Fcntl() locks, which give us bytes range locking, remote filesystem locking, 
-and prevents the sharing of file locks by several processes (even related to each other).
- 
-An internal registry is then used to normalize the behaviour of file locks:
-- locks are attached to a specific file descriptor, not just to the whole process.
-- the merging/splitting of bytes range locks, and the use of lock reentrancy, are prevented
-
-Finally, file closing operations have been modified to work around the fcntl() flaws: when
-a stream is closed, RSFile will actually keep the native file descriptor alive, as a zombie,
-for as long as the process will have some locks on the same disk file.
-
-The danger with this workaround, is that your process could run out of available file file descriptors, if it continuely 
-opens and locks the same file without ever letting the possibility to release these handle (i.e by constantly keeping at 
-least some bytes locked on this file).
-
-Anyway, if your application behaves that way, it also creates some kind of denial-of-service against any other process 
-which would want to lock the whole file, so it could be the sign that other means of protection (file permissions, 
-immediate deletion of the filesystem entry...) would be more appropriate for your needs.
-
-But if you really need to constantly lock parts of the file (eg. for a shared database file), then you shall:
-
-- reuse the same file descriptors whenever possible
-- plan "zero locks" moments, to allow the purging of zombie file descriptors
-- let the closing operation of a file descriptor atomically release the locks still kept, 
-  instead of manually unlocking them just before closing the file. This helps the purge of file descriptors
-  by preventing new locks from being taken in the short time between the unlocking and the
-  closing of the stream.
-
-
-.. warning::
-    This workaround provided will only work as long as accesses to a disk file are done through the RSFile
-    API. Third-party libraries using other "io" modules, or low level routines (eg. in C extensions) may still
-    silently break your locks. Part of these dangers can be prevented by enforcing the use of RSFile for normal 
-    python stream operations (CF :ref:`rsfile-patching`). But overriding the lowest level I/O routines, like libc's open(), would require a tremendous skills and work.
 
 
 Cascading buffers and caches

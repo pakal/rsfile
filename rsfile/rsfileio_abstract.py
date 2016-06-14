@@ -14,7 +14,52 @@ from .rsfile_registries import IntraProcessLockRegistry, _default_rsfile_options
 
 class RSFileIOAbstract(defs.io_module.RawIOBase):
 
+    """
+    This class is an improved version of the raw stream :class:`io.FileIO`, relying on native OS primitives,
+    and offering much more control over the behaviour of the file stream.
 
+    Hopefully you won't have to deal directly with its constructor, since factory
+    functions like :func:`rsopen` give you a much easier access to streams chain,
+    including buffering and encoding aspects.
+
+    .. rubric::
+        Target determination parameters
+
+    These parameters determine if a new raw file stream will be opened from the filesystem, or
+    if an existing one will be wrapped by the new RSFileIo instance.
+
+    - *path* (unicode/bytes or None): The path of the regular file to be opened.
+      If ``fileno`` or ``handle`` is provided, ``path`` is only used as additional
+      information.
+    - *fileno* (integer or None): if provided, it must be an open C-style file
+      descriptor, compatible with the *Mode parameters* requested, and which will be used
+      as an underlying raw stream. Such file descriptors should be available on all platforms,
+      but on windows (where they are only emulated) they might be too buggy to benefit
+      from file locking and other advanced features.
+    - *handle* (handle or None): if provided, it must be a native open file
+      handle, compatible with the *Mode parameters* requested, and which will be used
+      as an underlying raw stream. On unix platforms, it is the same as a ``fileno``,
+      and on windows it must be a win32 Handle (an integer) or a pyHandle instance from pywin32.
+    - *closefd* (boolean): if ``fileno`` or ``handle`` is given, this parameter determines whether
+      the wrapped raw file stream will be closed when the stream gets closed or deleted, or whether
+      it will be left open. When creating a new raw file stream from ``path``, ``closefd`` must
+      necessarily be True.
+
+    .. rubric::
+        Mode parameters
+
+    These parameters determine the access checking that will be done while manipulating
+    the stream. The file must necessarily be opened at least with read or write access,
+    and can naturally be opened with both.
+
+    - *read* (boolean): Open the file with read access (doesn't allow file truncation).
+    - *write* (boolean): Open the file with write access (allows file truncation).
+    - *append* (boolean): Open the file in append mode, i.e on most OSes, write operations
+      will automatically move the file pointer to the end of file  before actually writing
+      (the file pointer is not restored afterwards). ``append`` implicitly forces ``write`` to *True*.
+
+    See RSOpen() docs for the semantic of other parameters.
+    """
 
     def __init__(self,
                  path=None, # it seems pywin32 already uses unicode versions of these functions, so it's cool  :-)
@@ -31,52 +76,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
                  inheritable=False,
                  permissions=0o777):
 
-        """
-        This class is an improved version of the raw stream :class:`io.FileIO`, relying on native OS primitives, 
-        and offering much more control over the behaviour of the file stream.
-        
-        Hopefully you won't have to deal directly with its constructor, since factory 
-        functions like :func:`rsopen` give you a much easier access to streams chain,
-        including buffering and encoding aspects.
 
-        .. rubric::
-            Target determination parameters
-        
-        These parameters determine if a new raw file stream will be opened from the filesystem, or
-        if an existing one will be wrapped by the new RSFileIo instance.
-
-        - *path* (unicode/bytes or None): The path of the regular file to be opened. 
-          If ``fileno`` or ``handle`` is provided, ``path`` is only used as additional 
-          information. 
-        - *fileno* (integer or None): if provided, it must be an open C-style file
-          descriptor, compatible with the *Mode parameters* requested, and which will be used
-          as an underlying raw stream. Such file descriptors should be available on all platforms,
-          but on windows (where they are only emulated) they might be too buggy to benefit 
-          from file locking and other advanced features.
-        - *handle* (handle or None): if provided, it must be a native open file
-          handle, compatible with the *Mode parameters* requested, and which will be used
-          as an underlying raw stream. On unix platforms, it is the same as a ``fileno``, 
-          and on windows it must be a win32 Handle (an integer) or a pyHandle instance from pywin32.
-        - *closefd* (boolean): if ``fileno`` or ``handle`` is given, this parameter determines whether
-          the wrapped raw file stream will be closed when the stream gets closed or deleted, or whether
-          it will be left open. When creating a new raw file stream from ``path``, ``closefd`` must
-          necessarily be True.
-        
-        .. rubric::
-            Mode parameters
-        
-        These parameters determine the access checking that will be done while manipulating
-        the stream. The file must necessarily be opened at least with read or write access,
-        and can naturally be opened with both.
-        
-        - *read* (boolean): Open the file with read access (doesn't allow file truncation).
-        - *write* (boolean): Open the file with write access (allows file truncation).
-        - *append* (boolean): Open the file in append mode, i.e on most OSes, write operations
-          will automatically move the file pointer to the end of file  before actually writing
-          (the file pointer is not restored afterwards). ``append`` implicitly forces ``write`` to *True*.
-
-        See RSOpen() docs for the semantic of other parameters.
-        """
 
         self.enforced_locking_timeout_value = _default_rsfile_options["enforced_locking_timeout_value"]
         self.default_spinlock_delay = _default_rsfile_options["default_spinlock_delay"]

@@ -1,5 +1,5 @@
 
-Advanced File Objects
+RSFile Streams
 =======================
 
 .. module:: rsfile.rsiobase

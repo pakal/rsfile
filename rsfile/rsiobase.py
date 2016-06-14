@@ -64,12 +64,11 @@ class RSIOBase(object):
         """
         Flushes and closes the IO object. This method has no effect if the file is already closed.
 
-        Potential exceptions are NOT swallowed. Yet the underlying IO streams are closed even if the flush() failed, as is done in the stdlib io module. So if your data is very important, issue a separate flush() and handle potential errors (no more disk space, blocking operation error on a non-blocking stream...) before close().
+        Potential exceptions are NOT swallowed. Yet the underlying raw streams are closed even if the flush() failed, as is done in the stdlib io module. So if your data is very important, issue a separate flush() and handle potential errors (no more disk space, blocking operation error on a non-blocking stream...) before close().
 
-        All the locks still held by the stream's file descriptor are released,
-        but on unix systems the file descriptor itself is only closed when no more locks
-        are held by the process on the target disk file. This is a workaround to prevent fctnl
-        locks on that file from all becoming stale in the process, due to the fctnl semantic.
+        When closing, all the locks still held by the stream's file descriptor are released.
+
+        However, note that the native file descriptor wrapped by this stream might be kept alive for a while, to prevent unexpected losses of locks elsewhere in the process (see :ref:`rsfile_locking_caveats` for details).
         """
         self._unsupported("close")
 
@@ -168,54 +167,27 @@ class RSIOBase(object):
         """
         Locks the whole regular file or a portion of it, depending on the arguments provided.
 
-        The strength of the locking depends on the underlying platform.
-
-        - on windows, all file locks (using LockFile()) are mandatory, i.e even programs
-          which are not using file locks won't be able to access locked
-          parts of files for reading or writing (depending on the type
-          of lock used).
-        - in posix platforms, most of the time locking is only advisory:
-          unless they use the same type of lock as rsFile
-          (currently, fcntl calls), programs will freely access your files if they have
-          proper permissions. Note that it is possible to enforce mandatory
-          locking, thanks to some mount options and file flags,
-          but this practice is advised against.
-        
-        Native locks have very different semantics depending on the platform, but 
-        rsfile enforces a single semantic : *per-handle, non-reentrant locks*.
-        
-        *per handle*: once a lock has been acquired via a native handle, 
-        this handle is the owner of the lock. No other handle, even in the current
-        process, even if they have been duplicated or inherited from the owner handle, 
-        can lock/unlock bytes that are protected by the original lock.
-        
-        *non-reentrant*: no merging/splitting of byte ranges can be performed with
-        this method : the ranges targeted by unlock_file() calls must be exactly the same
-        as those previously locked.
-        Also, trying to lock the same bytes several times will raise a 
-        RuntimeError, even if the sharing mode is not the same (no **atomic** lock 
-        upgrade/downgrade is available in kernels anyway, it seems).
-        
-        This way, rsfile locks act both as inter-process and intra-process locks. 
-
-        .. note: this semantic doesn't tell anything about thread-safety, which is
-                 ensured through other means, like the :class:`RSThreadSafeWrapper` class.
-
+        See the :ref:`rsfile_locking_semantic` doc to understand what type of locking, exactly,
+        you can achieve with that method.
 
         .. warning::
 
-           Be sure to read the :ref:`interoperability_caveats`, to be aware of some limitations
-           and dangers born from the different semantics of windows/unix file locks.
+           Be sure, in particular, to read the :ref:`rsfile_locking_caveats`,
+           to be aware of some limitations and dangers of these file locks.
 
 
         .. rubric::
             Parameters
         
         - *timeout* (None or positive integer):
-          If timeout is None, the process will block on this operation until it manages to get the lock; 
+          If timeout is None, the process will block on this operation
+          until it manages to get the lock;
           else, it must be a number indicating how many seconds
           the operation will wait before raising a timeout IOError
           (thus, timeout=0 means a non-blocking locking attempt).
+          Low level APIs do not support lock timeout, so it's currently emulated via repeated
+          non-blocking calls (spin-lock).
+          See :ref:`rsfile-options` for customization.
     
         - *length* (None or positive integer): Specifies how many bytes must be locked.
           If length is None or 0, it means *infinity*, i.e all the bytes after the 
@@ -244,14 +216,14 @@ class RSIOBase(object):
           by taken by stream having read access, and exclusive locks are reserved to writable streams.
           Thus, this parameter is only useful for read/write streams, which can alternate between
           shared and exclusive locks depending on their needs.
-        
-        On success, ``lock_file`` returns a context manager for use inside a with statement, 
+
+        This method raises `RuntimeError` if an abnormal workflow is detected (eg. attempting the lock overlapping
+        areas of the files several times through the *same* file handle, whatever the "shared" mode provided).
+
+        On success, ``lock_file`` returns a context manager for use inside a *with* statement,
         to automatically release the lock. However, it is advised that you don't release locks 
         if you close the stream just after that: letting the close() operation release the locks
-        is as efficient, and prevents some corner-case bugs with unix fcntl locks (see )
-        on unix it might
-        prevents other threads from taking locks in the short time
-        between unlocking and stream closing (which could).
+        is as efficient, and prevents some corner-case problems as described in :ref:`rsfile_locking_caveats`.
 
         """
         self._unsupported("lock_file")
@@ -262,7 +234,7 @@ class RSIOBase(object):
         Unlocks a portion of regular file previously locked through the same native handle.
         
         The specifications of the locked area (absolute offset and length) must 
-        be the same as those used when calling locking methods,
+        be the same as those used when calling lock_file(),
         else errors will occur; its is thus not possible to release only 
         a part of a locked area, or to unlock with only one call
         two consecutive ranges.
@@ -270,8 +242,7 @@ class RSIOBase(object):
         This function will usually be implicitly called thanks to a context manager
         returned by :meth:`lock_file`. But as stated above, don't use it if you plan 
         to close the file immediately - the closing system will handle the unlocking
-        in a more efficient and safer manner, and it will prevent some corner-case bugs
-        as described in :ref:`interoperability_caveats`.
+        in a safer manner.
         """
         self._unsupported("unlock_file")
 

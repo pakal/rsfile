@@ -9,7 +9,7 @@ These new streams aim at providing a cross-platform, reliable, and comprehensive
 
 RSFile uses utilities scattered over the python stdlib (os, stat, fnctl, _pyio...), and accesses native APIs (like "Handles" on Windows) when it's necessary to achieve robust cross-platform interoperability. In particular, on Windows, it'll make use of `pywin32 <https://sourceforge.net/projects/pywin32/>`_ extensions if they are available, instead of relying on `ctypes`.
 
-Because RSFile adds multiple layers of securities to I/O streams, and is a pure python package, it is currently 3x to 10x slower than the C-backed :mod:`io` module from the stdlib. Speeding up RSFile would be doable (with cython, or cffi, or ctypes optimizations...), but not necessarily useful, since it can be used in parallel with :mod:`io` (one for security-critical file accesses, the other for high throughput. Be aware of some :ref:`interoperability_caveats` though.
+Because RSFile adds multiple layers of securities to I/O streams, and is a pure python package, it is currently 3x to 10x slower than the C-backed :mod:`io` module from the stdlib. Speeding up RSFile would be doable (with cython, or cffi, or ctypes optimizations...), but not necessarily useful, since it can be used in parallel with :mod:`io` (one for security-critical file accesses, the other for high throughput. Be aware of some :ref:`rsfile_locking_caveats` though.
 
 Compatibility-wise, RSFile is compliant with the stdlib test suite (except some testcases which check C-extension behaviours or "ResourceWarning" emitting). It may be used on regular files as well as on other stream types (anonymous pipes, named fifos, devices...), although its advanced features only work on "normal", seekable and lockable, files.
 
@@ -23,6 +23,6 @@ Compatibility-wise, RSFile is compliant with the stdlib test suite (except some 
 
 	rsopen.rst
 	rsfile_streams.rst
+	locking_semantic.rst
 	utilities_options.rst
-	caveats.rst
 	native_io_concepts.rst
