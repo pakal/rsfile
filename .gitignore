@@ -4,6 +4,7 @@ ___*
 *.pyc
 *.pyo
 
+.tox
 MYTODO.txt
 _build/
 build/*
