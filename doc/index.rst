@@ -19,7 +19,7 @@ Compatibility-wise, RSFile is compliant with the stdlib test suite (except some 
     so consider upgrading to the latest python2.7.X version to avoid corner-case buglets.
 
 .. toctree::
-	:maxdepth: 3
+	:maxdepth: 4
 
 	rsopen.rst
 	rsfile_streams.rst

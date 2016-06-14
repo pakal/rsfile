@@ -36,7 +36,7 @@ Open file object
     can end up being shared by several processes. Creating too many of these objects is what leads to
     the sly 'too many open files' error.
 
-File descriptor 
+File descriptor
     This type (C file descriptor on Posix systems, file Handle on windows platforms)
     mostly acts as a "pointer" to an open file object. It is typically an integer used as an index in
     a per-process "open file table". Several of these "open file references" can target the same open file objects,
@@ -160,7 +160,8 @@ sound like a dangerous idea.
 
 That's why RSFile uses several types of locks, to ensure your data won't get corrupted by simultaneous writes.
 These locks are recursive, i.e as *threading.RLock*, they allow the same client to acquire them several
-times, and need to be released the same number of time as they've been acquired
+times, and need to be released the same number of time as they've been acquired.
+Specific protections are setup to detect events like fork(), and reset data structures which make no sense anymore in the child process.
 
 
 Inter-threads locking
@@ -463,5 +464,16 @@ RSFile attempts to do its best with the constraints listed above: it offers a :m
 
 If you need constant synchronization data, see the "S" flag of advanced file open modes, which uses O_SYNC
 on unix and FILE_FLAG_WRITE_THROUGH on windows, to enforce data+metadata synchronization on each flush().
+
+
+Some links to go further
+---------------------------
+
+`On the Brokenness of File Locking <http://0pointer.de/blog/projects/locking.html>`_
+
+`Everything You Always Wanted to Know About Fsync() <http://blog.httrack.com/blog/2013/11/15/everything-you-always-wanted-to-know-about-fsync/>`_
+
+`A Tale of Two Standards - Samba <https://www.samba.org/samba/news/articles/low_point/tale_two_stds_os2.html>`_
+
 
 
