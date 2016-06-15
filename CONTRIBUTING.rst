@@ -25,15 +25,13 @@ If tox fails when creating py35 environment on windows ("The program can't start
 Manually testing
 -----------------
 
-To manually launch the test suites against a specific "python" interpreter, use the commands below.
+To manually launch the test suites against a specific "python" interpreter, use the different commands visible in the "tox.ini", in the form **python -m rsfile.rstest.xxxxxxx**
 
-Note that these tests can't all be executed inside the same runner process, since they monkey-patch their python environment differently. Also, double-check that the "rsfile" imported is well the one you meant, since the current working directory is automatically added to your python paths on launch.
+Note that these *.py test files can't all be executed inside the same runner process, since they monkey-patch their python environment differently.
 
-    $ python -m  rsfile.rstest.test_rsfile_streams
-    $ python -m  rsfile.rstest.test_rsfile_locking
-    $ python -m  rsfile.rstest.test_rsfile_retrocompatibility
+Also, double-check that the "rsfile" package imported is well the one you meant, since the current working directory is usually automatically added to your python "sys.path" on launch.
 
-If you have installed python-tabulate (https://pypi.python.org/pypi/tabulate), the retrocompatibility test will display a table listing the different opening modes and their features.
+If you have installed python-tabulate (https://pypi.python.org/pypi/tabulate), the retrocompatibility test will display a table listing the different file opening modes, and their features.
 
 
 Benchmarking
