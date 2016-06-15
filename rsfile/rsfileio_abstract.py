@@ -591,7 +591,8 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
             finally:
                 if not success:
                     res = IntraProcessLockRegistry.unregister_file_lock(self._lock_registry_inode, self._lock_registry_descriptor, length, abs_offset)
-                    assert res # there shall be no problem, since arguments MUST be valid there                        
+                    assert res in (True, False)  # there may or may not be locks left after that, we dunno
+
 
         return self._lock_remover(length, abs_offset, os.SEEK_SET)
 
