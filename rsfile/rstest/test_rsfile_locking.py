@@ -18,7 +18,7 @@ rsfile.monkey_patch_io_module()
 
 RESULT_FILE = "@RESULTFILE"
 
-
+logger = _worker_process.logger
 
 def get_character():
     return random.choice(string.ascii_lowercase).encode("ascii")
@@ -29,7 +29,7 @@ class ThreadWithExitCode(threading.Thread):
         try:
             threading.Thread.run(self)
         except Exception as e:
-            print ("THREAD %s TERMINATION ON ERROR" % threading.current_thread().name)
+            logger("THREAD %s TERMINATION ON ERROR" % threading.current_thread().name)
             traceback.print_exc()
             self.exitcode = 1
         except SystemExit as e:
@@ -80,10 +80,10 @@ class TestSafeFile(unittest.TestCase):
 
     def _start_and_check_subprocesses(self):
 
-        print ("----Subprocesses Launch ----")
+        logger("----Subprocesses Launch ----")
 
         for process in self.processList:
-            print ("Process '%s' starting" % process.name)
+            logger("Process '%s' starting" % process.name)
             process.daemon = True
             process.start()
 
@@ -93,7 +93,7 @@ class TestSafeFile(unittest.TestCase):
 
             self.assertEqual(process.exitcode, 0, "Process '%s' detected some synchronization inconsistency : retcode %d" % (process.name, process.exitcode))
 
-            print ("Process '%s' exited successfully" % process.name)
+            logger("Process '%s' exited successfully" % process.name)
 
 
 
@@ -184,21 +184,36 @@ class TestSafeFile(unittest.TestCase):
             f.lock_file(shared=False, timeout=0, length=1, offset=1, whence=os.SEEK_SET)
             f.lock_file(shared=True, timeout=0, length=3, offset=2, whence=os.SEEK_SET)
 
-
             assert f.tell() == 0
 
+            f.seek(5)
+            f.lock_file(shared=True, timeout=0, length=1, offset=0, whence=os.SEEK_CUR)  #works
+
+            f.seek(0)
+            assert f.tell() == 0
 
             # No double locking !
 
             self.assertRaises(RuntimeError, f.lock_file, shared=True, timeout=None, length=1, offset=0, whence=os.SEEK_CUR)
             self.assertRaises(RuntimeError, f.lock_file, shared=False, timeout=None, length=1, offset=0, whence=os.SEEK_CUR)
 
-            self.assertRaises(RuntimeError, f.lock_file, shared=True, timeout=0, length=1, offset=1, whence=os.SEEK_CUR)
+            self.assertRaises(RuntimeError, f.lock_file, shared=True, timeout=0, length=1, offset=1, whence=os.SEEK_SET)
             self.assertRaises(RuntimeError, f.lock_file, shared=False, timeout=0, length=1, offset=1, whence=os.SEEK_CUR)
 
             self.assertRaises(RuntimeError, f.lock_file, length=2, offset=0, whence=os.SEEK_CUR) # no lock merging !
             self.assertRaises(RuntimeError, f.lock_file, length=1, offset=3, whence=os.SEEK_CUR) # no lock splitting !
 
+            f.seek(5)
+            self.assertRaises(RuntimeError, f.lock_file, shared=True, timeout=0, length=1, offset=0, whence=os.SEEK_CUR)
+            f.seek(0)
+
+            assert f.wrapped_stream.__class__._inner_file_lock
+            f.wrapped_stream._inner_file_lock = "<nasty_string>"
+            # this properly
+            self.assertRaises(TypeError, f.lock_file, length=1, offset=355, whence=os.SEEK_SET)
+            del f.wrapped_stream._inner_file_lock
+            # IntraProcessLockRegistry was well cleaned up when treating this TypeError:
+            f.lock_file(shared=True, timeout=0, length=1, offset=355, whence=os.SEEK_SET)
 
             # Todo - test locking with duplicate handles
             """                     
@@ -306,7 +321,7 @@ class TestSafeFile(unittest.TestCase):
 
         with open(self.dummyFileName, "wb") as targetFile:
             targetFile.write(character * totalPayLoad)
-            print ("====== ALL INITIALIZED TO CHARACTER '%s' =====" % character.decode("ascii"))
+            logger("====== ALL INITIALIZED TO CHARACTER '%s' =====" % character.decode("ascii"))
 
         """ # TO REMOVE
         # we add a reader process first  
@@ -413,7 +428,7 @@ class TestSafeFile(unittest.TestCase):
 
 
                 for process in self.processList:
-                    print ("Process '%s' starting" % process.name)
+                    logger("Process '%s' starting" % process.name)
                     process.daemon = True
                     process.start()
 
@@ -479,15 +494,15 @@ def test_main():
             test_support.run_unittest(TestSafeFile)
         except Exception as e: # some kind of SystemExit exception gets raised by unittest.main()
             raise
-            #print("CAUGHT EXCEPTION ", repr(e))
-            #print("-----------------------------------------------------------------------")
+            #logger("CAUGHT EXCEPTION ", repr(e))
+            #logger("-----------------------------------------------------------------------")
 
     backends = _utilities.launch_rsfile_tests_on_backends(_launch_test_on_single_backend)
-    print("** RSFILE_LOCKING Test Suite has been run on backends %s **" % backends)
+    print("** RSFILE_LOCKING Test Suite has been run on backends %s **" % backends)  # ALWAYS displayed
 
 if __name__ == '__main__':
     #TestSafeFile("test_intra_process_locking").test_intra_process_locking()
-    #print("over")
+    #logger("over")
     test_main()
 
 
