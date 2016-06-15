@@ -183,6 +183,13 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
             self.seek(0, os.SEEK_END) # required by unit tests, might raise if non-seekable file...
 
 
+    def __repr__(self):
+        return ('<rsfile.RSFileIO name=%s mode="%s" origin="%s" closefd=%s>' %
+                ('"%s"' % self.name if isinstance(self.name, basestring) else self.name,
+                 self.mode, self.origin, self._closefd))
+
+
+
     def close(self):
 
         if not self.closed:

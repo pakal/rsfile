@@ -146,8 +146,10 @@ def test_original_io():
     test_fileio.AutoFileTests.testMethods = dummyfunc # messy C functions signatures...
     test_fileio.AutoFileTests.testErrors = dummyfunc # incoherent errors returned on bad fd, between C and Py implementations...
     test_fileio.OtherFileTests.testInvalidFd = dummyfunc  # different exception types...
+    test_fileio.AutoFileTests.testBlksize = dummyfunc  # rsfile doesn't use raw._blksize optimizations for now
 
     test_fileio.AutoFileTests.testRepr = dummyfunc  # repr() of streams changes of course
+    test_fileio.AutoFileTests.testReprNoCloseFD = dummyfunc  # repr() of streams changes of course
 
     """ OLD
     test_fileio.OtherFileTests.testWarnings = dummyfunc
@@ -224,6 +226,21 @@ class TestRawFileViaWrapper(unittest.TestCase):
         self.assertRaises(ValueError, io.open, -10, 'wb', buffering=0,)
         bad_fd = test_support.make_bad_fd()
         self.assertRaises(IOError, io.open, bad_fd, 'wb', buffering=0)
+
+
+
+    def testRSFileIORepr(self):
+        fd = os.open(TESTFN, os.O_WRONLY |os.O_CREAT)
+        try:
+            with io.FileIO(fd, 'w', closefd=False) as f:
+                self.assertEqual(repr(f),
+                                 """<rsfile.RSFileIO name=%r mode="wb" origin="fileno" closefd=False>""" % fd)
+        finally:
+            os.close(fd)
+
+        with io.FileIO(TESTFN, 'w') as f:
+            self.assertEqual(repr(f),
+                             """<rsfile.RSFileIO name="%s" mode="wb" origin="path" closefd=True>""" % TESTFN)
 
 
     def test_garbage_collection(self):
@@ -1125,7 +1142,7 @@ def test_main():
         # So get rid of it no matter what.
         try:
             test_support.run_unittest(TestRawFileViaWrapper, TestRawFileSpecialFeatures, TestMiscStreams)
-            test_original_io()
+            #######test_original_io()
         finally:
             if os.path.exists(TESTFN):
                 try:
