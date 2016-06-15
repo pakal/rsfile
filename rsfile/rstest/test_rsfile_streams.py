@@ -1148,7 +1148,7 @@ def test_main():
         # So get rid of it no matter what.
         try:
             test_support.run_unittest(TestRawFileViaWrapper, TestRawFileSpecialFeatures, TestMiscStreams)
-            #######test_original_io()
+            test_original_io()
         finally:
             if os.path.exists(TESTFN):
                 try:

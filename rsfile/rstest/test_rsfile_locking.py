@@ -172,9 +172,20 @@ class TestSafeFile(unittest.TestCase):
 
         with rsfile.rsopen(self.dummyFileName, "RWB", buffering=0, locking=False) as f:
 
-            f.lock_file(shared=True, timeout=0, length=1, offset=0, whence=os.SEEK_CUR)
-            f.lock_file(shared=False, timeout=0, length=1, offset=1, whence=os.SEEK_CUR)
-            f.lock_file(shared=True, timeout=0, length=3, offset=2, whence=os.SEEK_CUR)
+            assert f.tell() == 0
+
+            f.lock_file(shared=True, timeout=0, length=1, offset=100, whence=os.SEEK_SET)
+            f.lock_file(shared=False, timeout=0, length=1, offset=200, whence=os.SEEK_SET)
+
+
+            assert f.tell() == 0
+
+            f.lock_file(shared=True, timeout=0, length=1, offset=0, whence=os.SEEK_SET)
+            f.lock_file(shared=False, timeout=0, length=1, offset=1, whence=os.SEEK_SET)
+            f.lock_file(shared=True, timeout=0, length=3, offset=2, whence=os.SEEK_SET)
+
+
+            assert f.tell() == 0
 
 
             # No double locking !
@@ -475,6 +486,8 @@ def test_main():
     print("** RSFILE_LOCKING Test Suite has been run on backends %s **" % backends)
 
 if __name__ == '__main__':
+    #TestSafeFile("test_intra_process_locking").test_intra_process_locking()
+    #print("over")
     test_main()
 
 

@@ -361,7 +361,6 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         else:
             (nNumberOfBytesToLockLow, nNumberOfBytesToLockHigh) = utilities.pyint_to_double_dwords(length)
 
-
         overlapped = win32.OVERLAPPED() # contains ['Internal', 'InternalHigh', 'Offset', 'OffsetHigh', 'dword', 'hEvent', 'object']
         (overlapped.Offset, overlapped.OffsetHigh) = utilities.pyint_to_double_dwords(abs_offset)
         overlapped.hEvent = 0
@@ -381,12 +380,14 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         """
         hfile = self._handle
 
+        #print(">>>>>>> ctypes windows _inner_file_lock", self.name, length, abs_offset, blocking, shared)
         flags = 0 if shared else win32.LOCKFILE_EXCLUSIVE_LOCK
         if not blocking:
             flags |= win32.LOCKFILE_FAIL_IMMEDIATELY
 
         (nNumberOfBytesToLockLow, nNumberOfBytesToLockHigh, overlapped) = self._win32_convert_file_range_arguments(length, abs_offset)
 
+        #print(">>>>>>> ctypes windows LockFileEx", hfile, nNumberOfBytesToLockLow, nNumberOfBytesToLockHigh,  overlapped.Offset, overlapped.OffsetHigh)
         win32.LockFileEx(hfile, flags, nNumberOfBytesToLockLow, nNumberOfBytesToLockHigh, overlapped)
         # error: 32 - ERROR_SHARING_VIOLATION - The process cannot access the file because it is being used by another process.
         # error: 33 - ERROR_LOCK_VIOLATION - The process cannot access the file because another process has locked a portion of the file.
