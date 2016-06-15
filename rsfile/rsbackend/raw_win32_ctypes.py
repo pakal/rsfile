@@ -3,9 +3,12 @@ from __future__ import unicode_literals, print_function
 
 from ctypes import *
 
-from ctypes.wintypes import DWORD
 _stdcall_libraries = {}
 _stdcall_libraries['kernel32'] = WinDLL('kernel32')
+_libraries = {}
+_libraries['msvcrt'] = CDLL('msvcrt')
+
+from ctypes.wintypes import DWORD
 from ctypes.wintypes import BOOL
 from ctypes.wintypes import HANDLE
 from ctypes.wintypes import LARGE_INTEGER
@@ -14,22 +17,27 @@ from ctypes.wintypes import LPVOID
 from ctypes.wintypes import LONG
 from ctypes.wintypes import LPCSTR
 from ctypes.wintypes import LPCWSTR
-_libraries = {}
-_libraries['msvcrt'] = CDLL('msvcrt')
-from ctypes.wintypes import _FILETIME
 from ctypes.wintypes import FILETIME
 
 
-class _OVERLAPPED(Structure):
-    pass
-OVERLAPPED = _OVERLAPPED
+#MANUALLY ADDED, because ctypes generator forgot fields...
+class OVERLAPPED(Structure):
+    _fields_ = [('Internal', LPVOID),
+                ('InternalHigh', LPVOID),
+                ('Offset', DWORD),
+                ('OffsetHigh', DWORD),
+                ('Pointer', LPVOID),
+                ('hEvent', HANDLE),
+               ]
+
+
 class _SECURITY_ATTRIBUTES(Structure):
     pass
 SECURITY_ATTRIBUTES = _SECURITY_ATTRIBUTES
 GetLastError = _stdcall_libraries['kernel32'].GetLastError
 GetLastError.restype = DWORD
 GetLastError.argtypes = []
-LPOVERLAPPED = POINTER(_OVERLAPPED)
+LPOVERLAPPED = POINTER(OVERLAPPED)
 LockFileEx = _stdcall_libraries['kernel32'].LockFileEx
 LockFileEx.restype = BOOL
 LockFileEx.argtypes = [HANDLE, DWORD, DWORD, DWORD, DWORD, LPOVERLAPPED]
@@ -95,27 +103,9 @@ _open_osfhandle = _libraries['msvcrt']._open_osfhandle
 _open_osfhandle.restype = c_int
 _open_osfhandle.argtypes = [intptr_t, c_int]
 ULONG_PTR = c_ulong
-class N11_OVERLAPPED4DOLLAR_81E(Union):
-    pass
-class N11_OVERLAPPED4DOLLAR_814DOLLAR_82E(Structure):
-    pass
-N11_OVERLAPPED4DOLLAR_814DOLLAR_82E._fields_ = [
-    ('Offset', DWORD),
-    ('OffsetHigh', DWORD),
-]
+
 PVOID = c_void_p
-N11_OVERLAPPED4DOLLAR_81E._anonymous_ = ['_0']
-N11_OVERLAPPED4DOLLAR_81E._fields_ = [
-    ('_0', N11_OVERLAPPED4DOLLAR_814DOLLAR_82E),
-    ('Pointer', PVOID),
-]
-_OVERLAPPED._anonymous_ = ['_0']
-_OVERLAPPED._fields_ = [
-    ('Internal', ULONG_PTR),
-    ('InternalHigh', ULONG_PTR),
-    ('_0', N11_OVERLAPPED4DOLLAR_81E),
-    ('hEvent', HANDLE),
-]
+
 _SECURITY_ATTRIBUTES._fields_ = [
     ('nLength', DWORD),
     ('lpSecurityDescriptor', LPVOID),
@@ -143,8 +133,7 @@ __all__ = ['GetLastError', '_BY_HANDLE_FILE_INFORMATION',
            'GetFileInformationByHandle', 'PLARGE_INTEGER',
            'N11_OVERLAPPED4DOLLAR_81E', 'intptr_t', 'LockFileEx',
            'GetFileSizeEx', 'SetFilePointer', 'ReadFile',
-           'WriteFileEx', '_OVERLAPPED', 'WriteFile', 'CloseHandle',
-           'UnlockFileEx', 'OVERLAPPED',
-           'N11_OVERLAPPED4DOLLAR_814DOLLAR_82E', 'CreateFileW',
+           'WriteFileEx', 'WriteFile', 'CloseHandle',
+           'UnlockFileEx', 'OVERLAPPED', 'CreateFileW',
            'LPDWORD', 'BY_HANDLE_FILE_INFORMATION', 'SetEndOfFile',
            'ReadFileEx', 'CreateFileA', 'PVOID', 'PLONG']
