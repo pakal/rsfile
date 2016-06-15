@@ -142,6 +142,12 @@ def test_original_io():
     test_io.PyTextIOWrapperTest.test_create_at_shutdown_with_encoding = dummyfunc
     test_io.PyTextIOWrapperTest.test_create_at_shutdown_without_encoding = dummyfunc
 
+    # WIP buggy case dues to broken stdlib tests and _pyio (see https://bugs.python.org/issue23796)
+    test_io.PyBufferedReaderTest.test_read_on_closed = dummyfunc
+    test_io.PyBufferedRandomTest.test_read_on_closed = dummyfunc
+
+
+
     test_fileio._FileIO = rsfile.io_module.FileIO
     test_fileio.AutoFileTests.testMethods = dummyfunc # messy C functions signatures...
     test_fileio.AutoFileTests.testErrors = dummyfunc # incoherent errors returned on bad fd, between C and Py implementations...
