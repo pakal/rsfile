@@ -5,9 +5,29 @@ RSFile welcomes contributions like Reporting Bugs and Pull Requests.
 
 
 TESTING
------------
+++++++++++
 
-To launch the test suite (which reuses some stdlib testcases, and adds specific ones), install the stdlib test suite if needed (eg. on Ubuntu, install packages like "libpython2.7-testsuite"). Note that these tests can't all be executed inside the same runner process, since they monkey-patch their python environment differently.
+To run the test suites of RSFile (which reuse some stdlib testcases, and add specific ones), against the compatible python interpreters installed on your system, you must install the stdlib test suite if needed (eg. on Ubuntu, install packages like "libpythonX.Y-testsuite", on Windows the stdlib test suite is usually included).
+
+Testing using TOX
+---------------------
+
+- install the latest versions of pip, virtualenv and tox
+- run tox from the folder containing setup.py (possibly with "-e pyXY" or "-e doc" to select a specific environement):
+
+$ tox
+
+This will install RSFile into a virtual environment, and launch the test suites.
+
+If tox fails when creating py35 environment on windows ("The program can't start because VCRUNTIME140.dll is missing from your computer."), you might need to use "virtualenv-rewrite" instead of "virtualenv", for details see https://github.com/pypa/virtualenv/issues/796
+
+
+Manually testing
+-----------------
+
+To manually launch the test suites against a specific "python" interpreter, use the commands below.
+
+Note that these tests can't all be executed inside the same runner process, since they monkey-patch their python environment differently. Also, double-check that the "rsfile" imported is well the one you meant, since the current working directory is automatically added to your python paths on launch.
 
     $ python -m  rsfile.rstest.test_rsfile_streams
     $ python -m  rsfile.rstest.test_rsfile_locking
@@ -15,19 +35,25 @@ To launch the test suite (which reuses some stdlib testcases, and adds specific 
 
 If you have installed python-tabulate (https://pypi.python.org/pypi/tabulate), the retrocompatibility test will display a table listing the different opening modes and their features.
 
-To launch the performance benchmark, tweak the flags in rsfile/rstest/run_iobench.py to your liking,
-maybe modify rsfileio_win32 to force a specific low-level backend (on windows), and then run:
+
+Benchmarking
++++++++++++++
+
+To launch performance benchmarks, tweak the flags in rsfile/rstest/run_iobench.py to your liking,
+maybe modify rsfileio_win32.py to force a specific low-level backend (if on Windows), and then run:
 
     $ python -m  rsfile.rstest.run_iobench
 
+Again, be aware of possible confusion between an installed and a "current dir" rsfile packages.
+
 
 BUILDING
------------
+++++++++++
 
 To build the rsfile package:
 
     $ python setup.py sdist --formats=gztar,zip
 
-No need for `bdist_msi` or the weaker `bdist_wininst`: there is no automated 2to3 conversion with them, and rsfile is pure-python anyway, so no binary distribution is needed.
+No need for `bdist_msi` or the weaker `bdist_wininst`: there is no automated 2to3 conversion when using them, and rsfile is pure-python anyway, so no binary distribution is needed.
 
 
