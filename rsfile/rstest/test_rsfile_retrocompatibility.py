@@ -64,6 +64,38 @@ FILE_MODES_CORRELATION = {
     "RWNE": None,
 }
 
+def _disown_file_descriptor(stream):
+    stream = getattr(stream, "wrapped_stream", stream)
+    stream = getattr(stream, "_buffer", stream)
+    stream = getattr(stream, "raw", stream)
+    assert stream._closefd in (True, False)
+    stream._closefd = False
+
+def reopener_via_fileno(name, mode):
+    """Ensures that possible emulation of fileno doesn't break the access mode of the stream."""
+    f = rsfile.rsopen(name, mode=mode, locking=False, thread_safe=False)
+    _disown_file_descriptor(f)
+    fileno = f.fileno()
+    assert fileno, fileno
+    new_f = rsfile.rsopen(mode=mode, fileno=fileno, closefd=True)
+    assert new_f.handle() == f.handle()
+    assert new_f.fileno() == fileno
+    return new_f
+
+def __BROKEN__reopener_via_handle(name, mode):
+    """Ensures that possible emulation of handle doesn't break the access mode of the stream."""
+    f = rsfile.rsopen(name, mode=mode, locking=False, thread_safe=False)
+    _disown_file_descriptor(f)
+    handle = f.handle()
+    assert handle, handle
+    new_f = rsfile.rsopen(mode=mode, handle=handle, closefd=True)
+    assert new_f.handle() == handle
+    if (defs.RSFILE_IMPLEMENTATION == "windows"):
+        assert f._fileno is None, f._fileno  # we take care of NOT exhausting these emulated resources here
+    else:
+        assert new_f.fileno() == f.fileno()
+    return new_f
+
 def complete_and_normalize_possible_modes(file_modes):
     """
     We add all possible file_modes, except for advanced flags "I" and "S".
@@ -152,7 +184,6 @@ class TestStreamsRetrocompatibility(unittest.TestCase):
         with opener(name, mode) as stream:  # MUST succeed
 
             try:
-
                 if must_create or truncate:
                     stream.write(payload)
                     stream.flush()
@@ -271,7 +302,7 @@ class TestStreamsRetrocompatibility(unittest.TestCase):
             real_abilities = self.determine_stream_capabilities(rsfile.rsopen, chosen_flags)
 
             msg = """
-                THEORETICAL : %s
+                THEORETICAL: %s
                 REAL:         %s""" % (theoretical_abilities, real_abilities)
             self.assertEqual(theoretical_abilities, real_abilities, msg)
 
@@ -281,10 +312,26 @@ class TestStreamsRetrocompatibility(unittest.TestCase):
                 legacy_abilities = self.determine_stream_capabilities(io.open, selected_stdlib_flags)
 
                 msg = """
-                    THEORETICAL : %s
-                    LEGACY:       %s""" % (theoretical_abilities, legacy_abilities)
+                    THEORETICAL: %s
+                    LEGACY:      %s""" % (theoretical_abilities, legacy_abilities)
                 self.assertEqual(theoretical_abilities, legacy_abilities, msg)
 
+
+            abilities_via_fileno = self.determine_stream_capabilities(reopener_via_fileno, chosen_flags)
+            msg = """
+                THEORETICAL:         %s
+                REOPENED_VIA_FILENO: %s""" % (theoretical_abilities, abilities_via_fileno)
+            self.assertEqual(theoretical_abilities, abilities_via_fileno, msg)
+
+            '''
+            # no need to test "handle" passing because handles are below-or-equal filenos in our current implementations,
+            # plus it leads to "too many open files" on windows because filenos can't be released without closing the handle too (and blcksize forces fileno creation..)
+            abilities_via_handle = self.determine_stream_capabilities(reopener_via_handle, chosen_flags)
+            msg = """
+                THEORETICAL :        %s
+                REOPENED_VIA_HANDLE: %s""" % (theoretical_abilities, abilities_via_handle)
+            self.assertEqual(theoretical_abilities, abilities_via_handle, msg)
+            '''
 
         assert idx > 1000, idx  # we've well browsed lots of combinations
 

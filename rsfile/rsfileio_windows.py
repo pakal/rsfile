@@ -64,7 +64,8 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
     @_win32_error_converter        
     def _inner_create_streams(self, path, read, write, append, must_create, must_not_create, synchronized, inheritable, fileno, handle, permissions):
 
-        
+        assert not (fileno and handle), (fileno and handle)
+
         # # # real opening of the file stream # # #
         if handle is not None:
             assert fileno is None
@@ -231,11 +232,13 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
     
     @_win32_error_converter    
     def _inner_fileno(self):
-    
        
         if self._fileno is None:
             #print "EXTRACTING FILENO !"
             #traceback.print_stack()
+
+            # NOTE: these flags seem to be actually IGNORED by libc compatibility 
+            # layer, but let's be cautious...
             if self._readable and self._writable:
                 flags = os.O_RDWR
             elif self._writable:
@@ -245,6 +248,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
             else:
                 assert self._readable
                 flags = os.O_RDONLY
+
             # NEVER use flag os.O_TEXT, we're in raw IO here !
             self._fileno = win32._open_osfhandle(self._handle, flags)
 
