@@ -607,7 +607,7 @@ class TestRSFileStreams(unittest.TestCase):
                 # on windows the file remains but in a weird state, awaiting deletion, so we can't reopen it...
                 self.assertRaises(IOError, rsfile.rsopen, TESTFNBIS, "w", buffering=0)
             else:
-                with rsfile.rsopen(TESTFN, "w", buffering=0):
+                with rsfile.rsopen(TESTFN, "wb", buffering=0):
                     pass
 
 
@@ -1028,13 +1028,13 @@ def test_main():
 
 
 if __name__ == '__main__':
-    ##test_main()
+    test_main()
 
     ##_cleanup()
     #test_original_io()
     #run_unittest(TestMiscStreams)
-    TestRSFileStreams("testConflictsBetweenLockingAndOperations").testConflictsBetweenLockingAndOperations()
-    print("OK DONE")
+    ##TestRSFileStreams("testConflictsBetweenLockingAndOperations").testConflictsBetweenLockingAndOperations()
+    #print("OK DONE")
 
 
 
