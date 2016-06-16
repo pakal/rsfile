@@ -51,7 +51,7 @@ def _cleanup():
 
 
 
-class TestRawFileViaWrapper(unittest.TestCase):
+class TestRSFileStreams(unittest.TestCase):
 
     def setUp(self):
         _cleanup()
@@ -68,7 +68,6 @@ class TestRawFileViaWrapper(unittest.TestCase):
         self.assertRaises(IOError, io.open, bad_fd, 'wb', buffering=0)
 
 
-
     def testRSFileIORepr(self):
         fd = os.open(TESTFN, os.O_WRONLY |os.O_CREAT)
         try:
@@ -83,7 +82,7 @@ class TestRawFileViaWrapper(unittest.TestCase):
                              """<rsfile.RSFileIO name="%s" mode="wb" origin="path" closefd=True>""" % TESTFN)
 
 
-    def test_garbage_collection(self):
+    def testRawFileGarbageCollection(self):
         # FileIO objects are collected, and collecting them flushes
         # all data to disk.
 
@@ -107,7 +106,7 @@ class TestRawFileViaWrapper(unittest.TestCase):
 
 
 
-    def testProperties(self):
+    def testRawFileLegacyProperties(self):
         with io.open(TESTFN, 'wb', buffering=0) as f:
 
             self.assertEqual(f.writable(), True)
@@ -144,7 +143,7 @@ class TestRawFileViaWrapper(unittest.TestCase):
         os.rmdir(DIRNAME)
 
 
-    def testSizeAndPos(self):
+    def testFileSizeAndPos(self):
         with io.open(TESTFN, 'wb', buffering=0) as f:
             nbytes = random.randint(0, 10000)
 
@@ -175,7 +174,7 @@ class TestRawFileViaWrapper(unittest.TestCase):
             self.assertEqual(string, b"x" * x_written + b"\0" * nbytes + b"y" * y_written)
 
 
-    def testTruncation(self):
+    def testFileTruncation(self):
         with io.open(TESTFN, 'wb', buffering=0) as f:
 
             nbytes = random.randint(0, 100)
@@ -208,7 +207,7 @@ class TestRawFileViaWrapper(unittest.TestCase):
 
             self.assertEqual(string, b"i" * i_written + b"\0" * (10 * nbytes - i_written))
 
-    def testAppending(self):
+    def testAppendMode(self):
 
         with io.open(TESTFN, 'ab', buffering=0) as f:
 
@@ -329,16 +328,7 @@ class TestRawFileViaWrapper(unittest.TestCase):
 
 
 
-class TestRawFileSpecialFeatures(unittest.TestCase):
-
-    def setUp(self):
-        _cleanup()
-
-    def tearDown(self):
-        _cleanup()
-
-
-    def testReadWriteTypes(self):
+    def testReadWriteDataTypes(self):
 
         array_type = b"b" if sys.version_info < (3,) else "b"
 
@@ -556,7 +546,7 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
 
 
 
-    def testCreationOptions(self):
+    def testRawFileCreationParams(self):
 
         kargs = dict(path=TESTFN,
                      read=True,
@@ -588,7 +578,7 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
 
 
 
-    def testCreationPermissions(self):
+    def testFileCreationPermissions(self):
 
         with rsfile.rsopen(TESTFN, "RWB-", buffering=0, locking=False, permissions=0o555) as f: # creating read-only file
 
@@ -600,7 +590,7 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
         # no need to test further, as other permissions are non-portable and simply forwarded to underlying system calls...
 
 
-    def testDeletions(self): # PAKAL - TODO - WARNING # tests both normal share-delete semantic, and delete-on-close flag
+    def testFileDeletions(self):
 
         TESTFNBIS = TESTFN + "X"
         if os.path.exists(TESTFNBIS):
@@ -611,7 +601,15 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
             os.rename(TESTFN, TESTFNBIS)
             os.remove(TESTFNBIS)
             self.assertRaises(IOError, rsfile.rsopen, TESTFN, "R+", buffering=0)
-            self.assertRaises(IOError, rsfile.rsopen, TESTFNBIS, "R+", buffering=0) # on windows the file remains but in a weird state, awaiting deletion, so we can't reopen it...
+            self.assertRaises(IOError, rsfile.rsopen, TESTFNBIS, "R+", buffering=0)
+
+            if (defs.RSFILE_IMPLEMENTATION == "windows"):
+                # on windows the file remains but in a weird state, awaiting deletion, so we can't reopen it...
+                self.assertRaises(IOError, rsfile.rsopen, TESTFNBIS, "w", buffering=0)
+            else:
+                with rsfile.rsopen(TESTFN, "w", buffering=0):
+                    pass
+
 
         """
         
@@ -660,7 +658,7 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
 
 
 
-    def testInheritance(self):
+    def testFileInheritance(self):
         # # """Checks that handles are well inherited iff this creation option is set to True"""
         kargs = dict(path=TESTFN,
                      read=False,
@@ -717,7 +715,7 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
                     self.assertEqual(retcode, EXPECTED_RETURN_CODE, "Spawned process returned %d instead of %d" % (retcode, EXPECTED_RETURN_CODE))
 
 
-    def testSynchronization(self):
+    def testFileSynchronization(self):
 
         # beware - randomization!
         buffering = random.choice([None, -1, 0, 100])
@@ -815,25 +813,13 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
 
 
 
-
-class TestMiscStreams(unittest.TestCase):
-
-    def setUp(self):
-        _cleanup()
-
-    def tearDown(self):
-        _cleanup()
-
-
-
-
-    def test_builtin_patching(self):
+    def testBuiltinsPatching(self):
 
         with open(TESTFN, "wb", buffering=0) as f:
             self.assertTrue(isinstance(f, rsfile.RSFileIO)) # no thread safe interface
 
 
-    def testIOErrorOnClose(self):
+    def testIOErrorOnFileClose(self):
 
         def assertCloseOK(stream):
             def ioerror():
@@ -851,7 +837,7 @@ class TestMiscStreams(unittest.TestCase):
         assertCloseOK(io.open(TESTFN, "RWT", buffering=100))
 
 
-    def testMethodForwarding(self):
+    def testFileMethodForwarding(self):
 
         def test_new_methods(myfile, raw, char):
 
@@ -947,7 +933,7 @@ class TestMiscStreams(unittest.TestCase):
             f.write("abc")
 
 
-    def testStreamUtilities(self):
+    def testFileUtilities(self):
 
         # TODO IMPROVE THIS WITH OTHER ARGUMENTS
 
@@ -987,7 +973,7 @@ def test_main():
         # Historically, these tests have been sloppy about removing TESTFN.
         # So get rid of it no matter what.
         try:
-            test_support.run_unittest(TestRawFileViaWrapper, TestRawFileSpecialFeatures, TestMiscStreams)
+            test_support.run_unittest(TestRSFileStreams)
         finally:
             if os.path.exists(TESTFN):
                 try:
