@@ -289,7 +289,8 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
 
 
 
-def parse_standard_args(name, mode, fileno, handle, closefd): # warning - name can be a fileno here ...
+def parse_standard_args(name, mode, fileno, handle, closefd):
+    # warning - name can also be a fileno here, for retrocompatibility...
 
     modes = set(mode)
     if not mode or modes - defs.STDLIB_OPEN_FLAGS or len(mode) > len(modes):

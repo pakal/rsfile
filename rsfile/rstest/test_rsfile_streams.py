@@ -117,7 +117,6 @@ class TestRSFileStreams(unittest.TestCase):
             self.assertEqual(f.origin, "path")
             self.assertEqual(f.mode, 'wb')
 
-            #self.assertEqual(f._zerofill, True)  #TODO put that back !??
             self.assertEqual(f._append, False)
 
             self.assertRaises(IOError, f.read, 10)

@@ -285,7 +285,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         return self._origin
 
     @property
-    def closefd(self): # WARNING - NOT REQUIRED BY IO SPECS !!!
+    def closefd(self):
         return self._closefd
 
 
