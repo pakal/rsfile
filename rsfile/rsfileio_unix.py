@@ -103,8 +103,6 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
             else:
                 flags |= unix.O_CREAT # by default - we create the file iff it doesn't exists
 
-            # TODO - TWEAK INHERITABILITY HERE WITH FLAGS ??? like O_CLOEXEC
-
             #print("Creating unix stream with context", locals())
             self._fileno = self._handle = unix.open(strname, flags, permissions)
 
@@ -113,13 +111,14 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
             if stat.S_ISDIR(stats):
                 raise IOError(errno.EISDIR, "RSFile can't open directories", self.name)
 
+            # we don't use O_CLOEXEC flag (available since Linux 2.6.23) for compatibility and safety
             if hasattr(os, "set_inheritable"):
-                os.set_inheritable(self._fileno, inheritable)
+                os.set_inheritable(self._fileno, inheritable)  # for safety we call it in any case
             else:
                 # before PEP0446, newly created file descriptors were inheritable by default
                 if not inheritable:
                     old_flags = unix.fcntl(self._fileno, unix.F_GETFD, 0);
-                    if not (old_flags & unix.FD_CLOEXEC): # we may use O_CLOEXEC instead (Since Linux 2.6.23)
+                    if not (old_flags & unix.FD_CLOEXEC):
                         unix.fcntl(self._fileno, unix.F_SETFD, old_flags | unix.FD_CLOEXEC);
 
         # WHATEVER the origin of the stream, we initialize these fields:
