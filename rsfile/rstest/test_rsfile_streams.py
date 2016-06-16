@@ -62,7 +62,7 @@ class TestRSFileStreams(unittest.TestCase):
 
 
 
-    def ___testInvalidFd(self): # Pakal todo - put it back when msvcrt fixed in py trunk !
+    def testInvalidFd(self):  # replaces that of the stdlib
         self.assertRaises(ValueError, io.open, -10, 'wb', buffering=0,)
         bad_fd = test_support.make_bad_fd()
         self.assertRaises(IOError, io.open, bad_fd, 'wb', buffering=0)
