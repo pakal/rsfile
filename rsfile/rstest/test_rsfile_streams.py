@@ -911,26 +911,31 @@ class TestRSFileStreams(unittest.TestCase):
 
     def testReturnedStreamTypes(self):
 
-        with rsfile.rsopen(TESTFN, "RWB", buffering=0, thread_safe=True) as f:
-            self.assertTrue(isinstance(f, rsfile.RSThreadSafeWrapper))
-            f.write(b"abc")
-        with rsfile.rsopen(TESTFN, "RWB", buffering=0, thread_safe=False) as f:
-            self.assertTrue(isinstance(f, io.RawIOBase))
-            f.write(b"abc")
+        for forced_mutex in [None, threading.RLock(), multiprocessing.RLock()]:
 
-        with rsfile.rsopen(TESTFN, "RWB") as f:
-            self.assertTrue(isinstance(f, rsfile.RSThreadSafeWrapper))  # by default, thread-safe
-            f.write(b"abc")
-        with rsfile.rsopen(TESTFN, "RWB", thread_safe=False) as f:
-            self.assertTrue(isinstance(f, io.BufferedIOBase))
-            f.write(b"abc")
+            with rsfile.rsopen(TESTFN, "RWB", buffering=0, mutex=forced_mutex) as f: # by default, thread-safe
+                self.assertTrue(isinstance(f, rsfile.RSThreadSafeWrapper))
+                self.assertEqual(f.mutex, forced_mutex if forced_mutex else f.mutex)
+                f.write(b"abc")
+            with rsfile.rsopen(TESTFN, "RWB", buffering=0, thread_safe=False) as f:
+                self.assertTrue(isinstance(f, io.RawIOBase))
+                f.write(b"abc")
 
-        with rsfile.rsopen(TESTFN, "RWT",) as f:
-            self.assertTrue(isinstance(f, rsfile.RSThreadSafeWrapper))
-            f.write("abc")
-        with rsfile.rsopen(TESTFN, "RWT", thread_safe=False) as f:
-            self.assertTrue(isinstance(f, io.TextIOBase))
-            f.write("abc")
+            with rsfile.rsopen(TESTFN, "RWB", mutex=forced_mutex) as f:
+                self.assertTrue(isinstance(f, rsfile.RSThreadSafeWrapper))
+                self.assertEqual(f.mutex, forced_mutex if forced_mutex else f.mutex)
+                f.write(b"abc")
+            with rsfile.rsopen(TESTFN, "RWB", thread_safe=False) as f:
+                self.assertTrue(isinstance(f, io.BufferedIOBase))
+                f.write(b"abc")
+
+            with rsfile.rsopen(TESTFN, "RWT", mutex=forced_mutex) as f:
+                self.assertTrue(isinstance(f, rsfile.RSThreadSafeWrapper))
+                self.assertEqual(f.mutex, forced_mutex if forced_mutex else f.mutex)
+                f.write("abc")
+            with rsfile.rsopen(TESTFN, "RWT", thread_safe=False) as f:
+                self.assertTrue(isinstance(f, io.TextIOBase))
+                f.write("abc")
 
 
     def testFileUtilities(self):
