@@ -234,13 +234,16 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
             line_buffering = True
         if buffering < 0:
             buffering = defs.DEFAULT_BUFFER_SIZE
-            try:
-                bs = os.fstat(raw.fileno()).st_blksize # TODO - TO BE IMPROVED, on windows it uselessly puts to work the libc compatibility layer !
-            except (os.error, AttributeError):
-                pass
-            else:
-                if bs > 1:
-                    buffering = bs
+            # do not trigger the libc compatibility layer on windows,
+            # since anyway it seems to have no st_blksize...
+            if raw._fileno:
+                try:
+                    bs = os.fstat(raw._fileno).st_blksize
+                except (os.error, AttributeError):
+                    pass
+                else:
+                    if bs > 1:
+                        buffering = bs
         if buffering < 0:
             raise defs.BadValueTypeError("invalid buffering size")
         if buffering == 0:

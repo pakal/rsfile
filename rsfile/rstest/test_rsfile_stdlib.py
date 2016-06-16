@@ -138,7 +138,6 @@ def test_original_io():
     test_io.PyBufferedRandomTest.test_read_on_closed = dummyfunc
 
 
-
     test_fileio._FileIO = rsfile.io_module.FileIO
     test_fileio.AutoFileTests.testMethods = dummyfunc # messy C functions signatures...
     test_fileio.AutoFileTests.testErrors = dummyfunc # incoherent errors returned on bad fd, between C and Py implementations...
