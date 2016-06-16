@@ -318,6 +318,12 @@ class TestRawFileViaWrapper(unittest.TestCase):
                 self.assertRaises(IOError, writer.unlock_file)
                 self.assertRaises(IOError, reader.unlock_file)
 
+            # these operations make no sense, alright
+            self.assertRaises(EnvironmentError, io.open, w, "w+")
+            self.assertRaises(EnvironmentError, io.open, w, "r+")
+            self.assertRaises(EnvironmentError, io.open, r, "w+")
+            self.assertRaises(EnvironmentError, io.open, r, "r+")
+
         os.unlink(named_fifo)
         #print ("FINISHED")
 
@@ -999,7 +1005,7 @@ if __name__ == '__main__':
     ##_cleanup()
     #test_original_io()
     #run_unittest(TestMiscStreams)
-    #TestRawFileSpecialFeatures("testReadWriteTypes").testReadWriteTypes()
+    #TestRawFileViaWrapper("testPipesBehaviour").testPipesBehaviour()
     #print("OK DONE")
     #TestRawFileViaWrapper("testPipesBehaviour").testPipesBehaviour()
 
