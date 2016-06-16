@@ -22,12 +22,16 @@ The strength of the locking depends on the underlying platform.
   to some mount options and file flags, but this practice is advised against.
 
 Native locks have very different semantics depending on the platform, but
-RSFile enforces a single semantic : **per-handle, non-reentrant locks**.
+RSFile enforces a single semantic : **per handle, bytes level, non-reentrant locks**.
 
 **per handle**: once a lock has been acquired via a native handle,
 this handle is the owner of the lock. No other handle, even in the current
 process, even if they have been duplicated or inherited from the owner handle,
 can lock/unlock bytes that are protected by the original lock.
+
+**bytes level**: the lock can concern the whole file, or only a range of bytes.
+It's not a problem to have locks beyond the current end of file, locking the "virtual
+bytes" that may be written in the future.
 
 **non-reentrant**: no merging/splitting of byte ranges can be performed with
 this method : the ranges targeted by unlock_file() calls must be exactly the same
