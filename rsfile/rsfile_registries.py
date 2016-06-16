@@ -81,8 +81,6 @@ class IntraProcessLockRegistryClass(object):
         self._lock_registry = {} 
         
         self.mutex = threading.RLock()
-    
-        #self.datacount = 0 # TODO REMOVE
         
         
 
@@ -267,13 +265,6 @@ class IntraProcessLockRegistryClass(object):
             
             self._ensure_entry_exists(unique_id, create=True)
             self._lock_registry[unique_id][2].append(data)
-            
-            #self.datacount += 1 # TO REMOVE
-            # Todo -> put debugging limits, configurable !
-            #print (">DATACOUNT : ", self.datacount)
-            #if self.datacount > 50: # TODO - make it configurable
-            #    raise RuntimeError("Lock Registry size exceeded")
-            
             
     
     def remove_unique_id_data(self, unique_id):

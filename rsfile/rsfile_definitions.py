@@ -50,7 +50,6 @@ class ViolationException(LockingException):
     pass # only raised for mandatory locking
 
 
-# TODO - use a namedtuple instead ??
 class FileTimes(object):
     def __init__(self, access_time, modification_time):
         self.access_time = access_time

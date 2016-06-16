@@ -46,7 +46,7 @@ def test_original_io():
     import _io
 
     from test import test_io, test_memoryio, test_file, test_bufio, test_fileio, test_largefile
-    from test.test_largefile import LargeFileTest # TODO REVIVE THIS ?? it excludes py26
+    from test.test_largefile import LargeFileTest # TODO REVIVE THIS ASAP now that py26 gone
 
     class dummyklass(unittest.TestCase):
         pass

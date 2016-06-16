@@ -102,6 +102,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
                 flags |= unix.O_CREAT | unix.O_EXCL
             else:
                 flags |= unix.O_CREAT # by default - we create the file iff it doesn't exists
+
             # TODO - TWEAK INHERITABILITY HERE WITH FLAGS ??? like O_CLOEXEC
 
             #print("Creating unix stream with context", locals())
@@ -271,7 +272,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         if length is None:
             length = 0 # that's the "infinity" value for fcntl
 
-        unix.lockf(fd, operation, length, abs_offset, os.SEEK_SET) #  might raise errno.EACCES, errno.EAGAIN and ... ? TODO
+        unix.lockf(fd, operation, length, abs_offset, os.SEEK_SET)
 
 
     @_unix_error_converter

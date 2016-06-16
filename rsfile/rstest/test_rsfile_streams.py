@@ -117,13 +117,12 @@ class TestRSFileStreams(unittest.TestCase):
             self.assertEqual(f.origin, "path")
             self.assertEqual(f.mode, 'wb')
 
-            #self.assertEqual(f._zerofill, True)
+            #self.assertEqual(f._zerofill, True)  #TODO put that back !??
             self.assertEqual(f._append, False)
 
             self.assertRaises(IOError, f.read, 10)
             self.assertRaises(IOError, f.readinto, sys.stdout)
 
-        #TODO - complete this !!!!!!!!!!!!!!! or NOT ??
 
 
     def testDirectoryOpening(self):
@@ -940,7 +939,7 @@ class TestRSFileStreams(unittest.TestCase):
 
     def testFileUtilities(self):
 
-        # TODO IMPROVE THIS WITH OTHER ARGUMENTS
+        # TODO IMPROVE THIS WITH OTHER ARGUMENTS AND COMBINATIONS
 
         self.assertRaises(ValueError, rsfile.write_to_file, TESTFN, b"abc", must_not_create=True, must_create=True)
         self.assertRaises(IOError, rsfile.append_to_file, TESTFN, b"abc", must_not_create=True)

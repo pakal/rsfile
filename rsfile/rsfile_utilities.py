@@ -90,8 +90,6 @@ def read_from_file(filename, binary=False, buffering=None, encoding=None, errors
     with rsopen(filename, mode=mode, buffering=buffering, encoding=encoding, errors=errors,
                 newline=newline, locking=locking, timeout=timeout, thread_safe=False) as myfile:
 
-        #print (">>>>>",myfile, mode) # PAKAL TODO REMOVE
-
         data_blocks = []
         while True:
             temp = myfile.read() # Warning - change rsiopen so that we never get a raw file here !!!

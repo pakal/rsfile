@@ -113,11 +113,11 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
             else:
                 flagsAndAttributes = win32.FILE_ATTRIBUTE_NORMAL   
             
-            
-            #### NO - TODO - PAKAL - use RSFS to delete it immediately !!!
-            """
+
+            """  # NOPE, rather a filesystem-level concern here
             if hidden:
-                flagsAndAttributes |= win32.FILE_FLAG_DELETE_ON_CLOSE""" # TO BE REMOVED
+                flagsAndAttributes |= win32.FILE_FLAG_DELETE_ON_CLOSE
+            """
                 
             if synchronized:
                 flagsAndAttributes |= win32.FILE_FLAG_WRITE_THROUGH 
@@ -344,8 +344,9 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
             self._inner_seek(0, defs.SEEK_END)
 
         cur_pos = self._inner_tell()
-        if cur_pos > self._inner_size(): # TODO - document this !!!
-            self._inner_extend(cur_pos, zero_fill=True) # we extend the file with zeros until current file pointer position
+        if cur_pos > self._inner_size():
+            # we extend the file with zeros until current file pointer position
+            self._inner_extend(cur_pos, zero_fill=True)
 
         (res, bytes_written) = win32.WriteFile(self._handle, buffer)
         # nothing to do with res, for files, it seems

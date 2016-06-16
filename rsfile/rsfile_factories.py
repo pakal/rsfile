@@ -171,8 +171,6 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
 
     """
 
-    # TODO - PYCONTRACT !!! check that no mutex if not thread-safe
-
     # Quick type checking
     if name and not isinstance(name, (basestring, int, long)):
         raise defs.BadValueTypeError("invalid file: %r" % name)
@@ -278,7 +276,7 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
             return result
 
         text = RSTextIOWrapper(buffer, encoding, errors, newline, line_buffering)
-        text.mode = mode # TODO - shouldn't we change that weird artefact of the stdlib ?
+        text.mode = mode  # this is weird, but so does the _pyio module of stdlib...
         result = text
 
         if thread_safe:

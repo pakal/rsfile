@@ -13,7 +13,7 @@ import rsfile
 
 from test import test_support
 
-import io  #FIXME - ensure to import original one
+import io  #python wrapper for C-backend extension
 rsfile.monkey_patch_io_module()
 
 RESULT_FILE = "@RESULTFILE"
@@ -215,7 +215,7 @@ class TestRSFileLocking(unittest.TestCase):
             # IntraProcessLockRegistry was well cleaned up when treating this TypeError:
             f.lock_file(shared=True, timeout=0, length=1, offset=355, whence=os.SEEK_SET)
 
-            # Todo - test locking with duplicate handles
+            # Todo - test locking with duplicate handles, dup() or others ??
             """                     
                 if sys.platform == 'win32':
                     self.fail("Exclusively locking the same disk file twice from different open file objects didn't fail on win32")
