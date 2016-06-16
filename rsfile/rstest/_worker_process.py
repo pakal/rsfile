@@ -73,7 +73,7 @@ def writer_without_file_locking(rsfile_stream, multiprocessing_lock, character, 
         time.sleep(0.1)
 
         with rsfile_stream.mutex:  # ATOMIC thanks to interprocess lock
-            for i in range(chunk_length / divisor):
+            for i in range(chunk_length // divisor):
                 rsfile_stream.write(character * divisor)
 
 

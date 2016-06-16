@@ -315,7 +315,7 @@ def parse_standard_args(name, mode, fileno, handle, closefd): # warning - name c
         raise defs.BadValueTypeError("must have exactly one of create/read/write/append mode flags")
 
     # real semantic
-    if name is None or isinstance(name, basestring):
+    if name is None or isinstance(name, (bytes, unicode)):
         path = name  # OK valid
     elif isinstance(name, (int, long)):
         if fileno is not None:
