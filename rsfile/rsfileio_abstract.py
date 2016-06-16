@@ -533,7 +533,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
                 shared = True
 
         if (shared and not self._readable) or (not shared and not self._writable):
-            raise IOError("Can't obtain exclusive lock on non-writable stream, or share lock on non-writable stream.")
+            raise IOError("Can't obtain exclusive lock on non-writable stream, or shared lock on non-readable stream.")
 
         abs_offset = self._convert_relative_offset_to_absolute(offset, whence)
         blocking = timeout is None # here, it means "forever waiting for the lock"
