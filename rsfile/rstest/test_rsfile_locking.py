@@ -41,7 +41,7 @@ class ThreadWithExitCode(threading.Thread):
 
 
 
-class TestSafeFile(unittest.TestCase):
+class TestRSFileLocking(unittest.TestCase):
 
     SUBPROCESS_COUNT = 10
 
@@ -491,7 +491,7 @@ def test_main():
 
     def _launch_test_on_single_backend():
         try:
-            test_support.run_unittest(TestSafeFile)
+            test_support.run_unittest(TestRSFileLocking)
         except Exception as e: # some kind of SystemExit exception gets raised by unittest.main()
             raise
             #logger("CAUGHT EXCEPTION ", repr(e))
@@ -501,7 +501,7 @@ def test_main():
     print("** RSFILE_LOCKING Test Suite has been run on backends %s **" % backends)  # ALWAYS displayed
 
 if __name__ == '__main__':
-    #TestSafeFile("test_intra_process_locking").test_intra_process_locking()
+    #TestRSFileLocking("test_semaphores_on_fork").test_semaphores_on_fork()
     #logger("over")
     test_main()
 
