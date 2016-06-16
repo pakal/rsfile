@@ -1,9 +1,11 @@
 #-*- coding: utf-8 -*-
 from __future__ import unicode_literals, print_function
 
-import sys, multiprocessing, threading, functools, collections
+import sys, os
+import multiprocessing, threading, functools, collections
 
 from . import rsfile_definitions as defs
+
 
 if defs.RSFILE_IMPLEMENTATION == "windows":  # even on 64bits windows OS
     try:
@@ -22,8 +24,7 @@ else:
 class _buffer_forwarder_mixin(object):
 
     def _reset_buffers(self):
-        self.seek(self.tell())
-        # # # # self.seek(0, os.SEEK_CUR) # we flush i/o buffers !  # Warning - does not work in Py2.6, buffered seek is buggy there ! # TODO - still true ?
+        self.seek(0, os.SEEK_CUR)  # we flush i/o buffers, didn't work on py26
 
     def unique_id(self):
         return self.raw.unique_id()
@@ -77,10 +78,7 @@ class _buffer_forwarder_mixin(object):
 class _text_forwarder_mixin(object):
 
     def _reset_buffers(self):
-        # WARNING - this reset does NOT work with C io module, where seek() doesn't always reset buffers !!
-        # TODO - would flush() do it ??
-        self.seek(self.tell()) # Pakal - todo - change when io module fixed !!!
-        # # # # self.seek(0, os.SEEK_CUR) # we flush i/o buffers !
+        self.seek(0, os.SEEK_CUR)  # we flush i/o buffers, didn't work on py26
 
     def unique_id(self):
         return self.buffer.unique_id()
