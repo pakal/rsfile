@@ -94,6 +94,13 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
 
     Any combination of "R", "W", and "A" is possible, even though "W" is useless is "A" is set.
 
+    "Append mode" is emulated by using seek() on windows (since FILE_APPEND_DATA flag would prevent any truncation
+    of file) ; so file locking and thread-safe interface are necessary to ensure each single write is really
+    done at the end of file. On unix-like systems, rsfile relies on a properly working O_APPEND flag ; note that
+    locking and thread-safe interface might still be necessary, since multiple raw write() calls (which might
+    happen during a single flush()) might end up writing disjoint bytes chunks on disk file, in case of concurrent
+    access.
+
     By default, RSFile opening follows the "O_CREATE alone" semantic : files are created if not existing, else they're simply opened. "C" and "N" flags,  mutually exclusive, alter this behaviour. The old corresponding "-" and "+" flags, ambiguous, are deprecated but still supported.
 
     - with "C" (exclusive creation): file opening fails if the file already exists.
