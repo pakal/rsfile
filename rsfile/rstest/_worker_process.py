@@ -12,7 +12,7 @@ def logger(*args):
         print(" ".join(str(a) for a in args) + os.linesep, end="")
 
 _streams_already_initialized = False
-def _init_streams(multiprocessing_lock):
+def _init_output_streams(multiprocessing_lock):
     """Sets a locking system (preferably, with a multiprocessing lock) 
     on standard output streams so that outputs don't get mixed 
     on the console together.
@@ -54,8 +54,31 @@ def _init_streams(multiprocessing_lock):
     
     _streams_already_initialized = True
 
+
+
+def writer_without_file_locking(rsfile_stream, multiprocessing_lock, character, chunk_length):
+    _init_output_streams(multiprocessing_lock)
+
+    divisor = 1000
+    assert chunk_length % divisor == 0  # let's make it simple
+
+    logger("Process %s created with args " % (multiprocessing.current_process().name), locals())
+
+    for i in range(10):
+
+        logger("Process %s writing chunk of characters %s" % (multiprocessing.current_process().name, character))
+        data_chunk = character * chunk_length
+        rsfile_stream.write(data_chunk)  # ATOMIC on unix systems thanks to fork and interprocess lock
+
+        time.sleep(0.1)
+
+        with rsfile_stream.mutex:  # ATOMIC thanks to interprocess lock
+            for i in range(chunk_length / divisor):
+                rsfile_stream.write(character * divisor)
+
+
 def chunk_writer_reader(targetFileName, multiprocessing_lock, character, ioOffset=0, payLoad=10000, mustAlwaysSucceedLocking=False, lockingKwargs={}):
-    _init_streams(multiprocessing_lock)
+    _init_output_streams(multiprocessing_lock)
     
     logger("Process %s created with args "%(multiprocessing.current_process().name), locals())
 
@@ -116,7 +139,7 @@ def chunk_writer_reader(targetFileName, multiprocessing_lock, character, ioOffse
                 
                 
 def chunk_reader(targetFileName, multiprocessing_lock, character=None, ioOffset=0, payLoad=10000, mustAlwaysSucceedLocking=False, lockingKwargs={}):
-    _init_streams(multiprocessing_lock)
+    _init_output_streams(multiprocessing_lock)
     
     for i in range(random.randint(5,15)):
         
@@ -159,7 +182,7 @@ def lock_tester(resultQueue, targetFileName, multiprocessing_lock, multiprocess,
         """Tries to lock the file with the given locking parameters, and returns whether it succeeded or not,
         and the time it took.
         """
-        _init_streams(multiprocessing_lock)
+        _init_output_streams(multiprocessing_lock)
         
         with io.open(targetFileName,"r+b", buffering=0)  as targetFile:
             

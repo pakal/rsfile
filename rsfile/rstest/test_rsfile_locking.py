@@ -484,6 +484,44 @@ class TestRSFileLocking(unittest.TestCase):
         self._test_whence_and_timeout(ThreadWithExitCode, self.multithreading_lock, Queue.Queue, multiprocess=False)
 
 
+    @unittest.skipIf(os.name == 'nt', "test only works on a POSIX-like system")
+    def test_ipc_semaphore_locking_on_fork(self):
+
+        if not hasattr(self, "dummyFileName"):
+            self.setUp()  # standalone testcase launch...
+
+        lock = self.multiprocessing_lock
+        chunk_length = 10000
+
+        logger("Writing test_ipc_semaphore_locking_on_fork to ", self.dummyFileName)
+
+        # will be SHARED by forking, so must be INHERITABLE
+        rsfile_stream = io.open(self.dummyFileName, "WEBI", thread_safe=True, locking=False)
+
+        for i in range(self.SUBPROCESS_COUNT):
+
+            target = _worker_process.writer_without_file_locking
+            character = get_character()
+
+            kwargs = {'rsfile_stream': rsfile_stream, 'character': character, 'multiprocessing_lock': lock, 'chunk_length': chunk_length}
+
+            process = multiprocessing.Process(name="%s %d" % (target.__name__, i), target=target, kwargs=kwargs)
+
+            self.processList.append(process)
+
+        self._start_and_check_subprocesses()
+
+        with io.open(self.dummyFileName, "r") as f:
+            while True:
+                data = f.read(chunk_length)
+                if not data:
+                    break
+                assert len(data) == chunk_length, len(data)
+                data_set = set(data)
+                assert len(data_set) == 1, data_set  # only a single character per chunk
+                #print ("Character seen", data[0])
+
+        os.remove(self.dummyFileName)
 
 
 
@@ -501,9 +539,9 @@ def test_main():
     print("** RSFILE_LOCKING Test Suite has been run on backends %s **" % backends)  # ALWAYS displayed
 
 if __name__ == '__main__':
-    #TestRSFileLocking("test_semaphores_on_fork").test_semaphores_on_fork()
+    TestRSFileLocking("test_ipc_semaphore_locking_on_fork").test_ipc_semaphore_locking_on_fork()
     #logger("over")
-    test_main()
+    #test_main()
 
 
 
