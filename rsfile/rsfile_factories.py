@@ -184,7 +184,6 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
 
     cleaned_mode = mode.replace("U", "")
     if cleaned_mode.lower() == cleaned_mode:
-        assert handle is None and fileno is None # to handle these, use advanced open mode
         (raw_kwargs, extended_kwargs) = parse_standard_args(name, mode, fileno, handle, closefd)
     elif cleaned_mode.upper() == cleaned_mode:
         (raw_kwargs, extended_kwargs) = parse_advanced_args(name, mode, fileno, handle, closefd)
@@ -311,7 +310,7 @@ def parse_standard_args(name, mode, fileno, handle, closefd): # warning - name c
         fileno = name
         path = None
     else:
-        fileno = None
+        assert name is None or isinstance(name, basestring), name
         path = name
 
     read = reading_flag or updating_flag
