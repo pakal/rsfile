@@ -600,12 +600,12 @@ class TestRawFileSpecialFeatures(unittest.TestCase):
         if os.path.exists(TESTFNBIS):
             os.remove(TESTFNBIS)
 
-        with rsfile.rsopen(TESTFN, "RB", buffering=0) as h:
+        with rsfile.rsopen(TESTFN, "RB", buffering=0, locking=True) as h:
             self.assertTrue(os.path.exists(TESTFN))
             os.rename(TESTFN, TESTFNBIS)
             os.remove(TESTFNBIS)
             self.assertRaises(IOError, rsfile.rsopen, TESTFN, "R+", buffering=0)
-            self.assertRaises(IOError, rsfile.rsopen, TESTFNBIS, "R+", buffering=0) # on windows the file remains but in a weird state, awaiting deletion...
+            self.assertRaises(IOError, rsfile.rsopen, TESTFNBIS, "R+", buffering=0) # on windows the file remains but in a weird state, awaiting deletion, so we can't reopen it...
 
         """
         

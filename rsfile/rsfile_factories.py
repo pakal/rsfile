@@ -124,8 +124,13 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
 
         The "share-delete" semantic has been on enforced on windows as on unix, which means
         that files opened with this library can still be moved/deleted in the filesystem while
-        they're open. However, on windows it may result in "stale files", which are not really
-        deleted until the last handle to them is closed.
+        they're open.
+
+        However, on windows, deleting an open file may make it "stale": deletion
+        returns a success status, but the filesystem enry is not really remove until the last
+        handle to it is closed ; in the meantime, trying to reopen this file path will fail
+        with a "busy" error. That's why "rename then remove" is a safier workflow when heavily
+        interacting with the same file path.
 
     .. rubric::
         MODES COMPATIBILITY TABLE
