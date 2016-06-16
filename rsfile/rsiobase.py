@@ -206,7 +206,8 @@ class RSIOBase(object):
           If ``shared`` is True, the lock is a "reader", non-exclusive lock, which can be
           shared by several "reader" streams, but prevents "writer" locks from being taken
           on the locked portion.
-          The owner of the lock shall himself not attempt to write to the locked area.
+          The owner of the lock shall himself not attempt to write to the locked area if it's *shared*,
+          even if file open mode allows it: it'll fail if locking is mandatory, eg. on windows.
           
           If ``shared`` is False, the lock is a "writer", exclusive lock, preventing both writer 
           and reader locks from being taken by other processes on the locked portion.

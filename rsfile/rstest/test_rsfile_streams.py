@@ -968,6 +968,48 @@ class TestRSFileStreams(unittest.TestCase):
         assert resplus1 != resminus1, (resplus1, resminus1)
 
 
+    def testConflictsBetweenLockingAndOperations(self):
+
+        f = rsfile.rsopen(TESTFN, "RWE", thread_safe=False, locking=False)
+
+        f.lock_file(shared=False)
+        f.write("héllo")
+        f.flush()
+        f.seek(0)
+        data = f.read()
+        self.assertEqual(data, "héllo")
+        f.unlock_file()
+
+        f.lock_file(shared=True)
+        self.assertEqual(f.read(), "")
+        if (defs.RSFILE_IMPLEMENTATION == "windows"):
+            f.write("bye")
+            self.assertRaises(IOError, f.flush)
+            # data in buffers blocks implicit flush...
+            self.assertRaises(IOError, f.unlock_file)  
+            assert f._buffer._write_buf, f._buffer._write_buf
+            del f._buffer._write_buf[:]  # else error on closing flush()
+            f.flush()
+        else:
+            f.write("bye")
+            f.flush()
+        f.unlock_file()
+
+        # no problem if we write OUTSIDE of the locked area though
+        f.lock_file(length=1, offset=100, shared=True)
+        f.seek(0)
+        f.truncate()
+        f.write("twist")
+        f.flush()
+        f.seek(0)
+        data = f.read()
+        self.assertEqual(data, "twist")
+        f.unlock_file(length=1, offset=100)
+
+        f.close()
+
+
+
 def test_main():
     def _launch_test_on_single_backend():
         # Historically, these tests have been sloppy about removing TESTFN.
@@ -986,14 +1028,13 @@ def test_main():
 
 
 if __name__ == '__main__':
-    test_main()
+    ##test_main()
 
     ##_cleanup()
     #test_original_io()
     #run_unittest(TestMiscStreams)
-    #TestRawFileViaWrapper("testPipesBehaviour").testPipesBehaviour()
-    #print("OK DONE")
-    #TestRawFileViaWrapper("testPipesBehaviour").testPipesBehaviour()
+    TestRSFileStreams("testConflictsBetweenLockingAndOperations").testConflictsBetweenLockingAndOperations()
+    print("OK DONE")
 
 
 
