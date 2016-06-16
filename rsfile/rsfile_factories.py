@@ -46,7 +46,13 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
 
     If ``thread_safe`` is True, the chain of streams returned by the function will be wrapped into 
     a thread-safe interface ; in this case, if ``mutex`` is provided, it is used as the concurrency lock, 
-    else a new lock is created (a multiprocessing RLock() if the stream is inheritable, else a threading RLock().
+    else a new lock is created (a multiprocessing RLock() if the stream is inheritable and OS supports fork(),
+    else a threading RLock().
+    If a multiprocessing lock is in place, multiprocessing done via forking (without exec) allows all processes to
+    issue atomic calls (read(), write()...) on the stream they have inherited, and to protect themselves by a
+    "with myfile.mutex", if they must do several operations in an atomic way. For now streams are not pickleable,
+    so on windows (or after a fork+exec), each child process must open its own rsfile stream, and possibly provide it
+    a shared interprocess ``mutex`` transferred separately.
     Note that, for performance reasons, there are currently no checks done to prevent reentrant calls from occurring on
     file object methods (eg. calls issued by OS signal handler). So reentrant calls may cause deadlocks if the file
     is buffered or thread-safe-wrapped (the original C-backed io module, on the other hand, has protections:
