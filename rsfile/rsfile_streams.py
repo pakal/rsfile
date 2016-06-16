@@ -160,7 +160,7 @@ class RSThreadSafeWrapper(object):
     A quick wrapper, to ensure thread safety !
     
     If a threading or multiprocessing mutex is provided, it will be used for locking,
-    else a multiprocessing or multithreading (depending on *interprocess* boolean value) will be created.
+    else a multiprocessing or multithreading (depending on *is_interprocess* boolean value) will be created.
     """
 
     def __init__(self, wrapped_stream, mutex=None, is_interprocess=False):

@@ -190,6 +190,10 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
     else:
         raise defs.BadValueTypeError("bad mode string %r : it must contain only lower case (standard mode) or upper case (advanced mode) characters" % mode)
 
+    # don't use interprocess facilities if fork() isn't supported, because file objects aren't pickleable for now...
+    is_interprocess = raw_kwargs["inheritable"] and hasattr(os, "fork")
+    thread_safe_interface = functools.partial(RSThreadSafeWrapper, mutex=mutex, is_interprocess=is_interprocess)
+
     if opener:
         if raw_kwargs["fileno"]:
             raise defs.BadValueTypeError("can't provide both fileno and opener")
@@ -249,7 +253,7 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
         if buffering == 0:
             if extended_kwargs["binary"]:
                 if thread_safe:
-                    result = RSThreadSafeWrapper(raw, mutex=mutex, is_interprocess=raw_kwargs["inheritable"])
+                    result = thread_safe_interface(raw)
                 return result
             raise defs.BadValueTypeError("can't have unbuffered text I/O")
 
@@ -264,7 +268,7 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
         result = buffer
         if extended_kwargs["binary"]:
             if thread_safe:
-                result = RSThreadSafeWrapper(buffer, mutex=mutex, is_interprocess=raw_kwargs["inheritable"])
+                result = thread_safe_interface(buffer)
             return result
 
         text = RSTextIOWrapper(buffer, encoding, errors, newline, line_buffering)
@@ -272,7 +276,7 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
         result = text
 
         if thread_safe:
-            result = RSThreadSafeWrapper(text, mutex=mutex, is_interprocess=raw_kwargs["inheritable"])
+            result = thread_safe_interface(text)
         return result
     except:
         result.close()
