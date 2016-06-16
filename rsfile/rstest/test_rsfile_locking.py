@@ -249,7 +249,7 @@ class TestRSFileLocking(unittest.TestCase):
 
         for i in range(self.SUBPROCESS_COUNT):
 
-            if (True): #PAKAL -TODO -REPLACE THIS !!!  #random.randint(0,1)%2 == 0):
+            if random.randint(0,1):
                 target = _worker_process.chunk_writer_reader
                 character = get_character()
             else:
@@ -539,9 +539,9 @@ def test_main():
     print("** RSFILE_LOCKING Test Suite has been run on backends %s **" % backends)  # ALWAYS displayed
 
 if __name__ == '__main__':
-    TestRSFileLocking("test_ipc_semaphore_locking_on_fork").test_ipc_semaphore_locking_on_fork()
+    #TestRSFileLocking("test_ipc_semaphore_locking_on_fork").test_ipc_semaphore_locking_on_fork()
     #logger("over")
-    #test_main()
+    test_main()
 
 
 
