@@ -46,7 +46,7 @@ def test_original_io():
     import _io
 
     from test import test_io, test_memoryio, test_file, test_bufio, test_fileio, test_largefile
-    from test.test_largefile import LargeFileTest # TODO REVIVE THIS ASAP now that py26 gone
+    from test import test_largefile
 
     class dummyklass(unittest.TestCase):
         pass
@@ -179,7 +179,13 @@ def test_original_io():
 
     all_test_suites = []
 
-    for stdlib_test_module in (test_io, test_file, test_fileio, test_bufio, test_memoryio):
+    test_modules = [test_io, test_file, test_fileio, test_bufio, test_memoryio]
+
+    if False:
+        # BEWARE - heavy test, activate it it wisely
+        test_modules.insert(0, test_largefile)
+
+    for stdlib_test_module in test_modules:
 
         if hasattr(stdlib_test_module, "test_main"):
             stdlib_test_module.test_main()  # OLD STYLE
