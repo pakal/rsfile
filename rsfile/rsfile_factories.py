@@ -315,14 +315,15 @@ def parse_standard_args(name, mode, fileno, handle, closefd): # warning - name c
         raise defs.BadValueTypeError("must have exactly one of create/read/write/append mode flags")
 
     # real semantic
-    if isinstance(name, (int, long)):
+    if name is None or isinstance(name, basestring):
+        path = name  # OK valid
+    elif isinstance(name, (int, long)):
         if fileno is not None:
             raise defs.BadValueTypeError("Impossible to provide a file descriptor via both name and fileno arguments")
         fileno = name
         path = None
     else:
-        assert name is None or isinstance(name, basestring), name
-        path = name
+        raise defs.BadValueTypeError("Incorrect file name provided: %r" % name)
 
     read = reading_flag or updating_flag
     write = creating_flag or writing_flag or appending_flag or updating_flag
