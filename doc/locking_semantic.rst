@@ -4,6 +4,10 @@
 Semantic of RSFile Locking
 ==============================
 
+Cross-platform Behaviour
++++++++++++++++++++++++++
+
+
 RSFile relies on `windows LockFile()` and `unix fcntl()` locks, as well as miscellaneous intraprocess
 threading locks and registries, to achieve *shared/exclusive bytes range locking*, *locking
 on remote filesystems* (CIFS from Windows client, NFS from Unixclient ), and to *prevent
