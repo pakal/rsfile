@@ -5,7 +5,6 @@ ___*
 *.pyo
 
 .tox
-MYTODO.txt
 _build/
 build/*
 dist/*
