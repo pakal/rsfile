@@ -58,6 +58,50 @@ class TestRSFileStreams(unittest.TestCase):
     def tearDown(self):
         _cleanup()
 
+    def testSeekBehaviour(self):
+        with io.open(TESTFN, "w+b") as f:
+            self.assertEqual(f.tell(), 0)
+            self.assertEqual(f.size(), 0)
+
+            f.write(b"abc")
+
+            self.assertEqual(f.tell(), 3)
+            self.assertEqual(f.size(), 3)
+
+            f.seek(0)
+
+            self.assertEqual(f.tell(), 0)
+            self.assertEqual(f.size(), 3)
+
+            self.assertRaises(EnvironmentError, f.seek, -1)
+
+            self.assertEqual(f.tell(), 0)
+            self.assertEqual(f.size(), 3)
+
+            f.seek(1, whence=os.SEEK_CUR)
+
+            self.assertEqual(f.tell(), 1)
+            self.assertEqual(f.size(), 3)
+
+            f.seek(-1, whence=os.SEEK_END)
+
+            self.assertEqual(f.tell(), 2)
+            self.assertEqual(f.size(), 3)
+
+            f.seek(10)
+
+            self.assertEqual(f.tell(), 10)
+            self.assertEqual(f.size(), 3)
+
+            f.write(b"d")
+
+            self.assertEqual(f.tell(), 11)  # auto-extends file!!
+            self.assertEqual(f.size(), 11)
+
+            f.seek(0)
+            data = f.read()
+            self.assertEqual(data, b"abc\x00\x00\x00\x00\x00\x00\x00d")
+
     def testInvalidFd(self):  # replaces that of the stdlib
         self.assertRaises(ValueError, io.open, -10, 'wb', buffering=0, )
         bad_fd = test_support.make_bad_fd()

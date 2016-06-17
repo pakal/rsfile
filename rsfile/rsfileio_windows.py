@@ -290,12 +290,10 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
     @_win32_error_converter
     def _inner_seek(self, offset, whence=defs.SEEK_SET):
         """
-        NOTE : in both linux and windows :
         It is not an error to set a file pointer to a position beyond the end of the file. The size of the file does 
         not increase until you call the  SetEndOfFile,  WriteFile, or  WriteFileEx function. A write operation
-        increases
-        the size of the file to the file pointer position plus the size of the buffer written, which results in the 
-        intervening bytes uninitialized.
+        increases the size of the file to the file pointer position plus the size of the buffer written, which results
+        in the intervening bytes uninitialized.
         """
 
         if not isinstance(offset, (int, long)):

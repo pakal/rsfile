@@ -218,6 +218,9 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
 
     @_unix_error_converter
     def _inner_seek(self, offset, whence):
+        """
+        It's OK to seek past the end of file, writing there will extend the file and fill the hole with null bytes.
+        """
         return unix.lseek(self._fileno, offset, whence)
 
     @_unix_error_converter
