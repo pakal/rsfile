@@ -46,7 +46,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'RsFile'
+project = u'RSFile'
 copyright = u'2010-2016, Pascal Chambon'
 
 # The version info for the project you're documenting, acts as replacement for
