@@ -192,13 +192,14 @@ The inheritability of system semaphores allows an interesting optimization: when
 as *inheritable* and wrapped with a thread-safe interface, RSFile used an interprocess semaphore for the latter, 
 instead of a standard threading lock.
 
-Thus, if this instance gets inherited as a whole (eg. via multiprocessing module), parent and child processes will
-share a handle to the same open file object **and** a handle to the same semaphore, allowing for a quite easy 
-synchronisation between their respective access. 
+Thus, if this rsfile instance gets inherited as a whole (eg. via multiprocessing module on a fork-supporting
+system), parent and child processes will share a handle to the same open file object **and** a link
+to the same semaphore, allowing for a quite easy synchronisation between their respective accesses.
 
-This synchronization is particularly interesting in this case of parent-child stream sharing, since the file 
-pointer (contained in the unique open file object) is common to all related processes. So without synchronization, not
-only may related process corrupt each other's writes, but they also may read/write/truncate files at the wrong offset.
+This synchronization is particularly interesting in this case of parent-child stream sharing, since the file pointer
+(contained in the unique open file object) is common to all related processes. So without synchronization, not only
+may related process corrupt each other's writes, but they also may read/write/truncate files at the wrong offset.
+
 
 
 Inter-unrelated-processes locking
