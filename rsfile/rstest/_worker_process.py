@@ -55,6 +55,21 @@ def _init_output_streams(multiprocessing_lock):
     _streams_already_initialized = True
 
 
+def locking_inheritance_tester(rsfile_stream, multiprocessing_lock, offset=100):
+
+    # we expect parent process to have locked the first "offset" bytes
+
+    rsfile_stream.lock_file(length=100, offset=offset, timeout=0)
+    rsfile_stream.unlock_file(length=100, offset=offset)
+
+    try:
+        rsfile_stream.lock_file(length=100, offset=0, timeout=0)
+    except EnvironmentError:
+        pass  # should raise something like "[Errno 11] Resource temporarily unavailable" on linux
+    else:
+        raise RuntimeError("Child abnormally able to lock beginning of rsfile_stream.")
+
+
 
 def writer_without_file_locking(rsfile_stream, multiprocessing_lock, character, chunk_length):
     _init_output_streams(multiprocessing_lock)
@@ -230,7 +245,7 @@ def lock_tester(resultQueue, targetFileName, multiprocessing_lock, multiprocess,
         
             
             
-def inheritance_tester(read, write, append, fileno=None, handle=None):
+def fd_inheritance_tester(read, write, append, fileno=None, handle=None):
         assert not (fileno and handle)
         #logger>>sys.stderr, "Launching Worker Process inheritance_tester with fileno=%s and handle=%s !" % (fileno, handle)
         #sys.exit(99)        

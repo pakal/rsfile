@@ -665,7 +665,7 @@ class TestRSFileStreams(unittest.TestCase):
                      write=True, append=True,
                      inheritable=True)
 
-        target = _worker_process.inheritance_tester
+        target = _worker_process.fd_inheritance_tester
 
         bools = [True, False]
         permutations = [(a, b, c) for a in bools for b in bools for c in bools if (a or b or c)]
@@ -694,7 +694,7 @@ class TestRSFileStreams(unittest.TestCase):
 
 
                     executable = sys.executable
-                    pre_args = ("python", "-m", "rsfile.rstest._inheritance_tester") #.os.path.join(os.path.dirname(__file__), "_inheritance_tester.py"))
+                    pre_args = ("python", "-m", "rsfile.rstest._fd_inheritance_tester") #.os.path.join(os.path.dirname(__file__), "_inheritance_tester.py"))
                     args = (str(read), str(write), str(append), str(kwargs.get("fileno", "-")), str(kwargs.get("handle", "-")))
 
                     myfile.seek(0, os.SEEK_END) # to fulfill the expectations of the worker process

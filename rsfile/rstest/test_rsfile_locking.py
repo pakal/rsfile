@@ -503,6 +503,34 @@ class TestRSFileLocking(unittest.TestCase):
         os.remove(TESTFN)
 
 
+    @unittest.skipIf(os.name == 'nt', "test only works on a POSIX-like system")
+    def locking_inheritance_tester(self):
+
+        if not hasattr(self, "dummyFileName"):
+            self.setUp()  # standalone testcase launch...
+
+        lock = self.multiprocessing_lock
+        chunk_length = 10000
+
+        logger("Launching locking_inheritance_tester on ", self.dummyFileName)
+
+        # will be SHARED by forking, so must be INHERITABLE
+        rsfile_stream = io.open(self.dummyFileName, "WEB", thread_safe=False, locking=False)
+        rsfile_stream.lock_file(length=100, offset=0)  # lock a chunk
+
+        for i in range(1): #self.SUBPROCESS_COUNT):
+            target = _worker_process.locking_inheritance_tester
+            character = get_character()
+
+            kwargs = {'rsfile_stream': rsfile_stream, 'multiprocessing_lock': lock, 'offset': 100}
+
+            process = multiprocessing.Process(name="%s %d" % (target.__name__, i), target=target, kwargs=kwargs)
+
+            self.processList.append(process)
+
+        self._start_and_check_subprocesses()
+
+
 
     @unittest.skipIf(os.name == 'nt', "test only works on a POSIX-like system")
     def test_ipc_semaphore_locking_on_fork(self):
@@ -514,9 +542,6 @@ class TestRSFileLocking(unittest.TestCase):
         chunk_length = 10000
 
         logger("Writing test_ipc_semaphore_locking_on_fork to ", self.dummyFileName)
-
-        # will be SHARED by forking, so must be INHERITABLE
-        rsfile_stream = io.open(self.dummyFileName, "WEBI", thread_safe=True, locking=False)
 
         for i in range(self.SUBPROCESS_COUNT):
 
@@ -559,7 +584,7 @@ def test_main():
     print("** RSFILE_LOCKING Test Suite has been run on backends %s **\n" % backends)
 
 if __name__ == '__main__':
-    #TestRSFileLocking("test_intraprocess_duplicated_handle_locking").test_intraprocess_duplicated_handle_locking()
+    #TestRSFileLocking("locking_inheritance_tester").locking_inheritance_tester()
     #print("over")
     test_main()
 
