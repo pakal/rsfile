@@ -404,8 +404,6 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         # error: 307 - ERROR_INVALID_LOCK_RANGE - A requested file lock operation cannot be processed due to an invalid byte range. -> shouldn't happen due to previous value checks        
 
 
-
-
         
     @_win32_error_converter  
     def _inner_file_unlock(self, length, abs_offset):

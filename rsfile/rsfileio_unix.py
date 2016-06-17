@@ -130,12 +130,9 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
 
     @_unix_error_converter
     def _inner_close_streams(self):
-        """
-        Warning - unlike official stdlib modules, this function won't swallow IOError !
-        # Todo - is that still true ?
-        """
         if self._closefd:
             with IntraProcessLockRegistry.mutex:
+                # safety mechanisms for fcntl() and its Unlock-All-On-Single-Close semantic
                 IntraProcessLockRegistry.add_unique_id_data(self._lock_registry_inode, self._lock_registry_descriptor)
                 self._purge_pending_related_file_descriptors()
                 # we assume that there are chances for this to be the only handle pointing this precise file
@@ -287,7 +284,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         try:
             unix.lockf(self._fileno, unix.LOCK_UN, length, abs_offset, os.SEEK_SET)
         finally:
-            self._purge_pending_related_file_descriptors() # todo - optimize this out during unlock-on-close loop
+            self._purge_pending_related_file_descriptors()
 
 
 

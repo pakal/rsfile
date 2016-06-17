@@ -200,13 +200,13 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
                 # even if implicit flush() failed, we properly close underlying streams
 
                 with IntraProcessLockRegistry.mutex:
-                    # safety mechanisms for fcntl() and its Unlock-All-On-Single-Close semantic
+
                     for (handle, shared, start, end) in IntraProcessLockRegistry.remove_file_locks(self._lock_registry_inode, self._lock_registry_descriptor):
                         #print (">>>>>>>> ", (handle, shared, start, end))
                         length = None if end is None else (end - start)
                         self._inner_file_unlock(length, start)
 
-                    self._inner_close_streams()  # should close the stream even if some operations fail
+                    self._inner_close_streams()  # should mark the raw stream as closed even if some operations fail
 
 
     def __del__(self):
