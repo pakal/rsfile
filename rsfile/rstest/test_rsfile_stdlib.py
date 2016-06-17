@@ -40,13 +40,13 @@ from test import test_support  # NOW ONLY we can import it
 def test_original_io():
     """
     Beware, We patch stdlib tests to remove C extension tests, or other tests that can't apply to our python implementation.
+
     Original cmd : " python -m test.regrtest -uall -v test_fileio test_file test_io test_bufio test_memoryio test_largefile "
     """
 
     import _io
 
-    from test import test_io, test_memoryio, test_file, test_bufio, test_fileio, test_largefile
-    from test import test_largefile
+    from test import test_io, test_memoryio, test_file, test_bufio, test_fileio, test_largefile  # python stdlib test suite must be installed for current python interpreter
 
     class dummyklass(unittest.TestCase):
         pass
@@ -205,7 +205,7 @@ def test_main():
         test_original_io()
 
     backends = _utilities.launch_rsfile_tests_on_backends(_launch_test_on_single_backend)
-    print("** RSFILE_STDLIB Test Suite has been run on backends %s **" % backends)
+    print("** RSFILE_STDLIB Test Suite has been run on backends %s **\n" % backends)
 
 
 if __name__ == '__main__':

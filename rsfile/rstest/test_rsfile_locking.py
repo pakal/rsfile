@@ -536,7 +536,7 @@ def test_main():
             #logger("-----------------------------------------------------------------------")
 
     backends = _utilities.launch_rsfile_tests_on_backends(_launch_test_on_single_backend)
-    print("** RSFILE_LOCKING Test Suite has been run on backends %s **" % backends)  # ALWAYS displayed
+    print("** RSFILE_LOCKING Test Suite has been run on backends %s **\n" % backends)
 
 if __name__ == '__main__':
     #TestRSFileLocking("test_ipc_semaphore_locking_on_fork").test_ipc_semaphore_locking_on_fork()

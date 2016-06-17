@@ -392,7 +392,7 @@ def FlushFileBuffers(handle):
     
                               
 def ReadFile(handle, buffer_or_int, overlapped=None):
-    # TODO - improve to work directly with ctypes array types !
+    #TODO - optimize to work directly with ctypes array types, and to avoid copies for readinto() ?
     
     if isinstance(buffer_or_int, (int, long)):
         bytes_to_read = buffer_or_int

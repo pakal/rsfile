@@ -1027,7 +1027,7 @@ def test_main():
                     pass
 
     backends = _utilities.launch_rsfile_tests_on_backends(_launch_test_on_single_backend)
-    print("** RSFILE_STREAMS Test Suite has been run on backends %s **" % backends)
+    print("** RSFILE_STREAMS Test Suite has been run on backends %s **\n" % backends)
 
 
 if __name__ == '__main__':

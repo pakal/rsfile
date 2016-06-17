@@ -368,7 +368,10 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
 
         if n is None or n < 0:
             return self.readall()
-        return self._inner_read(n)
+
+        mybytes = self._inner_read(n)
+        assert mybytes is None or isinstance(mybytes, bytes), type(mybytes)
+        return mybytes
 
 
     def readinto(self, buffer):
@@ -384,6 +387,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
 
         mybytes = self._inner_read(len(buffer))
         byteslen = len(mybytes)
+        assert mybytes is None or isinstance(mybytes, bytes), type(mybytes)
 
         if isinstance(buffer, array):
             typecode = b"b" if (sys.version_info[:2] < (3, 0)) else "b" # typecode weirdness...
