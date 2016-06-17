@@ -22,11 +22,13 @@ try:
 except NameError:
     xrange = range
 
+
 def text_open(fn, mode, encoding=None):
     try:
         return open(fn, mode, encoding=encoding or TEXT_ENCODING)
     except TypeError:
         return open(fn, mode)
+
 
 def get_file_sizes():
     for s in ['20 KB', '400 KB', '10 MB']:
@@ -34,23 +36,29 @@ def get_file_sizes():
         size = int(size) * {'KB': 1024, 'MB': 1024 ** 2}[unit]
         yield s.replace(' ', ''), size
 
+
 def get_binary_files():
     return ((name + ".bin", size) for name, size in get_file_sizes())
 
+
 def get_text_files():
     return (("%s-%s-%s.txt" % (name, TEXT_ENCODING, NEWLINES), size)
-        for name, size in get_file_sizes())
+            for name, size in get_file_sizes())
+
 
 def with_open_mode(mode):
     def decorate(f):
         f.file_open_mode = mode
         return f
+
     return decorate
+
 
 def with_sizes(*sizes):
     def decorate(f):
         f.file_sizes = sizes
         return f
+
     return decorate
 
 
@@ -64,6 +72,7 @@ def read_bytewise(f):
     while f.read(1):
         pass
 
+
 @with_open_mode("r")
 @with_sizes("medium")
 def read_small_chunks(f):
@@ -71,6 +80,7 @@ def read_small_chunks(f):
     f.seek(0)
     while f.read(20):
         pass
+
 
 @with_open_mode("r")
 @with_sizes("medium")
@@ -80,6 +90,7 @@ def read_big_chunks(f):
     while f.read(4096):
         pass
 
+
 @with_open_mode("r")
 @with_sizes("small", "medium", "large")
 def read_whole_file(f):
@@ -88,6 +99,7 @@ def read_whole_file(f):
     while f.read():
         pass
 
+
 @with_open_mode("rt")
 @with_sizes("medium")
 def read_lines(f):
@@ -95,6 +107,7 @@ def read_lines(f):
     f.seek(0)
     for line in f:
         pass
+
 
 @with_open_mode("r")
 @with_sizes("medium")
@@ -106,6 +119,7 @@ def seek_forward_bytewise(f):
     for i in xrange(0, size - 1):
         f.seek(i, 0)
 
+
 @with_open_mode("r")
 @with_sizes("medium")
 def seek_forward_blockwise(f):
@@ -116,6 +130,7 @@ def seek_forward_blockwise(f):
     for i in xrange(0, size - 1, 1000):
         f.seek(i, 0)
 
+
 @with_open_mode("rb")
 @with_sizes("medium")
 def read_seek_bytewise(f):
@@ -123,6 +138,7 @@ def read_seek_bytewise(f):
     f.seek(0)
     while f.read(1):
         f.seek(1, 1)
+
 
 @with_open_mode("rb")
 @with_sizes("medium")
@@ -138,28 +154,31 @@ def read_seek_blockwise(f):
 def write_bytewise(f, source):
     """ write one unit at a time """
     for i in xrange(0, len(source)):
-        f.write(source[i:i+1])
+        f.write(source[i:i + 1])
+
 
 @with_open_mode("w")
 @with_sizes("medium")
 def write_small_chunks(f, source):
     """ write 20 units at a time """
     for i in xrange(0, len(source), 20):
-        f.write(source[i:i+20])
+        f.write(source[i:i + 20])
+
 
 @with_open_mode("w")
 @with_sizes("medium")
 def write_medium_chunks(f, source):
     """ write 4096 units at a time """
     for i in xrange(0, len(source), 4096):
-        f.write(source[i:i+4096])
+        f.write(source[i:i + 4096])
+
 
 @with_open_mode("w")
 @with_sizes("large")
 def write_large_chunks(f, source):
     """ write 1e6 units at a time """
     for i in xrange(0, len(source), 1000000):
-        f.write(source[i:i+1000000])
+        f.write(source[i:i + 1000000])
 
 
 @with_open_mode("w+")
@@ -168,7 +187,8 @@ def modify_bytewise(f, source):
     """ modify one unit at a time """
     f.seek(0)
     for i in xrange(0, len(source)):
-        f.write(source[i:i+1])
+        f.write(source[i:i + 1])
+
 
 @with_open_mode("w+")
 @with_sizes("medium")
@@ -176,7 +196,8 @@ def modify_small_chunks(f, source):
     """ modify 20 units at a time """
     f.seek(0)
     for i in xrange(0, len(source), 20):
-        f.write(source[i:i+20])
+        f.write(source[i:i + 20])
+
 
 @with_open_mode("w+")
 @with_sizes("medium")
@@ -184,7 +205,8 @@ def modify_medium_chunks(f, source):
     """ modify 4096 units at a time """
     f.seek(0)
     for i in xrange(0, len(source), 4096):
-        f.write(source[i:i+4096])
+        f.write(source[i:i + 4096])
+
 
 @with_open_mode("wb+")
 @with_sizes("medium")
@@ -192,8 +214,9 @@ def modify_seek_forward_bytewise(f, source):
     """ alternate write & seek one unit """
     f.seek(0)
     for i in xrange(0, len(source), 2):
-        f.write(source[i:i+1])
-        f.seek(i+2)
+        f.write(source[i:i + 1])
+        f.seek(i + 2)
+
 
 @with_open_mode("wb+")
 @with_sizes("medium")
@@ -201,8 +224,9 @@ def modify_seek_forward_blockwise(f, source):
     """ alternate write & seek 1000 units """
     f.seek(0)
     for i in xrange(0, len(source), 2000):
-        f.write(source[i:i+1000])
-        f.seek(i+2000)
+        f.write(source[i:i + 1000])
+        f.seek(i + 2000)
+
 
 # XXX the 2 following tests don't work with py3k's text IO
 @with_open_mode("wb+")
@@ -212,7 +236,8 @@ def read_modify_bytewise(f, source):
     f.seek(0)
     for i in xrange(0, len(source), 2):
         f.read(1)
-        f.write(source[i+1:i+2])
+        f.write(source[i + 1:i + 2])
+
 
 @with_open_mode("wb+")
 @with_sizes("medium")
@@ -221,7 +246,7 @@ def read_modify_blockwise(f, source):
     f.seek(0)
     for i in xrange(0, len(source), 2000):
         f.read(1000)
-        f.write(source[i+1000:i+2000])
+        f.write(source[i + 1000:i + 2000])
 
 
 read_tests = [
@@ -242,6 +267,7 @@ modify_tests = [
     read_modify_bytewise, read_modify_blockwise,
 ]
 
+
 def run_during(duration, func):
     _t = time.time
     n = 0
@@ -257,6 +283,7 @@ def run_during(duration, func):
     real = (end[4] if start[4] else time.time()) - real_start
     return n, real, sum(end[0:2]) - sum(start[0:2])
 
+
 def warm_cache(filename):
     with open(filename, "rb") as f:
         f.read()
@@ -267,8 +294,8 @@ def run_all_tests(options):
         name = re.split(r'[-.]', filename)[0]
         out.write(
             ("[%s] %s... "
-                % (name.center(7), func.__doc__.strip())
-            ).ljust(52))
+             % (name.center(7), func.__doc__.strip())
+             ).ljust(52))
         out.flush()
 
     def print_results(size, n, real, cpu):
@@ -277,7 +304,7 @@ def run_all_tests(options):
         out.write(bw.rjust(12) + "\n")
         if cpu < 0.90 * real:
             out.write("   warning: test above used only %d%% CPU, "
-                "result may be flawed!\n" % (100.0 * cpu / real))
+                      "result may be flawed!\n" % (100.0 * cpu / real))
 
     def run_one_test(name, size, open_func, test_func, *args):
         mode = test_func.file_open_mode
@@ -297,10 +324,10 @@ def run_all_tests(options):
                 continue
             for s in test_func.file_sizes:
                 name, size = files[size_names[s]]
-                #name += file_ext
+                # name += file_ext
                 args = tuple(f(name, size) for f in make_args)
                 run_one_test(name, size,
-                    open_func, test_func, *args)
+                             open_func, test_func, *args)
 
     size_names = {
         "small": 0,
@@ -328,38 +355,46 @@ def run_all_tests(options):
     # Binary writes
     if "b" in options and "w" in options:
         print("\n** Binary append **\n")
+
         def make_test_source(name, size):
             with open(name, "rb") as f:
                 return f.read()
+
         run_test_family(write_tests, "t", binary_files,
-            lambda fn: open(os.devnull, "wb"), make_test_source)
+                        lambda fn: open(os.devnull, "wb"), make_test_source)
 
     # Text writes
     if "t" in options and "w" in options:
         print("\n** Text append **\n")
+
         def make_test_source(name, size):
             with text_open(name, "r") as f:
                 return f.read()
+
         run_test_family(write_tests, "b", text_files,
-            lambda fn: text_open(os.devnull, "w"), make_test_source)
+                        lambda fn: text_open(os.devnull, "w"), make_test_source)
 
     # Binary overwrites
     if "b" in options and "w" in options:
         print("\n** Binary overwrite **\n")
+
         def make_test_source(name, size):
             with open(name, "rb") as f:
                 return f.read()
+
         run_test_family(modify_tests, "t", binary_files,
-            lambda fn: open(fn, "r+b"), make_test_source)
+                        lambda fn: open(fn, "r+b"), make_test_source)
 
     # Text overwrites
     if "t" in options and "w" in options:
         print("\n** Text overwrite **\n")
+
         def make_test_source(name, size):
             with text_open(name, "r") as f:
                 return f.read()
+
         run_test_family(modify_tests, "b", text_files,
-            lambda fn: open(fn, "r+"), make_test_source)
+                        lambda fn: open(fn, "r+"), make_test_source)
 
 
 def prepare_files():
@@ -372,7 +407,7 @@ def prepare_files():
             f.write(os.urandom(size))
     # Text files
     chunk = []
-    #print(">> Opening %s to look for chunk markers" % __file__)
+    # print(">> Opening %s to look for chunk markers" % __file__)
     with text_open(__file__, "rU", encoding='utf8') as f:
         for line in f:
             if line.startswith("# <iobench text chunk marker>"):
@@ -404,6 +439,7 @@ def prepare_files():
         with open(name, "wb") as f:
             f.write(head)
             f.write(tail)
+
 
 def main():
     global TEXT_ENCODING, NEWLINES
@@ -456,9 +492,9 @@ def main():
     prepare_files()
     run_all_tests(test_options)
 
+
 if __name__ == "__main__":
     main()
-
 
 # -- This part to exercise text reading. Don't change anything! --
 # <iobench text chunk marker>
@@ -534,8 +570,28 @@ annars brjóstum í.
 """
 
 """
-C'est revenir tard, je le sens, sur un sujet trop rebattu et déjà presque oublié. Mon état, qui ne me permet plus aucun travail suivi, mon aversion pour le genre polémique, ont causé ma lenteur à écrire et ma répugnance à publier. J'aurais même tout à fait supprimé ces Lettres, ou plutôt je lie les aurais point écrites, s'il n'eût été question que de moi : Mais ma patrie ne m'est pas tellement devenue étrangère que je puisse voir tranquillement opprimer ses citoyens, surtout lorsqu'ils n'ont compromis leurs droits qu'en défendant ma cause. Je serais le dernier des hommes si dans une telle occasion j'écoutais un sentiment qui n'est plus ni douceur ni patience, mais faiblesse et lâcheté, dans celui qu'il empêche de remplir son devoir.
-Rien de moins important pour le public, j'en conviens, que la matière de ces lettres. La constitution d'une petite République, le sort d'un petit particulier, l'exposé de quelques injustices, la réfutation de quelques sophismes ; tout cela n'a rien en soi d'assez considérable pour mériter beaucoup de lecteurs : mais si mes sujets sont petits mes objets sont grands, et dignes de l'attention de tout honnête homme. Laissons Genève à sa place, et Rousseau dans sa dépression ; mais la religion, mais la liberté, la justice ! voilà, qui que vous soyez, ce qui n'est pas au-dessous de vous.
-Qu'on ne cherche pas même ici dans le style le dédommagement de l'aridité de la matière. Ceux que quelques traits heureux de ma plume ont si fort irrités trouveront de quoi s'apaiser dans ces lettres, L'honneur de défendre un opprimé eût enflammé mon coeur si j'avais parlé pour un autre. Réduit au triste emploi de me défendre moi-même, j'ai dû me borner à raisonner ; m'échauffer eût été m'avilir. J'aurai donc trouvé grâce en ce point devant ceux qui s'imaginent qu'il est essentiel à la vérité d'être dite froidement ; opinion que pourtant j'ai peine à comprendre. Lorsqu'une vive persuasion nous anime, le moyen d'employer un langage glacé ? Quand Archimède tout transporté courait nu dans les rues de Syracuse, en avait-il moins trouvé la vérité parce qu'il se passionnait pour elle ? Tout au contraire, celui qui la sent ne peut s'abstenir de l'adorer ; celui qui demeure froid ne l'a pas vue.
-Quoi qu'il en soit, je prie les lecteurs de vouloir bien mettre à part mon beau style, et d'examiner seulement si je raisonne bien ou mal ; car enfin, de cela seul qu'un auteur s'exprime en bons termes, je ne vois pas comment il peut s'ensuivre que cet auteur ne sait ce qu'il dit.
+C'est revenir tard, je le sens, sur un sujet trop rebattu et déjà presque oublié. Mon état, qui ne me permet plus
+aucun travail suivi, mon aversion pour le genre polémique, ont causé ma lenteur à écrire et ma répugnance à publier.
+J'aurais même tout à fait supprimé ces Lettres, ou plutôt je lie les aurais point écrites, s'il n'eût été question
+que de moi : Mais ma patrie ne m'est pas tellement devenue étrangère que je puisse voir tranquillement opprimer ses
+citoyens, surtout lorsqu'ils n'ont compromis leurs droits qu'en défendant ma cause. Je serais le dernier des hommes
+si dans une telle occasion j'écoutais un sentiment qui n'est plus ni douceur ni patience, mais faiblesse et lâcheté,
+dans celui qu'il empêche de remplir son devoir.
+Rien de moins important pour le public, j'en conviens, que la matière de ces lettres. La constitution d'une petite
+République, le sort d'un petit particulier, l'exposé de quelques injustices, la réfutation de quelques sophismes ;
+tout cela n'a rien en soi d'assez considérable pour mériter beaucoup de lecteurs : mais si mes sujets sont petits mes
+objets sont grands, et dignes de l'attention de tout honnête homme. Laissons Genève à sa place, et Rousseau dans sa
+dépression ; mais la religion, mais la liberté, la justice ! voilà, qui que vous soyez, ce qui n'est pas au-dessous
+de vous.
+Qu'on ne cherche pas même ici dans le style le dédommagement de l'aridité de la matière. Ceux que quelques traits
+heureux de ma plume ont si fort irrités trouveront de quoi s'apaiser dans ces lettres, L'honneur de défendre un
+opprimé eût enflammé mon coeur si j'avais parlé pour un autre. Réduit au triste emploi de me défendre moi-même,
+j'ai dû me borner à raisonner ; m'échauffer eût été m'avilir. J'aurai donc trouvé grâce en ce point devant ceux qui
+s'imaginent qu'il est essentiel à la vérité d'être dite froidement ; opinion que pourtant j'ai peine à comprendre.
+Lorsqu'une vive persuasion nous anime, le moyen d'employer un langage glacé ? Quand Archimède tout transporté courait
+nu dans les rues de Syracuse, en avait-il moins trouvé la vérité parce qu'il se passionnait pour elle ? Tout au
+contraire, celui qui la sent ne peut s'abstenir de l'adorer ; celui qui demeure froid ne l'a pas vue.
+Quoi qu'il en soit, je prie les lecteurs de vouloir bien mettre à part mon beau style, et d'examiner seulement si je
+raisonne bien ou mal ; car enfin, de cela seul qu'un auteur s'exprime en bons termes, je ne vois pas comment il peut
+s'ensuivre que cet auteur ne sait ce qu'il dit.
 """

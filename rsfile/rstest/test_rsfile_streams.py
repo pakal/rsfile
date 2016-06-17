@@ -1,9 +1,10 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 from __future__ import unicode_literals, print_function
 
 import rsfile.rsfile_definitions as defs
 
 from rsfile.rstest import _utilities
+
 _utilities.patch_test_supports()
 
 from rsfile.rstest import _worker_process
@@ -24,7 +25,7 @@ from datetime import datetime, timedelta
 
 import rsfile
 
-TESTFN = "@TESTING" # we used our own one, since the test_support version is broken
+TESTFN = "@TESTING"  # we used our own one, since the test_support version is broken
 
 # FORCE THIS TO TRUE if you want to check that fdatasync is faster than fuller fsync
 # linux is often tested in a Virtual Machine for now, so we disable it by default because perfs are incoherent
@@ -32,9 +33,9 @@ CHECK_SYNC_PERFS = (defs.RSFILE_IMPLEMENTATION == "windows")
 
 from test import test_support  # NOW ONLY we can import it
 
-
 # to keep these test functional without mass search-replace, we just monkey-patch:
 import io, _io, _pyio
+
 rsfile.monkey_patch_io_module(_io)  # C-backed version
 rsfile.monkey_patch_io_module(io)  # python interface to C-backed version
 rsfile.monkey_patch_io_module(_pyio)  # (almost) pure python version
@@ -50,26 +51,20 @@ def _cleanup():
         os.remove(TESTFN + ".temp")
 
 
-
 class TestRSFileStreams(unittest.TestCase):
-
     def setUp(self):
         _cleanup()
-
 
     def tearDown(self):
         _cleanup()
 
-
-
     def testInvalidFd(self):  # replaces that of the stdlib
-        self.assertRaises(ValueError, io.open, -10, 'wb', buffering=0,)
+        self.assertRaises(ValueError, io.open, -10, 'wb', buffering=0, )
         bad_fd = test_support.make_bad_fd()
         self.assertRaises(IOError, io.open, bad_fd, 'wb', buffering=0)
 
-
     def testRSFileIORepr(self):
-        fd = os.open(TESTFN, os.O_WRONLY |os.O_CREAT)
+        fd = os.open(TESTFN, os.O_WRONLY | os.O_CREAT)
         try:
             with io.FileIO(fd, 'w', closefd=False) as f:
                 assert f.closefd == False
@@ -82,7 +77,6 @@ class TestRSFileStreams(unittest.TestCase):
             assert f.closefd == True
             self.assertEqual(repr(f),
                              """<rsfile.RSFileIO name="%s" mode="wb" origin="path" closefd=True>""" % TESTFN)
-
 
     def testRawFileGarbageCollection(self):
         # FileIO objects are collected, and collecting them flushes
@@ -100,17 +94,14 @@ class TestRSFileStreams(unittest.TestCase):
 
         test_support.gc_collect()
 
-        #print (gc.garbage) - in case of trouble
+        # print (gc.garbage) - in case of trouble
 
         self.assertTrue(wr() is None, wr)
         with io.open(TESTFN, "rb") as f:
             self.assertEqual(f.read(), b"abcxxx")
 
-
-
     def testRawFileLegacyProperties(self):
         with io.open(TESTFN, 'wb', buffering=0) as f:
-
             self.assertEqual(f.writable(), True)
             self.assertEqual(f.seekable(), True)
             self.assertEqual(f.readable(), False)
@@ -124,15 +115,13 @@ class TestRSFileStreams(unittest.TestCase):
             self.assertRaises(IOError, f.read, 10)
             self.assertRaises(IOError, f.readinto, sys.stdout)
 
-
-
     def testDirectoryOpening(self):
 
         DIRNAME = "DUMMYDIR"
         try:
             os.rmdir(DIRNAME)
         except EnvironmentError:
-            pass # not existing surely...
+            pass  # not existing surely...
 
         os.mkdir(DIRNAME)
 
@@ -141,7 +130,6 @@ class TestRSFileStreams(unittest.TestCase):
         self.assertRaises(IOError, io.open, DIRNAME, 'wb', buffering=0)
 
         os.rmdir(DIRNAME)
-
 
     def testFileSizeAndPos(self):
         with io.open(TESTFN, 'wb', buffering=0) as f:
@@ -161,22 +149,19 @@ class TestRSFileStreams(unittest.TestCase):
 
             oldpos = f.tell()
             self.assertRaises(IOError, f.seek, -random.randint(1, 10))
-            self.assertEqual(f.tell(), oldpos) # we must not have moved !
+            self.assertEqual(f.tell(), oldpos)  # we must not have moved !
 
             f.seek(0, os.SEEK_END)
             self.assertEqual(f.tell(), f.size())
 
         with io.open(TESTFN, "rb", buffering=0) as a:
-
             string = a.read(4 * nbytes)
-            self.assertEqual(a.read(10), b"") # we should have read until EOF here, else pb !!
+            self.assertEqual(a.read(10), b"")  # we should have read until EOF here, else pb !!
 
             self.assertEqual(string, b"x" * x_written + b"\0" * nbytes + b"y" * y_written)
 
-
     def testFileTruncation(self):
         with io.open(TESTFN, 'wb', buffering=0) as f:
-
             nbytes = random.randint(0, 100)
 
             i_written = f.write(b"i" * nbytes)
@@ -193,24 +178,21 @@ class TestRSFileStreams(unittest.TestCase):
             self.assertEqual(f.size(), 10 * nbytes)
             self.assertEqual(f.tell(), pos)
 
-            #print ("WE AVE CHOSEN ", x_written+nbytes+y_written)
+            # print ("WE AVE CHOSEN ", x_written+nbytes+y_written)
             # we try illegal, negative truncation
             self.assertRaises(IOError, f.truncate, -random.randint(1, 10))
             self.assertEqual(f.size(), 10 * nbytes)
             self.assertEqual(f.tell(), pos)
 
-
         with io.open(TESTFN, "rb", buffering=0) as a:
-
             string = a.read(20 * nbytes)
-            self.assertEqual(a.read(10), b"") # we should have read until EOF here, else pb !!
+            self.assertEqual(a.read(10), b"")  # we should have read until EOF here, else pb !!
 
             self.assertEqual(string, b"i" * i_written + b"\0" * (10 * nbytes - i_written))
 
     def testAppendMode(self):
 
         with io.open(TESTFN, 'ab', buffering=0) as f:
-
             nbytes = random.randint(0, 100)
             f.write(b"i" * nbytes)
             f.seek(0)
@@ -218,13 +200,11 @@ class TestRSFileStreams(unittest.TestCase):
 
             self.assertEqual(f.tell(), 2 * nbytes)
 
-
         with io.open(TESTFN, "rb", buffering=0) as a:
             string = a.read(3 * nbytes)
             a.close()
 
         self.assertEqual(string, b"i" * nbytes + b"j" * nbytes)
-
 
     @unittest.skipIf(os.name == 'nt', "test only works on a POSIX-like system")
     def testPipesBehaviour(self):
@@ -247,14 +227,15 @@ class TestRSFileStreams(unittest.TestCase):
 
         for (case, r, w) in [("anonymous", piper, pipew), ("named", namedr, namedw)]:
 
-            #print("Testing pipe of type %s" % case)
+            # print("Testing pipe of type %s" % case)
 
             with io.open(w, "w") as writer, io.open(r, "r") as reader:
 
                 self.assertEqual(reader.name, r)
                 self.assertEqual(writer.name, w)
                 self.assertEqual(reader.origin, "fileno")
-                self.assertEqual(writer.origin, "path" if (case == "named" and not use_fileno_for_named_writer) else "fileno")
+                self.assertEqual(writer.origin,
+                                 "path" if (case == "named" and not use_fileno_for_named_writer) else "fileno")
                 self.assertEqual(reader.mode, "r")
                 self.assertEqual(writer.mode, "w")
 
@@ -289,7 +270,7 @@ class TestRSFileStreams(unittest.TestCase):
 
                 unique_id = writer.unique_id()
                 assert unique_id and all(unique_id), unique_id
-                self.assertEqual(reader.unique_id(), unique_id)  #same PIPE
+                self.assertEqual(reader.unique_id(), unique_id)  # same PIPE
 
                 times = writer.times()
                 assert times, times
@@ -324,9 +305,7 @@ class TestRSFileStreams(unittest.TestCase):
             self.assertRaises(EnvironmentError, io.open, r, "r+")
 
         os.unlink(named_fifo)
-        #print ("FINISHED")
-
-
+        # print ("FINISHED")
 
     def testReadWriteDataTypes(self):
 
@@ -357,7 +336,7 @@ class TestRSFileStreams(unittest.TestCase):
             self.assertEquals(f.read(), result)
             f.seek(0)
 
-            target = array.array(array_type, b" "*20)
+            target = array.array(array_type, b" " * 20)
             assert len(target) == 20, target
             f.readinto(target)
             assert len(target) == 20, target
@@ -365,7 +344,7 @@ class TestRSFileStreams(unittest.TestCase):
 
             f.seek(0)
 
-            target = bytearray(b" "* 20)
+            target = bytearray(b" " * 20)
             assert len(target) == 20, target
             f.readinto(target)
             assert len(target) == 20, target
@@ -385,11 +364,9 @@ class TestRSFileStreams(unittest.TestCase):
             assert len(target) == 20, target
             self.assertRaises(TypeError, f.readinto, target)  # READONLY buffer
 
-
     def testNewAccessors(self):
 
         with io.open(TESTFN, 'wb', buffering=0) as f:
-
             # immediately initialized on unix actually, for intra process locks registry...
             assert bool(f._unique_id) == (defs.RSFILE_IMPLEMENTATION != "windows")
 
@@ -412,7 +389,7 @@ class TestRSFileStreams(unittest.TestCase):
 
         with io.open(TESTFN, 'rb', buffering=0) as stream:
             stream.read()
-            #we enforce access time by closing
+            # we enforce access time by closing
 
         time.sleep(1)
 
@@ -445,10 +422,9 @@ class TestRSFileStreams(unittest.TestCase):
         print (int(os.fstat(f.fileno()).st_mtime))
         """
 
-
     def testCloseFdAndOrigins(self):
 
-        f = io.open(TESTFN, 'wb', buffering=0) # low-level default python open()
+        f = io.open(TESTFN, 'wb', buffering=0)  # low-level default python open()
         f.write(b"aaa")
 
         copy1 = io.open(f.fileno(), 'ab', buffering=0, closefd=False)
@@ -467,13 +443,13 @@ class TestRSFileStreams(unittest.TestCase):
         self.assertRaises(IOError, f.write, b"---")
 
         try:
-            f.close() # this is normally buggy since the fd was closed through copy2...
+            f.close()  # this is normally buggy since the fd was closed through copy2...
         except EnvironmentError:
             pass
 
         # ------------
 
-        f = io.open(TESTFN, 'wb', buffering=0) # low-level default python open()
+        f = io.open(TESTFN, 'wb', buffering=0)  # low-level default python open()
         f.write(b"aaa")
 
         copy1 = io.open(mode='AB', buffering=0, fileno=f.fileno(), closefd=False)
@@ -502,16 +478,17 @@ class TestRSFileStreams(unittest.TestCase):
         self.assertRaises(IOError, f.write, b"---")
 
         try:
-            f.close() # this is normally buggy since the fd was closed through copy2...
+            f.close()  # this is normally buggy since the fd was closed through copy2...
         except EnvironmentError:
             pass
 
         # ------------
 
-        f = io.open(TESTFN, 'wb', buffering=0) # low-level version
+        f = io.open(TESTFN, 'wb', buffering=0)  # low-level version
         f.write(b"aaa")
 
-        copy1 = io.open(mode='AB', buffering=0, handle=f.handle(), closefd=False) # We trick the functools.partial object there...
+        copy1 = io.open(mode='AB', buffering=0, handle=f.handle(),
+                        closefd=False)  # We trick the functools.partial object there...
         self.assertEqual(copy1.origin, "handle")
         assert isinstance(copy1.fileno(), (int, long))
         assert isinstance(copy1.handle(), (int, long))
@@ -523,7 +500,8 @@ class TestRSFileStreams(unittest.TestCase):
         self.assertEqual(copy1.name, f.handle())
         copy1.write(b"bbb")
 
-        copy2 = io.open(mode='AB', buffering=0, handle=f.handle(), closefd=True) # We trick the functools.partial object there...
+        copy2 = io.open(mode='AB', buffering=0, handle=f.handle(),
+                        closefd=True)  # We trick the functools.partial object there...
         self.assertEqual(copy2.origin, "handle")
         copy2.write(b"ccc")
 
@@ -536,62 +514,54 @@ class TestRSFileStreams(unittest.TestCase):
         copy2.close()
         self.assertRaises(IOError, f.write, b"---")
 
-
         try:
-            f.close() # this is normally buggy since the fd was closed through copy2...
+            f.close()  # this is normally buggy since the fd was closed through copy2...
         except IOError:
             pass
-
-
-
-
 
     def testRawFileCreationParams(self):
 
         kargs = dict(path=TESTFN,
                      read=True,
                      write=True, append=True,
-                     must_not_create=True, must_create=False, # only used on file opening
+                     must_not_create=True, must_create=False,  # only used on file opening
                      )
 
         with io.open(TESTFN, "wb") as f:
             f.write(b"-----")
 
-
         f = rsfile.RSFileIO(**kargs)
         f.close()
-
 
         kargs["must_not_create"] = False
         kargs["must_create"] = True
         self.assertRaises(IOError, rsfile.RSFileIO, **kargs)
 
-
-        os.remove(TESTFN) # important
+        os.remove(TESTFN)  # important
         f = rsfile.RSFileIO(**kargs)
         f.close()
 
-        os.remove(TESTFN) # important
+        os.remove(TESTFN)  # important
         kargs["must_not_create"] = True
         kargs["must_create"] = False
         self.assertRaises(IOError, rsfile.RSFileIO, **kargs)
 
-
-
     def testFileCreationPermissions(self):
 
-        with rsfile.rsopen(TESTFN, "RWB-", buffering=0, locking=False, permissions=0o555) as f: # creating read-only file
+        with rsfile.rsopen(TESTFN, "RWB-", buffering=0, locking=False,
+                           permissions=0o555) as f:  # creating read-only file
 
             f.write(b"abc")  # WORKS, because file permissions are only applied on subsequent open()
             f.flush()
 
             with rsfile.rsopen(TESTFN, "RB+", buffering=0, locking=False) as g:
-                pass # no problem
+                pass  # no problem
 
-            self.assertRaises(IOError, rsfile.rsopen, TESTFN, "WB+", buffering=0, locking=False) # now can't open for writing
+            self.assertRaises(IOError, rsfile.rsopen, TESTFN, "WB+", buffering=0,
+                              locking=False)  # now can't open for writing
 
-        # no need to test further, as other permissions are non-portable and simply forwarded to underlying system calls...
-
+            # no need to test further, as other permissions are non-portable and simply forwarded to underlying
+            # system calls...
 
     def testFileDeletions(self):
 
@@ -613,7 +583,6 @@ class TestRSFileStreams(unittest.TestCase):
                 with rsfile.rsopen(TESTFN, "wb", buffering=0):
                     pass
 
-
         """
         
         # NO NEED FOR BUILTIN DELETE ON CLOSE SEMANTIC
@@ -626,11 +595,9 @@ class TestRSFileStreams(unittest.TestCase):
             # Here, Delete On Close takes effect
             fullpath = os.path.join(os.getcwd(), TESTFN)
             self.assertFalse(os.path.exists(fullpath))
-            self.assertRaises(IOError, rsfile.rsopen, TESTFN, "R") # on win32, deleted file is in a weird state until all handles are closed !!
+            self.assertRaises(IOError, rsfile.rsopen, TESTFN, "R") # on win32, deleted file is in a weird state until
+            all handles are closed !!
         """
-
-
-
 
     def testRsopenBehaviour(self):
 
@@ -644,7 +611,7 @@ class TestRSFileStreams(unittest.TestCase):
             f.write(b"abcde")
 
         with rsfile.rsopen(TESTFN, "RAEB", buffering=0) as f:
-            #PAKAL TO REPUT self.assertEqual(f.size(), 0)
+            # PAKAL TO REPUT self.assertEqual(f.size(), 0)
             f.write(b"abcdef")
             f.seek(0)
             f.write(b"abcdef")
@@ -654,12 +621,10 @@ class TestRSFileStreams(unittest.TestCase):
         self.assertRaises(IOError, rsfile.rsopen, TESTFN, "RB-", buffering=0)
 
         with rsfile.rsopen(TESTFN, "RAEB", buffering=0) as f:
-            os.rename(TESTFN, TESTFN + ".temp") # for windows platforms...
+            os.rename(TESTFN, TESTFN + ".temp")  # for windows platforms...
             os.remove(TESTFN + ".temp")
 
         self.assertRaises(IOError, rsfile.rsopen, TESTFN, "WB+", buffering=0)
-
-
 
     def testFileInheritance(self):
         # # """Checks that handles are well inherited iff this creation option is set to True"""
@@ -674,10 +639,10 @@ class TestRSFileStreams(unittest.TestCase):
         permutations = [(a, b, c) for a in bools for b in bools for c in bools if (a or b or c)]
 
         for (inheritance, EXPECTED_RETURN_CODE) in [(True, 4), (False, 5)]:
-            #print ("STATUS : ", (inheritance, EXPECTED_RETURN_CODE))
+            # print ("STATUS : ", (inheritance, EXPECTED_RETURN_CODE))
             for perm in permutations:
                 (read, write, append) = perm
-                #print ("->", perm)
+                # print ("->", perm)
 
                 kwargs = dict(read=read, write=write, append=append)
 
@@ -687,36 +652,41 @@ class TestRSFileStreams(unittest.TestCase):
                 with io.open(TESTFN, "wb", 0) as temp:
                     temp.write(b"ABCDEFG")
 
-
                 with rsfile.RSFileIO(TESTFN, inheritable=inheritance, **kwargs) as myfile:
 
                     if defs.RSFILE_IMPLEMENTATION == "windows":
-                        kwargs["handle"] = int(myfile.handle()) # we transform the PyHandle into an integer to ensure serialization
+                        kwargs["handle"] = int(
+                            myfile.handle())  # we transform the PyHandle into an integer to ensure serialization
                     else:
-                        kwargs["fileno"] = myfile.fileno() # already an integer
-
+                        kwargs["fileno"] = myfile.fileno()  # already an integer
 
                     executable = sys.executable
-                    pre_args = ("python", "-m", "rsfile.rstest._fd_inheritance_tester") #.os.path.join(os.path.dirname(__file__), "_inheritance_tester.py"))
-                    args = (str(read), str(write), str(append), str(kwargs.get("fileno", "-")), str(kwargs.get("handle", "-")))
+                    pre_args = ("python", "-m",
+                                "rsfile.rstest._fd_inheritance_tester")  # .os.path.join(os.path.dirname(__file__),
+                    # "_inheritance_tester.py"))
+                    args = (
+                        str(read), str(write), str(append), str(kwargs.get("fileno", "-")),
+                        str(kwargs.get("handle", "-")))
 
-                    myfile.seek(0, os.SEEK_END) # to fulfill the expectations of the worker process
+                    myfile.seek(0, os.SEEK_END)  # to fulfill the expectations of the worker process
                     child = subprocess.Popen(pre_args + args, executable=executable, shell=False, close_fds=False)
                     retcode = child.wait()
-                    self.assertEqual(retcode, EXPECTED_RETURN_CODE, "Spawned child returned %d instead of %d" % (retcode, EXPECTED_RETURN_CODE))
+                    self.assertEqual(retcode, EXPECTED_RETURN_CODE,
+                                     "Spawned child returned %d instead of %d" % (retcode, EXPECTED_RETURN_CODE))
 
-
-                    myfile.seek(0, os.SEEK_END) # to fulfill the expectations of the worker process
+                    myfile.seek(0, os.SEEK_END)  # to fulfill the expectations of the worker process
 
                     if defs.RSFILE_IMPLEMENTATION == "windows":
-                        cmdline = subprocess.list2cmdline(pre_args + args) # Important for space escaping, with the buggy windows spawn implementation...
+                        cmdline = subprocess.list2cmdline(
+                            pre_args + args)  # Important for space escaping, with the buggy windows spawn
+                        # implementation...
                         retcode = os.spawnl(os.P_WAIT, executable, cmdline)  # 1st argument must be the program itself !
                     else:
                         cmdline = pre_args + args
                         retcode = os.spawnv(os.P_WAIT, executable, cmdline)
 
-                    self.assertEqual(retcode, EXPECTED_RETURN_CODE, "Spawned process returned %d instead of %d" % (retcode, EXPECTED_RETURN_CODE))
-
+                    self.assertEqual(retcode, EXPECTED_RETURN_CODE,
+                                     "Spawned process returned %d instead of %d" % (retcode, EXPECTED_RETURN_CODE))
 
     def testFileSynchronization(self):
 
@@ -734,7 +704,7 @@ class TestRSFileStreams(unittest.TestCase):
 
         string = b"abcdefghijklmnopqrstuvwxyz" * 1014 * 1024
 
-        #print("kwargs", kwargs)
+        # print("kwargs", kwargs)
         f = rsfile.rsopen(**kwargs)
         self.assertEqual(f._synchronized, synchronized)
         res = f.write(string)
@@ -760,7 +730,7 @@ class TestRSFileStreams(unittest.TestCase):
                 f.buffer.flush = broken
 
             try:
-                #print("-------------->BEFORE", f.flush)
+                # print("-------------->BEFORE", f.flush)
                 for kwargs in combinations:
                     self.assertRaises(NameError, f.sync, **kwargs)  # sync implies flush!
             finally:
@@ -768,13 +738,13 @@ class TestRSFileStreams(unittest.TestCase):
                     del f.flush
                 else:
                     del f.buffer.flush
-            #print("-------------->AFTER", f.flush)
+            # print("-------------->AFTER", f.flush)
             pass
-
 
         if CHECK_SYNC_PERFS:
 
-            # We have no easy way to check that the stream is REALLY in sync mode, except manually crashing the computer... but we may check if perfs diff, at least
+            # We have no easy way to check that the stream is REALLY in sync mode, except manually crashing the
+            # computer... but we may check if perfs diff, at least
 
             with rsfile.rsopen(TESTFN, "wb", thread_safe=False) as f:
 
@@ -802,9 +772,9 @@ class TestRSFileStreams(unittest.TestCase):
                 a = time.time()
                 for i in range(N):
                     f.write(b"c")
-                    #print("We issue full sync")
+                    # print("We issue full sync")
                     f.sync(metadata=True, full_flush=True)
-                    #print("STOP")
+                    # print("STOP")
                 b = time.time()
                 res3 = b - a
 
@@ -813,14 +783,10 @@ class TestRSFileStreams(unittest.TestCase):
                 else:
                     assert res3 > 1.05 * res2, (res2, res3)  # full sync heavier than datasync, on linux/osx
 
-
-
-
     def testBuiltinsPatching(self):
 
         with open(TESTFN, "wb", buffering=0) as f:
-            self.assertTrue(isinstance(f, rsfile.RSFileIO)) # no thread safe interface
-
+            self.assertTrue(isinstance(f, rsfile.RSFileIO))  # no thread safe interface
 
     def testIOErrorOnFileClose(self):
 
@@ -830,7 +796,7 @@ class TestRSFileStreams(unittest.TestCase):
 
             stream.flush = ioerror
             self.assertRaises(IOError, stream.close)
-            self.assertEqual(True, stream.closed) # stream HAS been closed
+            self.assertEqual(True, stream.closed)  # stream HAS been closed
 
         assertCloseOK(io.open(TESTFN, "RB", buffering=100))
         assertCloseOK(io.open(TESTFN, "WB", buffering=100))
@@ -839,11 +805,9 @@ class TestRSFileStreams(unittest.TestCase):
         assertCloseOK(io.open(TESTFN, "WT", buffering=100))
         assertCloseOK(io.open(TESTFN, "RWT", buffering=100))
 
-
     def testFileMethodForwarding(self):
 
         def test_new_methods(myfile, raw, char):
-
             myfile.sync()
             myfile.unique_id()
             times = myfile.times()
@@ -859,64 +823,62 @@ class TestRSFileStreams(unittest.TestCase):
             myfile.closefd
 
             myfile.write(char)
-            self.assertEqual(raw.size(), 0) # not yet flushed
+            self.assertEqual(raw.size(), 0)  # not yet flushed
             myfile.lock_file()
-            self.assertEqual(raw.size(), 1) # has been flushed
+            self.assertEqual(raw.size(), 1)  # has been flushed
             myfile.write(char)
-            self.assertEqual(raw.size(), 1) # not yet flushed
+            self.assertEqual(raw.size(), 1)  # not yet flushed
             myfile.unlock_file()
-            self.assertEqual(raw.size(), 2) # has been flushed
+            self.assertEqual(raw.size(), 2)  # has been flushed
 
             myfile.truncate(0)
-            self.assertEqual(myfile.tell(), 2) # file pointer is unmoved
+            self.assertEqual(myfile.tell(), 2)  # file pointer is unmoved
             myfile.write(char)
-            self.assertEqual(raw.size(), 0) # not yet flushed
+            self.assertEqual(raw.size(), 0)  # not yet flushed
             myfile.lock_file()
-            self.assertEqual(raw.size(), 3) # has been flushed, extending file as well
+            self.assertEqual(raw.size(), 3)  # has been flushed, extending file as well
             myfile.write(char)
-            self.assertEqual(raw.size(), 3) # not yet flushed
+            self.assertEqual(raw.size(), 3)  # not yet flushed
             myfile.unlock_file()
-            self.assertEqual(raw.size(), 4) # has been flushed
+            self.assertEqual(raw.size(), 4)  # has been flushed
 
             myfile.seek(0)
             myfile.write(char * 10)
             myfile.seek(0)
 
             self.assertEqual(myfile.read(1), char)
-            self.assertTrue(raw.tell() > 1) # read ahead buffer full
+            self.assertTrue(raw.tell() > 1)  # read ahead buffer full
             myfile.lock_file()
 
-            self.assertEqual(raw.tell(), 1) # read ahead buffer reset
+            self.assertEqual(raw.tell(), 1)  # read ahead buffer reset
             self.assertEqual(myfile.read(1), char)
 
-            self.assertTrue(raw.tell() > 2) # read ahead buffer full
+            self.assertTrue(raw.tell() > 2)  # read ahead buffer full
             myfile.unlock_file()
-            self.assertEqual(raw.tell(), 2) # read ahead buffer reset
+            self.assertEqual(raw.tell(), 2)  # read ahead buffer reset
 
             myfile.seek(0)
 
             self.assertEqual(myfile.read(1), char)
-            self.assertTrue(raw.tell() > 1) # read ahead buffer full
+            self.assertTrue(raw.tell() > 1)  # read ahead buffer full
             myfile.lock_file()
-            self.assertEqual(raw.tell(), 1) # read ahead buffer reset
+            self.assertEqual(raw.tell(), 1)  # read ahead buffer reset
             self.assertEqual(myfile.read(1), char)
-            self.assertTrue(raw.tell() > 2) # read ahead buffer full
+            self.assertTrue(raw.tell() > 2)  # read ahead buffer full
             myfile.unlock_file()
-            self.assertEqual(raw.tell(), 2) # read ahead buffer reset
+            self.assertEqual(raw.tell(), 2)  # read ahead buffer reset
 
-
-        with rsfile.rsopen(TESTFN, "RWEB", buffering=100, locking=False, thread_safe=False) as myfile: # RW buffered binary stream
+        with rsfile.rsopen(TESTFN, "RWEB", buffering=100, locking=False,
+                           thread_safe=False) as myfile:  # RW buffered binary stream
             test_new_methods(myfile, myfile.raw, b"x")
 
-        with rsfile.rsopen(TESTFN, "RWET", buffering=100, locking=False, thread_safe=False) as myfile: # text stream
+        with rsfile.rsopen(TESTFN, "RWET", buffering=100, locking=False, thread_safe=False) as myfile:  # text stream
             test_new_methods(myfile, myfile.buffer.raw, "x")
-
 
     def testReturnedStreamTypes(self):
 
         for forced_mutex in [None, threading.RLock(), multiprocessing.RLock()]:
-
-            with rsfile.rsopen(TESTFN, "RWB", buffering=0, mutex=forced_mutex) as f: # by default, thread-safe
+            with rsfile.rsopen(TESTFN, "RWB", buffering=0, mutex=forced_mutex) as f:  # by default, thread-safe
                 self.assertTrue(isinstance(f, rsfile.RSThreadSafeWrapper))
                 self.assertEqual(f.mutex, forced_mutex if forced_mutex else f.mutex)
                 f.write(b"abc")
@@ -940,7 +902,6 @@ class TestRSFileStreams(unittest.TestCase):
                 self.assertTrue(isinstance(f, io.TextIOBase))
                 f.write("abc")
 
-
     def testFileUtilities(self):
 
         # quick tests: since most args are just transferred to rsopen, risks of bug are low
@@ -949,7 +910,8 @@ class TestRSFileStreams(unittest.TestCase):
         self.assertRaises(IOError, rsfile.append_to_file, TESTFN, b"abc", must_not_create=True)
 
         rsfile.write_to_file(TESTFN, b"abcdef", sync=True, must_create=True)
-        rsfile.write_to_file(TESTFN, "abcdef", sync=False, must_not_create=True, encoding="latin1") # we overwrite TESTFN with unicode data
+        rsfile.write_to_file(TESTFN, "abcdef", sync=False, must_not_create=True,
+                             encoding="latin1")  # we overwrite TESTFN with unicode data
 
         rsfile.append_to_file(TESTFN, b"ghijkl", sync=True, must_not_create=True)
         rsfile.append_to_file(TESTFN, "mnopqr", sync=False, must_not_create=False, errors="replace")
@@ -959,7 +921,6 @@ class TestRSFileStreams(unittest.TestCase):
 
         self.assertEqual(mytext, mystr.decode("ascii"))
         self.assertEqual(mytext, "abcdefghijklmnopqr")
-
 
     def testDeprecatedRSOpenFlags(self):
 
@@ -974,7 +935,6 @@ class TestRSFileStreams(unittest.TestCase):
         assert resminus1 == resminux2, (resminus1, resminux2)
 
         assert resplus1 != resminus1, (resplus1, resminus1)
-
 
     def testConflictsBetweenLockingAndOperations(self):
 
@@ -994,7 +954,7 @@ class TestRSFileStreams(unittest.TestCase):
             f.write("bye")
             self.assertRaises(IOError, f.flush)
             # data in buffers blocks implicit flush...
-            self.assertRaises(IOError, f.unlock_file)  
+            self.assertRaises(IOError, f.unlock_file)
             assert f._buffer._write_buf, f._buffer._write_buf
             del f._buffer._write_buf[:]  # else error on closing flush()
             f.flush()
@@ -1015,7 +975,6 @@ class TestRSFileStreams(unittest.TestCase):
         f.unlock_file(length=1, offset=100)
 
         f.close()
-
 
 
 def test_main():
@@ -1039,16 +998,7 @@ if __name__ == '__main__':
     test_main()
 
     ##_cleanup()
-    #test_original_io()
-    #run_unittest(TestMiscStreams)
+    # test_original_io()
+    # run_unittest(TestMiscStreams)
     ##TestRSFileStreams("testConflictsBetweenLockingAndOperations").testConflictsBetweenLockingAndOperations()
-    #print("OK DONE")
-
-
-
-
-
-
-
-
-
+    # print("OK DONE")

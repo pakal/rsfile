@@ -1,11 +1,10 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 from __future__ import unicode_literals, print_function
 
 import sys, os
 import multiprocessing, threading, functools, collections
 
 from . import rsfile_definitions as defs
-
 
 if defs.RSFILE_IMPLEMENTATION == "windows":  # even on 64bits windows OS
     try:
@@ -20,9 +19,7 @@ else:
         raise ImportError("No unix backend available : %s" % e)
 
 
-
 class _buffer_forwarder_mixin(object):
-
     def _reset_buffers(self):
         self.seek(0, os.SEEK_CUR)  # we flush i/o buffers, didn't work on py26
 
@@ -65,7 +62,6 @@ class _buffer_forwarder_mixin(object):
         else:
             return "<%s.%s name=%r>" % (__name__, clsname, name)
 
-
     def __getattr__(self, name):
         # print ("--> taking ", name, "in ", self)
         raw = self.__dict__.get("_raw")  # beware here - we avoid infinite recursion on getattr !
@@ -74,9 +70,7 @@ class _buffer_forwarder_mixin(object):
         return getattr(raw, name)
 
 
-
 class _text_forwarder_mixin(object):
-
     def _reset_buffers(self):
         self.seek(0, os.SEEK_CUR)  # we flush i/o buffers, didn't work on py26
 
@@ -104,10 +98,10 @@ class _text_forwarder_mixin(object):
 
     def __USELESS__close(self):
         if not self.closed:
-            self.flush() # we do NOT swallow exceptions !
+            self.flush()  # we do NOT swallow exceptions !
             self.buffer.close()
 
-    def readinto(self, buffer): # to please test suite...
+    def readinto(self, buffer):  # to please test suite...
         self._checkClosed()
         raise defs.BadValueTypeError("Text stream can't be read into buffer")
 
@@ -121,16 +115,12 @@ class _text_forwarder_mixin(object):
         else:
             return "<%s.%s name=%r>" % (__name__, clsname, name)
 
-
     def __getattr__(self, name):
         # print ("--> taking ", name, "in ", self)
-        buffer = self.__dict__.get("_buffer") # beware here - we avoid infinite recursion on getattr !
+        buffer = self.__dict__.get("_buffer")  # beware here - we avoid infinite recursion on getattr !
         if buffer is None or isinstance(buffer, collections.Callable):
             raise AttributeError("Attribute '_buffer' not found on RSTextIO (uninitialized?)")  # problem...
         return getattr(buffer, name)
-
-
-
 
 
 ### EXTENDED BUFFER AND TEXT STREAMS !!!!!!!!
@@ -138,21 +128,21 @@ class _text_forwarder_mixin(object):
 class RSBufferedReader(_buffer_forwarder_mixin, defs.io_module.BufferedReader):
     pass
 
+
 class RSBufferedWriter(_buffer_forwarder_mixin, defs.io_module.BufferedWriter):
     pass
 
-#class RSBufferedRandom(defs.io_module.BufferedRandom, _buffer_forwarder_mixin):  # future C extension version
+
+# class RSBufferedRandom(defs.io_module.BufferedRandom, _buffer_forwarder_mixin):  # future C extension version
 #    pass
 
 # awkward structure to have all methods/inheritance-relations OK even when monkey patching
 class RSBufferedRandom(defs.io_module.BufferedRandom, RSBufferedWriter, RSBufferedReader):
     pass
 
+
 class RSTextIOWrapper(_text_forwarder_mixin, defs.io_module.TextIOWrapper):
     pass
-
-
-
 
 
 class RSThreadSafeWrapper(object):
@@ -179,13 +169,12 @@ class RSThreadSafeWrapper(object):
         with self.mutex:
             return getattr(self.wrapped_stream, name)(*args, **kwargs)
 
-
     def __getattr__(self, name):
 
         attr = getattr(self.wrapped_stream, name)  # might raise AttributeError
 
         if not name.startswith("_") and isinstance(attr, collections.Callable):
-            #print ("<<<<<<< WRAPPING METHOD", name)
+            # print ("<<<<<<< WRAPPING METHOD", name)
             attr = functools.partial(self._secure_call, name)
             # IMPORTANT : cache the thread-safe caller in object, so that we bypass this __getattr__ next time
             setattr(self, name, attr)
@@ -201,7 +190,6 @@ class RSThreadSafeWrapper(object):
     def __repr__(self):
         return "RSThreadSafeWrapper(%r)" % self.wrapped_stream
 
-
     def __enter__(self):
         """Context management protocol.  Returns self."""
         self._checkClosed()
@@ -210,9 +198,3 @@ class RSThreadSafeWrapper(object):
     def __exit__(self, *args):
         """Context management protocol.  Calls close()"""
         self.close()
-
-
-
-
-
-

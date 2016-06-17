@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 from __future__ import unicode_literals, print_function
 
 """
@@ -8,6 +8,7 @@ BEWARE - in this test, we DO NOT monkey patch the stdlib, so that we can compare
 import rsfile.rsfile_definitions as defs
 
 from rsfile.rstest import _utilities
+
 _utilities.patch_test_supports()
 
 import sys
@@ -23,15 +24,11 @@ import random
 import io
 import rsfile
 
-
 from test import test_support  # NOW ONLY we can import it
 
-
-TESTFN = "@TESTING" # we used our own one, since the test_support version is broken
-
+TESTFN = "@TESTING"  # we used our own one, since the test_support version is broken
 
 HAS_X_OPEN_FLAG = defs.HAS_X_OPEN_FLAG
-
 
 # this maps advanced modes to standard open() modes
 # we don't list here redundant flags, or binary/text/inheritable/synchronised stuffs
@@ -64,12 +61,14 @@ FILE_MODES_CORRELATION = {
     "RWNE": None,
 }
 
+
 def _disown_file_descriptor(stream):
     stream = getattr(stream, "wrapped_stream", stream)
     stream = getattr(stream, "_buffer", stream)
     stream = getattr(stream, "raw", stream)
     assert stream._closefd in (True, False)
     stream._closefd = False
+
 
 def reopener_via_fileno(name, mode):
     """Ensures that possible emulation of fileno doesn't break the access mode of the stream."""
@@ -81,6 +80,7 @@ def reopener_via_fileno(name, mode):
     assert new_f.handle() == f.handle()
     assert new_f.fileno() == fileno
     return new_f
+
 
 def __BROKEN__reopener_via_handle(name, mode):
     """Ensures that possible emulation of handle doesn't break the access mode of the stream."""
@@ -95,6 +95,7 @@ def __BROKEN__reopener_via_handle(name, mode):
     else:
         assert new_f.fileno() == f.fileno()
     return new_f
+
 
 def complete_and_normalize_possible_modes(file_modes):
     """
@@ -129,9 +130,7 @@ def complete_and_normalize_possible_modes(file_modes):
     return file_modes
 
 
-
 class TestStreamsRetrocompatibility(unittest.TestCase):
-
     @staticmethod
     def determine_stream_capabilities(opener, mode):
         """
@@ -172,7 +171,6 @@ class TestStreamsRetrocompatibility(unittest.TestCase):
             except EnvironmentError:
                 must_not_create = True
         assert not (must_create and must_not_create), (must_create, must_not_create)
-
 
         (fd, name) = tempfile.mkstemp()
         os.write(fd, os_payload)
@@ -218,7 +216,6 @@ class TestStreamsRetrocompatibility(unittest.TestCase):
                       must_not_create=must_not_create,
                       truncate=truncate)
         return params
-
 
     def testModeEquivalences(self):
 
@@ -288,15 +285,14 @@ class TestStreamsRetrocompatibility(unittest.TestCase):
 
                 chosen_flags = selected_adv_flags
 
-
             # we compare theoretical abilities with what the stream can ACTUALLY do
             theoretical_abilities = dict(
-                read = adv_res[0]["read"],
-                write = adv_res[0]["write"],
-                append = adv_res[0]["append"],
-                must_create = adv_res[0]["must_create"],
-                must_not_create = adv_res[0]["must_not_create"],
-                truncate = adv_res[1]["truncate"]
+                read=adv_res[0]["read"],
+                write=adv_res[0]["write"],
+                append=adv_res[0]["append"],
+                must_create=adv_res[0]["must_create"],
+                must_not_create=adv_res[0]["must_not_create"],
+                truncate=adv_res[1]["truncate"]
             )
 
             real_abilities = self.determine_stream_capabilities(rsfile.rsopen, chosen_flags)
@@ -306,16 +302,13 @@ class TestStreamsRetrocompatibility(unittest.TestCase):
                 REAL:         %s""" % (theoretical_abilities, real_abilities)
             self.assertEqual(theoretical_abilities, real_abilities, msg)
 
-
             if selected_stdlib_flags:
-
                 legacy_abilities = self.determine_stream_capabilities(io.open, selected_stdlib_flags)
 
                 msg = """
                     THEORETICAL: %s
                     LEGACY:      %s""" % (theoretical_abilities, legacy_abilities)
                 self.assertEqual(theoretical_abilities, legacy_abilities, msg)
-
 
             abilities_via_fileno = self.determine_stream_capabilities(reopener_via_fileno, chosen_flags)
             msg = """
@@ -324,8 +317,10 @@ class TestStreamsRetrocompatibility(unittest.TestCase):
             self.assertEqual(theoretical_abilities, abilities_via_fileno, msg)
 
             '''
-            # no need to test "handle" passing because handles are below-or-equal filenos in our current implementations,
-            # plus it leads to "too many open files" on windows because filenos can't be released without closing the handle too (and blcksize forces fileno creation..)
+            # no need to test "handle" passing because handles are below-or-equal filenos in our current
+            implementations,
+            # plus it leads to "too many open files" on windows because filenos can't be released without closing the
+            handle too (and blcksize forces fileno creation..)
             abilities_via_handle = self.determine_stream_capabilities(reopener_via_handle, chosen_flags)
             msg = """
                 THEORETICAL :        %s
@@ -335,7 +330,6 @@ class TestStreamsRetrocompatibility(unittest.TestCase):
 
         assert idx > 1000, idx  # we've well browsed lots of combinations
 
-
     def testMiscStreamBehavioursRetrocompatibility(self):
 
         filename = "TESTFILE"
@@ -344,8 +338,8 @@ class TestStreamsRetrocompatibility(unittest.TestCase):
 
             # BEWARE: wrapped stream must NOT be truncated despite the "w" mode
 
-            #print("Trying with", opener)
-            fd = os.open(filename, os.O_WRONLY|os.O_CREAT|os.O_TRUNC)
+            # print("Trying with", opener)
+            fd = os.open(filename, os.O_WRONLY | os.O_CREAT | os.O_TRUNC)
             self.assertEqual(os.fstat(fd).st_size, 0)
             os.write(fd, b"abcd")
             self.assertEqual(os.fstat(fd).st_size, 4)
@@ -356,9 +350,7 @@ class TestStreamsRetrocompatibility(unittest.TestCase):
                 self.assertEqual(os.fstat(fd).st_size, 4)
 
 
-
 def display_open_modes_correlations_table():
-
     file_modes_correlation = FILE_MODES_CORRELATION
 
     _ref_stdlib_modes = set(m for m in file_modes_correlation.values() if m)
@@ -368,8 +360,7 @@ def display_open_modes_correlations_table():
     correlations = []
 
     for stdlib_mode in sorted_stdlib_modes:
-
-        #print("Analysing stdlib mode %r" % stdlib_mode)
+        # print("Analysing stdlib mode %r" % stdlib_mode)
 
         advanced_modes = [k for (k, v) in file_modes_correlation.items() if v == stdlib_mode]
         advanced_mode = min(advanced_modes, key=len)
@@ -377,7 +368,7 @@ def display_open_modes_correlations_table():
         abilities = TestStreamsRetrocompatibility.determine_stream_capabilities(io.open, stdlib_mode)
 
         abilities = {k: ("true" if v else " ")
-                      for (k, v) in abilities.items()}
+                     for (k, v) in abilities.items()}
 
         abilities["std_mode"] = stdlib_mode
         abilities["adv_mode"] = advanced_mode
@@ -410,6 +401,7 @@ if __name__ == '__main__':
 
     try:
         from tabulate import tabulate  # requires "pip install tabulate"
+
         data = display_open_modes_correlations_table()
         # pprint(data)
         ordering = "std_mode adv_mode read write append must_create must_not_create truncate".split()
@@ -418,7 +410,6 @@ if __name__ == '__main__':
         print(tabulate(data, headers=ordering, tablefmt="rst", numalign="left", stralign="left"))
 
         all_advanced_modes = sorted(FILE_MODES_CORRELATION.keys())
-        print ("\nAuthorized advanced open modes:\n%s" % all_advanced_modes)
+        print("\nAuthorized advanced open modes:\n%s" % all_advanced_modes)
     except ImportError:
         print("Python-tabulate not installed, skipping display of file modes tables")
-

@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 from __future__ import unicode_literals, print_function
 
 from ctypes import *
@@ -20,7 +20,7 @@ from ctypes.wintypes import LPCWSTR
 from ctypes.wintypes import FILETIME
 
 
-#MANUALLY ADDED, because ctypes generator forgot fields...
+# MANUALLY ADDED, because ctypes generator forgot fields...
 class OVERLAPPED(Structure):
     _fields_ = [('Internal', LPVOID),
                 ('InternalHigh', LPVOID),
@@ -28,11 +28,13 @@ class OVERLAPPED(Structure):
                 ('OffsetHigh', DWORD),
                 ('Pointer', LPVOID),
                 ('hEvent', HANDLE),
-               ]
+                ]
 
 
 class _SECURITY_ATTRIBUTES(Structure):
     pass
+
+
 SECURITY_ATTRIBUTES = _SECURITY_ATTRIBUTES
 GetLastError = _stdcall_libraries['kernel32'].GetLastError
 GetLastError.restype = DWORD
@@ -44,8 +46,12 @@ LockFileEx.argtypes = [HANDLE, DWORD, DWORD, DWORD, DWORD, LPOVERLAPPED]
 UnlockFileEx = _stdcall_libraries['kernel32'].UnlockFileEx
 UnlockFileEx.restype = BOOL
 UnlockFileEx.argtypes = [HANDLE, DWORD, DWORD, DWORD, LPOVERLAPPED]
+
+
 class _BY_HANDLE_FILE_INFORMATION(Structure):
     pass
+
+
 BY_HANDLE_FILE_INFORMATION = _BY_HANDLE_FILE_INFORMATION
 LPBY_HANDLE_FILE_INFORMATION = POINTER(_BY_HANDLE_FILE_INFORMATION)
 GetFileInformationByHandle = _stdcall_libraries['kernel32'].GetFileInformationByHandle

@@ -1,26 +1,28 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 from __future__ import unicode_literals, print_function
-
 
 ## THIS CLASS IS CURRENTLY ONLY USED FOR DOCUMENTATION PURPOSE ##
 
 
 import sys, os
 
+
 class RSIOBase(object):
     """
     This abstract base class is only used to document the **additional/modified** features of rsfile streams,
-    compared to those of the stdlib `io.IOBase` subclasses. Unless stated otherwise, all methods and attributes documented for the `io` module also exist on rsfile sreams, with a compatible behaviour.
+    compared to those of the stdlib `io.IOBase` subclasses. Unless stated otherwise, all methods and attributes
+    documented for the `io` module also exist on rsfile sreams, with a compatible behaviour.
 
     Advanced streams can be found in the *rsfile* package, as classes named *RSFileIO*, *RSBufferedReader*,
     *RSBufferedWriter*, *RSBufferedRandom*, *RSTextIOWrapper* and *RSThreadSafeWrapper*.
-    However, you shouldn't have to deal with them directly, since RSOpen() takes care of instantiating them properly. Also note that the signature of RSFileIO differs quite much from its stdlib counterpart, because of its enhanced capabilities.
+    However, you shouldn't have to deal with them directly, since RSOpen() takes care of instantiating them properly.
+    Also note that the signature of RSFileIO differs quite much from its stdlib counterpart, because of its enhanced
+    capabilities.
 
     """
 
     def _unsupported(selfself, name):
         raise NotImplementedError(name)
-
 
     ### IMPROVED METHODS ###
 
@@ -45,7 +47,6 @@ class RSIOBase(object):
         """
         self._unsupported("truncate")
 
-
     def flush(self):
         """
         Flushes read and/or write buffers, if applicable.
@@ -59,29 +60,29 @@ class RSIOBase(object):
         """
         self._unsupported("flush")
 
-
     def close(self):
         """
         Flushes and closes the IO object. This method has no effect if the file is already closed.
 
-        Potential exceptions are NOT swallowed. Yet the underlying raw streams are closed even if the flush() failed, as is done in the stdlib io module. So if your data is very important, issue a separate flush() and handle potential errors (no more disk space, blocking operation error on a non-blocking stream...) before close().
+        Potential exceptions are NOT swallowed. Yet the underlying raw streams are closed even if the flush() failed,
+        as is done in the stdlib io module. So if your data is very important, issue a separate flush() and handle
+        potential errors (no more disk space, blocking operation error on a non-blocking stream...) before close().
 
         When closing, all the locks still held by the stream's file descriptor are released.
 
-        However, note that the native file descriptor wrapped by this stream might be kept alive for a while, to prevent unexpected losses of locks elsewhere in the process (see :ref:`rsfile_locking_caveats` for details).
+        However, note that the native file descriptor wrapped by this stream might be kept alive for a while,
+        to prevent unexpected losses of locks elsewhere in the process (see :ref:`rsfile_locking_caveats` for details).
         """
         self._unsupported("close")
 
-
     ### NEW METHODS ###
 
-    def size(self): # non standard method    
+    def size(self):  # non standard method
         """Returns the size, in bytes, of the opened file.
 
         Intermediate buffers are flushed before the size is actually computed.
         """
         self._unsupported("size")
-
 
     def sync(self, metadata=True, full_flush=True):
         """Pushes file (meta)data from application to physical device, through
@@ -98,7 +99,8 @@ class RSIOBase(object):
         file times and other metadata (this can improve performance, at the cost of some
         incoherence in filesystem state).
 
-        If None of the above works, a standard sync() is attempted, i.e pushing both data and metadata up to the disk device.
+        If None of the above works, a standard sync() is attempted, i.e pushing both data and metadata up to the disk
+        device.
 
         Note that the file's parent directory is not necessarily updated synchronously, so
         some risks of data loss may remain.
@@ -111,7 +113,6 @@ class RSIOBase(object):
         No return value is expected.
         """
         self._unsupported("sync")
-
 
     def times(self):
         """Returns a :class:`FileTimes` instance with portable file time attributes.
@@ -126,7 +127,6 @@ class RSIOBase(object):
         Raises IOError if the stream has no times available.
         """
         self._unsupported("times")
-
 
     def unique_id(self):
         """Returns a tuple of (device, inode) integers, identifying unambiguously the stream.
@@ -143,14 +143,13 @@ class RSIOBase(object):
         """
         self._unsupported("unique_id")
 
-
     def fileno(self):
         """Returns the C-style file descriptor (an integer).
 
-        Rsfile streams always expose a file descriptor. However, on Windows, this file descriptor is just a wrapper around the native Handle, and it shouldn't be relied upon too much.
+        Rsfile streams always expose a file descriptor. However, on Windows, this file descriptor is just a wrapper
+        around the native Handle, and it shouldn't be relied upon too much.
         """
         self._unsupported("fileno")
-
 
     def handle(self):
         """Returns the native file handle associated with the stream.
@@ -161,9 +160,7 @@ class RSIOBase(object):
         """
         self._unsupported("handle")
 
-
     def lock_file(self, timeout=None, length=None, offset=None, whence=os.SEEK_SET, shared=None):
-        
         """
         Locks the whole regular file or a portion of it, depending on the arguments provided.
 
@@ -229,7 +226,6 @@ class RSIOBase(object):
         """
         self._unsupported("lock_file")
 
-
     def unlock_file(self, length=None, offset=0, whence=os.SEEK_SET):
         """
         Unlocks a portion of regular file previously locked through the same native handle.
@@ -247,12 +243,11 @@ class RSIOBase(object):
         """
         self._unsupported("unlock_file")
 
-
-
     @property
     def mode(self):
         """
-        At the moment, this property behaves like its sibling from the stdlib io module, and returns a string of *standard* (lowercase) mode flags.
+        At the moment, this property behaves like its sibling from the stdlib io module, and returns a string of
+        *standard* (lowercase) mode flags.
 
         On a binary stream, it recomputes the mode from the raw stream attributes,
         except that it does't distinguish "rb+" from "wb+" ("rb+" is always returned).
@@ -260,7 +255,6 @@ class RSIOBase(object):
         If the file is opened in text mode however, its "mode" attribute is exactly that which was passed open().
         """
         self._unsupported("mode")
-
 
     @property
     def origin(self):
@@ -271,7 +265,6 @@ class RSIOBase(object):
         """
         self._unsupported("origin")
 
-
     @property
     def name(self):
         """
@@ -280,6 +273,3 @@ class RSIOBase(object):
         To interpret this attribute safely, refer to the :attr:`origin` property.
         """
         self._unsupported("name")
-
-
-

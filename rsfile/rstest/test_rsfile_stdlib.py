@@ -1,9 +1,10 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 from __future__ import unicode_literals, print_function
 
 import rsfile.rsfile_definitions as defs
 
 from rsfile.rstest import _utilities
+
 _utilities.patch_test_supports()
 
 from rsfile.rstest import _worker_process
@@ -25,31 +26,32 @@ from datetime import datetime, timedelta
 import rsfile
 import io, _io, _pyio
 
-
 # IMPORTANT - we monkey-patch the original io modules !!!
 rsfile.monkey_patch_io_module(_io)  # C-backed version
 rsfile.monkey_patch_io_module(io)  # python interface to C-backed version
 rsfile.monkey_patch_io_module(_pyio)  # (almost) pure python version
 rsfile.monkey_patch_open_builtin()
 
-
 from test import test_support  # NOW ONLY we can import it
-
 
 
 def test_original_io():
     """
-    Beware, We patch stdlib tests to remove C extension tests, or other tests that can't apply to our python implementation.
+    Beware, We patch stdlib tests to remove C extension tests, or other tests that can't apply to our python
+    implementation.
 
-    Original cmd : " python -m test.regrtest -uall -v test_fileio test_file test_io test_bufio test_memoryio test_largefile "
+    Original cmd : " python -m test.regrtest -uall -v test_fileio test_file test_io test_bufio test_memoryio
+    test_largefile "
     """
 
     import _io
 
-    from test import test_io, test_memoryio, test_file, test_bufio, test_fileio, test_largefile  # python stdlib test suite must be installed for current python interpreter
+    from test import test_io, test_memoryio, test_file, test_bufio, test_fileio, \
+        test_largefile  # python stdlib test suite must be installed for current python interpreter
 
     class dummyklass(unittest.TestCase):
         pass
+
     def dummyfunc(*args, **kwargs):
         print("<DUMMY>", end='')
 
@@ -62,8 +64,8 @@ def test_original_io():
             os.remove(newname)
         except:
             pass
-    test_support.unlink = clean_unlink
 
+    test_support.unlink = clean_unlink
 
     # Skip C-specific tests, which are anyway often skipped for "_pyio" itself
     test_io.CBufferedRandomTest = dummyklass
@@ -75,13 +77,14 @@ def test_original_io():
     test_io.CMiscIOTest = dummyklass
     test_io.CIOTest = dummyklass
 
-    test_io.IOTest.test_garbage_collection = dummyfunc # cyclic GC can't work with python classes having __del__() method
-    test_io.PyIOTest.test_garbage_collection = dummyfunc # idem
+    test_io.IOTest.test_garbage_collection = dummyfunc  # cyclic GC can't work with python classes having __del__()
+    # method
+    test_io.PyIOTest.test_garbage_collection = dummyfunc  # idem
     test_io.PyIOTest.test_large_file_ops = dummyfunc  # we just skip because HEAVY AND LONG
     test_io.TextIOWrapperTest.test_repr = dummyfunc  # repr() of streams changes of course
 
-
-    # like in _pyio implementation, in rsfile, we do not detect reentrant access, nor raise RuntimeError to avoid deadlocks
+    # like in _pyio implementation, in rsfile, we do not detect reentrant access, nor raise RuntimeError to avoid
+    # deadlocks
     test_io.PySignalsTest.test_reentrant_write_buffered = dummyfunc
     test_io.PySignalsTest.test_reentrant_write_text = dummyfunc
     test_io.CSignalsTest.test_reentrant_write_buffered = dummyfunc
@@ -101,39 +104,37 @@ def test_original_io():
     test_io.PyBufferedReaderTest.test_read_on_closed = dummyfunc
     test_io.PyBufferedRandomTest.test_read_on_closed = dummyfunc
 
-
     test_fileio._FileIO = rsfile.io_module.FileIO
-    test_fileio.AutoFileTests.testMethods = dummyfunc # messy C functions signatures...
-    test_fileio.AutoFileTests.testErrors = dummyfunc # incoherent errors returned on bad fd, between C and Py implementations...
+    test_fileio.AutoFileTests.testMethods = dummyfunc  # messy C functions signatures...
+    test_fileio.AutoFileTests.testErrors = dummyfunc  # incoherent errors returned on bad fd, between C and Py
+    # implementations...
     test_fileio.OtherFileTests.testInvalidFd = dummyfunc  # different exception types...
     test_fileio.AutoFileTests.testBlksize = dummyfunc  # rsfile doesn't use raw._blksize optimizations for now
 
     test_fileio.AutoFileTests.testRepr = dummyfunc  # repr() of streams changes of course
     test_fileio.AutoFileTests.testReprNoCloseFD = dummyfunc  # repr() of streams changes of course
 
-
     # bugfix of testErrnoOnClosedWrite() test in python2.7
-    deco = test_fileio.AutoFileTests.__dict__["ClosedFDRaises"] # decorator must not become unbound method !
+    deco = test_fileio.AutoFileTests.__dict__["ClosedFDRaises"]  # decorator must not become unbound method !
+
     @deco
     def bugfixed(self, f):
-        f.write(b'a') # in py27 trunk, "binary" modifier was lacking...
-    test_fileio.AutoFileTests.testErrnoOnClosedWrite = bugfixed
+        f.write(b'a')  # in py27 trunk, "binary" modifier was lacking...
 
+    test_fileio.AutoFileTests.testErrnoOnClosedWrite = bugfixed
 
     # Skip C-oriented tests
     test_memoryio.CStringIOPickleTest = dummyklass
     test_memoryio.CBytesIOTest = dummyklass
     test_memoryio.CStringIOTest = dummyklass
 
-
     # Skip C-oriented tests
     test_file.CAutoFileTests = dummyklass
 
-
     ## To launch a single test ##
-    #mytest = test_io.PyIOTest('test_invalid_newline')
-    #res = mytest.run()
-    #print(res)
+    # mytest = test_io.PyIOTest('test_invalid_newline')
+    # res = mytest.run()
+    # print(res)
 
 
     all_test_suites = []
@@ -155,8 +156,6 @@ def test_original_io():
 
     if all_test_suites:
         test_support.run_unittest(*all_test_suites)
-
-
 
 
 def test_main():

@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 from __future__ import unicode_literals, print_function
 
 import os, stat
@@ -6,15 +6,15 @@ from . import rsfile_definitions as defs
 from .rsfile_streams import *
 
 
-
 def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newline=None,
            fileno=None, handle=None, closefd=True, opener=None,
            locking=True, timeout=None, thread_safe=True, mutex=None, permissions=0o777):
-
     """
-    This function is a factory retrocompatible with :func:`io.open` (wich is an alias of the "open()" builtin). It returns chains of I/O streams, with a focus on security and concurrency.
+    This function is a factory retrocompatible with :func:`io.open` (wich is an alias of the "open()" builtin). It
+    returns chains of I/O streams, with a focus on security and concurrency.
 
-    For background information see the `open() builtin documentation <https://docs.python.org/3/library/functions.html#open>`_.
+    For background information see the `open() builtin documentation
+    <https://docs.python.org/3/library/functions.html#open>`_.
 
     .. rubric::
         PARAMETERS
@@ -22,13 +22,18 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
     ``name`` is the path to the file, required if no existing fileno or handle is provided for wrapping
     through the ``fileno``/``handle`` arguments.
 
-    ``mode`` is the access mode of the stream, it can be given either as a standard mode string, or as an advanced mode string (see :ref:`file opening modes<file_opening_modes>`).
+    ``mode`` is the access mode of the stream, it can be given either as a standard mode string, or as an advanced
+    mode string (see :ref:`file opening modes<file_opening_modes>`).
 
-    The ``buffering``, ``encoding``, ``errors``, ``newline`` and ``opener`` arguments have the same meaning as in :func:`io.open`. Note that the ``opener`` callable must return a ``mode``-compatible C-style file descriptor, like in the stdlib, not an OS-specific handle.
+    The ``buffering``, ``encoding``, ``errors``, ``newline`` and ``opener`` arguments have the same meaning as in
+    :func:`io.open`. Note that the ``opener`` callable must return a ``mode``-compatible C-style file descriptor,
+    like in the stdlib, not an OS-specific handle.
 
-    ``fileno`` and ``handle``, mutually exclusive, allow you to provide a C-style file descriptor or an OS-specific handle to be wrapped. Please ensure, of course, that these raw streams are compatible with the ``mode`` requested.
+    ``fileno`` and ``handle``, mutually exclusive, allow you to provide a C-style file descriptor or an OS-specific
+    handle to be wrapped. Please ensure, of course, that these raw streams are compatible with the ``mode`` requested.
 
-    ``closefd`` (boolean) may only be False when wrapping a fileno or a handle, and in this case this wrapped raw stream will not be closed when the file object gets closed.
+    ``closefd`` (boolean) may only be False when wrapping a fileno or a handle, and in this case this wrapped raw
+    stream will not be closed when the file object gets closed.
  
     .. note:: 
             For backward compatibility, when using standard modes, it is also possible to provide
@@ -40,8 +45,11 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
         only issue one system call. So in this case, checking the number of bytes written/read after 
         each operation is highly advised.
     
-    If ``locking`` is True, the *whole* file will be immediately locked on opening, with an automatically determined share mode (exclusive for writable streams, shared for read-only streams), and the ``timeout`` argument provided (see the :meth:`lock_file() <rsfile.rsiobase.RSIOBase.lock_file>` method for details).
-    This is particularly useful is the file is opened with "truncate" flag, as it prevents this truncation from happening without inter-process protection.
+    If ``locking`` is True, the *whole* file will be immediately locked on opening, with an automatically determined
+    share mode (exclusive for writable streams, shared for read-only streams), and the ``timeout`` argument provided
+    (see the :meth:`lock_file() <rsfile.rsiobase.RSIOBase.lock_file>` method for details).
+    This is particularly useful is the file is opened with "truncate" flag, as it prevents this truncation from
+    happening without inter-process protection.
     It is still possible to abort that locking later, with a call to :meth:`unlock` (without arguments).
 
     If ``thread_safe`` is True, the chain of streams returned by the function will be wrapped into 
@@ -99,7 +107,8 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
     'T'       Stream is in Text mode (default)
     ========= ========================================================================================
 
-    **Except readability/writability, all these flags are only taken into account when opening a new raw stream, not wrapping an existing fileno or handle.**
+    **Except readability/writability, all these flags are only taken into account when opening a new raw stream,
+    not wrapping an existing fileno or handle.**
 
     Any combination of "R", "W", and "A" is possible, even though "W" is useless is "A" is set.
 
@@ -110,7 +119,9 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
     happen during a single flush()) might end up writing disjoint bytes chunks on disk file, in case of concurrent
     access.
 
-    By default, RSFile opening follows the "O_CREATE alone" semantic : files are created if not existing, else they're simply opened. "C" and "N" flags,  mutually exclusive, alter this behaviour. The old corresponding "-" and "+" flags, ambiguous, are deprecated but still supported.
+    By default, RSFile opening follows the "O_CREATE alone" semantic : files are created if not existing,
+    else they're simply opened. "C" and "N" flags,  mutually exclusive, alter this behaviour. The old corresponding
+    "-" and "+" flags, ambiguous, are deprecated but still supported.
 
     - with "C" (exclusive creation): file opening fails if the file already exists.
       This is the same semantic as (O_CREATE | O_EXCL) flags, which can be used to
@@ -192,7 +203,9 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
     elif cleaned_mode.upper() == cleaned_mode:
         (raw_kwargs, extended_kwargs) = parse_advanced_args(name, mode, fileno, handle, closefd)
     else:
-        raise defs.BadValueTypeError("bad mode string %r : it must contain only lower case (standard mode) or upper case (advanced mode) characters" % mode)
+        raise defs.BadValueTypeError(
+            "bad mode string %r : it must contain only lower case (standard mode) or upper case (advanced mode) "
+            "characters" % mode)
 
     # don't use interprocess facilities if fork() isn't supported, because file objects aren't pickleable for now...
     is_interprocess = raw_kwargs["inheritable"] and hasattr(os, "fork")
@@ -201,7 +214,8 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
     if opener:
         if raw_kwargs["fileno"]:
             raise defs.BadValueTypeError("can't provide both fileno and opener")
-        raw_kwargs["fileno"] = opener(name, mode)  # we give it the original "name" as parameter, not the normalized path
+        raw_kwargs["fileno"] = opener(name,
+                                      mode)  # we give it the original "name" as parameter, not the normalized path
         raw_kwargs["path"] = None  # irrelevant in this case
 
     if extended_kwargs["truncate"]:
@@ -221,13 +235,13 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
         raise defs.BadValueTypeError("binary mode doesn't take a newline argument")
 
     raw_kwargs['permissions'] = permissions
-    #print("We get RSFileIO", RSFileIO)
+    # print("We get RSFileIO", RSFileIO)
     raw = RSFileIO(**raw_kwargs)
     result = raw
     try:
 
         if locking:
-            #print "we enforce file locking with %s - %s" %(shared, timeout)
+            # print "we enforce file locking with %s - %s" %(shared, timeout)
             raw.lock_file(timeout=timeout)
 
         if extended_kwargs["truncate"]:
@@ -287,8 +301,6 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
         raise
 
 
-
-
 def parse_standard_args(name, mode, fileno, handle, closefd):
     # note: name can also be a fileno here, for retrocompatibility...
 
@@ -307,10 +319,10 @@ def parse_standard_args(name, mode, fileno, handle, closefd):
     binary = "b" in modes
     text = "t" in modes
 
-    if "U" in modes: # only for backward compatibility
+    if "U" in modes:  # only for backward compatibility
         if creating_flag or writing_flag or appending_flag or updating_flag:
             raise defs.BadValueTypeError("can't use U and writing mode at once")
-        reading_flag = True # we enforce reading 
+        reading_flag = True  # we enforce reading
 
     if creating_flag + reading_flag + writing_flag + appending_flag != 1:
         raise defs.BadValueTypeError("must have exactly one of create/read/write/append mode flags")
@@ -336,31 +348,28 @@ def parse_standard_args(name, mode, fileno, handle, closefd):
         truncate = False  # ignored
 
     raw_kwargs = dict(path=path,
-                    read=read,
-                    write=write,
-                    append=append,
-                    must_create=must_create,
-                    must_not_create=must_not_create,
-                    synchronized=False,
-                    inheritable=False,  # was changed in python stdlib, no more inheritability by default!
-                    fileno=fileno, handle=handle, closefd=closefd)
+                      read=read,
+                      write=write,
+                      append=append,
+                      must_create=must_create,
+                      must_not_create=must_not_create,
+                      synchronized=False,
+                      inheritable=False,  # was changed in python stdlib, no more inheritability by default!
+                      fileno=fileno, handle=handle, closefd=closefd)
 
     extended_kwargs = dict(truncate=truncate,
-                            binary=binary,
-                            text=text)
+                           binary=binary,
+                           text=text)
 
     return (raw_kwargs, extended_kwargs)
 
 
-
-
 def parse_advanced_args(path, mode, fileno, handle, closefd):
-
     modes = set(mode)
     if modes - set(defs.ADVANCED_OPEN_FLAGS) or len(mode) > len(modes):
         raise defs.BadValueTypeError("invalid mode: %r" % mode)
 
-    path = path # must be None or a string
+    path = path  # must be None or a string
 
     read = "R" in mode
     append = "A" in mode
@@ -372,7 +381,7 @@ def parse_advanced_args(path, mode, fileno, handle, closefd):
     synchronized = "S" in mode
     inheritable = "I" in mode
 
-    truncate = "E" in mode # for "Erase"  
+    truncate = "E" in mode  # for "Erase"
     binary = "B" in modes
     text = "T" in modes
 
@@ -380,23 +389,16 @@ def parse_advanced_args(path, mode, fileno, handle, closefd):
         truncate = False  # ignored
 
     raw_kwargs = dict(path=path,
-                    read=read,
-                    write=write, append=append,
-                    must_create=must_create,
-                    must_not_create=must_not_create,
-                    synchronized=synchronized,
-                    inheritable=inheritable,
-                    fileno=fileno, handle=handle, closefd=closefd)
+                      read=read,
+                      write=write, append=append,
+                      must_create=must_create,
+                      must_not_create=must_not_create,
+                      synchronized=synchronized,
+                      inheritable=inheritable,
+                      fileno=fileno, handle=handle, closefd=closefd)
 
     extended_kwargs = dict(truncate=truncate,
-                      binary=binary,
-                      text=text)
+                           binary=binary,
+                           text=text)
 
     return (raw_kwargs, extended_kwargs)
-
-
-
-
-
-
-

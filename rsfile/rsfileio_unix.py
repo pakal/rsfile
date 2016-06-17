@@ -1,26 +1,23 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 from __future__ import unicode_literals, print_function
 
 """
 Reimplementation of raw streams for unix-like OS, with advanced abilities.
 """
 
-
 import sys, os, functools, errno, time, stat, threading, locale
-from .import rsfileio_abstract
-from .import rsfile_definitions as defs
-
+from . import rsfileio_abstract
+from . import rsfile_definitions as defs
 
 from .rsbackend import unix_stdlib as unix
 from .rsfile_registries import IntraProcessLockRegistry
 
-
 UNIX_MSG_ENCODING = locale.getpreferredencoding()
 
-class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
 
+class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
     # Warning - this is to be used as a static method ! #
-    def _unix_error_converter(f): #@NoSelf
+    def _unix_error_converter(f):  # @NoSelf
         @functools.wraps(f)
         def wrapper(self, *args, **kwds):
             try:
@@ -41,7 +38,6 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
 
         return wrapper
 
-
     @_unix_error_converter
     def _purge_pending_related_file_descriptors(self):
         """
@@ -50,18 +46,18 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
 
         with IntraProcessLockRegistry.mutex:
             res = IntraProcessLockRegistry.unique_id_has_locks(self._lock_registry_inode)
-            if not res: # no more locks left for that unique_id
+            if not res:  # no more locks left for that unique_id
                 data_list = IntraProcessLockRegistry.remove_unique_id_data(self._lock_registry_inode)
-                for fd in data_list: # we close all pending file descriptors (which were left opened to prevent fcntl() lock autoremoving)
+                for fd in data_list:  # we close all pending file descriptors (which were left opened to prevent
+                    # fcntl() lock autoremoving)
                     unix.close(fd)
 
             return not res
 
-
-
     # # Private methods - no check is made on their argument or the file object state ! # #
     @_unix_error_converter
-    def _inner_create_streams(self, path, read, write, append, must_create, must_not_create, synchronized, inheritable, fileno, handle, permissions):
+    def _inner_create_streams(self, path, read, write, append, must_create, must_not_create, synchronized, inheritable,
+                              fileno, handle, permissions):
 
         # Note : opening broken links works if we're in "w" mode, and raises error in "r" mode,
         # like for normal unexisting files.
@@ -74,17 +70,18 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
             assert handle is None
             self._fileno = self._handle = fileno
 
-        else: #we open the file with low level posix IO - the unix "open()"  function
+        else:  # we open the file with low level posix IO - the unix "open()"  function
 
             if isinstance(path, unicode):
-                strname = path.encode(sys.getfilesystemencoding()) # let's take no risks - and do not use locale.getpreferredencoding() here 
+                strname = path.encode(
+                    sys.getfilesystemencoding())  # let's take no risks - and do not use locale.getpreferredencoding(
+                # ) here
             else:
                 strname = path
 
-
             flags = 0  # Note that unix.O_LARGEFILE is actually irrelevant
 
-            if synchronized :
+            if synchronized:
                 flags |= unix.O_SYNC
 
             if read and write:
@@ -98,13 +95,13 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
                 flags |= unix.O_APPEND
 
             if must_not_create:
-                pass # it's the default case for open() function
+                pass  # it's the default case for open() function
             elif must_create:
                 flags |= unix.O_CREAT | unix.O_EXCL
             else:
-                flags |= unix.O_CREAT # by default - we create the file iff it doesn't exists
+                flags |= unix.O_CREAT  # by default - we create the file iff it doesn't exists
 
-            #print("Creating unix stream with context", locals())
+            # print("Creating unix stream with context", locals())
             self._fileno = self._handle = unix.open(strname, flags, permissions)
 
             # on unix we must prevent the opening of directories, but not named fifos or other special files
@@ -126,8 +123,6 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         self._lock_registry_inode = self.unique_id()  # enforces caching of unique_id
         self._lock_registry_descriptor = self._fileno
 
-
-
     @_unix_error_converter
     def _inner_close_streams(self):
         if self._closefd:
@@ -138,13 +133,10 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
                 # we assume that there are chances for this to be the only handle pointing this precise file
                 IntraProcessLockRegistry.try_deleting_unique_id_entry(self._lock_registry_inode)
 
-
-
     @_unix_error_converter
     def _inner_reduce(self, size):
         assert size >= 0, size
         unix.ftruncate(self._fileno, size)
-
 
     @_unix_error_converter
     def _inner_extend(self, size, zero_fill):
@@ -153,14 +145,13 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         # posix truncation is ALWAYS "zerofill" actually...
         unix.ftruncate(self._fileno, size)
 
-
     @_unix_error_converter
     def _inner_sync(self, metadata, full_flush):
 
-        if full_flush: # full_flush is more important than metadata
+        if full_flush:  # full_flush is more important than metadata
             try:
-                unix.fcntl(self._fileno, unix.F_FULLFSYNC, 0) # Mac OS X only
-                #print("FULLFLUSH_UNIX_DONE")
+                unix.fcntl(self._fileno, unix.F_FULLFSYNC, 0)  # Mac OS X only
+                # print("FULLFLUSH_UNIX_DONE")
                 return
             except unix.error:
                 pass
@@ -168,15 +159,14 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         if not metadata and hasattr(unix, "fdatasync"):
             try:
                 # theoretically, file size will properly be updated, if it is necessary to preserve data integrity
-                unix.fdatasync(self._fileno) # not supported on Mac OS X
-                #print("FDATASYNC_UNIX_DONE")
+                unix.fdatasync(self._fileno)  # not supported on Mac OS X
+                # print("FDATASYNC_UNIX_DONE")
                 return
             except unix.error:
                 pass
 
-        unix.fsync(self._fileno) # last attempt : metadata flush without full_sync guarantees
-        #print("FSYNC_UNIX_DONE")
-
+        unix.fsync(self._fileno)  # last attempt : metadata flush without full_sync guarantees
+        # print("FSYNC_UNIX_DONE")
 
     def _inner_fileno(self):
         assert self._fileno
@@ -185,7 +175,6 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
     def _inner_handle(self):
         assert self._handle
         return self._handle
-
 
     @_unix_error_converter
     def _inner_unique_id(self):
@@ -196,7 +185,8 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
 
         The st_ino and st_dev fields taken together uniquely identify the file within the system.
 
-        Unless otherwise specified, the structure members st_mode, st_ino, st_dev, st_unique_id, st_gid, st_atime, st_ctime, and st_mtime shall have meaningful values for all file types defined in IEEE Std 1003.1-2001.
+        Unless otherwise specified, the structure members st_mode, st_ino, st_dev, st_unique_id, st_gid, st_atime,
+        st_ctime, and st_mtime shall have meaningful values for all file types defined in IEEE Std 1003.1-2001.
         """
         stats = unix.fstat(self._fileno)
         _unique_id = (stats.st_dev, stats.st_ino)
@@ -209,7 +199,10 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         """
         See STAT() docs:
 
-        Not all of the Linux file systems implement all of the time fields. Some file system types allow mounting in such a way that file and/or directory accesses do not cause an update of the st_atime field. (See noatime, nodiratime, and relatime in mount(8), and related information in mount(2).) In addition, st_atime is not updated if a file is opened with the O_NOATIME; see open(2).
+        Not all of the Linux file systems implement all of the time fields. Some file system types allow mounting in
+        such a way that file and/or directory accesses do not cause an update of the st_atime field. (See noatime,
+        nodiratime, and relatime in mount(8), and related information in mount(2).) In addition, st_atime is not
+        updated if a file is opened with the O_NOATIME; see open(2).
         """
         stats = unix.fstat(self._fileno)
         return defs.FileTimes(access_time=stats.st_atime,
@@ -232,16 +225,16 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         try:
             return unix.read(self._fileno, n)
         except OSError as e:
-            #print ("<<< inner read", e.__class__)
+            # print ("<<< inner read", e.__class__)
             if e.args[0] == errno.EAGAIN:
                 return None
             raise
-    '''      
+
+    '''
     @_unix_error_converter
     def _inner_readinto(self, buffer):
         return unix.readinto(self._fileno, buffer, len(buffer))
     '''
-
 
     @_unix_error_converter
     def _inner_write(self, bytes):
@@ -249,7 +242,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         try:
             return unix.write(self._fileno, bytes)
         except OSError as e:
-            #print(">>>>>>>>>_inner_write", e.__class__)
+            # print(">>>>>>>>>_inner_write", e.__class__)
             if e.args[0] == errno.EAGAIN:
                 return None
             raise
@@ -257,11 +250,12 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
     @_unix_error_converter
     def _inner_file_lock(self, length, abs_offset, blocking, shared):
 
-        #TODO - switch to "Open file description locks (non-POSIX)" on recent Linux one day, to have per-file-descriptor (but inheritable alas) locks
+        # TODO - switch to "Open file description locks (non-POSIX)" on recent Linux one day,
+        # to have per-file-descriptor (but inheritable alas) locks
 
         fd = self._fileno
 
-        if(shared):
+        if (shared):
             operation = unix.LOCK_SH
         else:
             operation = unix.LOCK_EX
@@ -269,21 +263,17 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         if not blocking:
             operation |= unix.LOCK_NB
         if length is None:
-            length = 0 # that's the "infinity" value for fcntl
+            length = 0  # that's the "infinity" value for fcntl
 
         unix.lockf(fd, operation, length, abs_offset, os.SEEK_SET)
-
 
     @_unix_error_converter
     def _inner_file_unlock(self, length, abs_offset):
 
         if length is None:
-            length = 0 # that's the "infinity" value for fcntl
+            length = 0  # that's the "infinity" value for fcntl
 
         try:
             unix.lockf(self._fileno, unix.LOCK_UN, length, abs_offset, os.SEEK_SET)
         finally:
             self._purge_pending_related_file_descriptors()
-
-
-

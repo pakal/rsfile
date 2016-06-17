@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 from __future__ import unicode_literals, print_function
 
 # Large files linux : http://www.suse.de/~aj/linux_lfs.html
@@ -48,7 +48,9 @@ IN PYWIN32 - ctypes : warning
 
 In pywin32 : import AllocateReadBuffer(bufSize) for readfile
 
-To write to the end of file, specify both the Offset and OffsetHigh members of the OVERLAPPED structure as 0xFFFFFFFF. This is functionally equivalent to previously calling the CreateFile function to open hFile using FILE_APPEND_DATA access.
+To write to the end of file, specify both the Offset and OffsetHigh members of the OVERLAPPED structure as
+0xFFFFFFFF. This is functionally equivalent to previously calling the CreateFile function to open hFile using
+FILE_APPEND_DATA access.
 
 
 Q: what's he point of readinto ??????? Why not use it for files ???
@@ -67,37 +69,37 @@ An attempt to lock the file using one of these file descriptors
 may be denied by a lock that the calling process has already placed via another descriptor.
 """
 
+error = (OSError,
+         IOError)  
+# we expose the types of errors that this backend uses (fcntl uses IOError, unlike os module functions...)
 
-error = (OSError, IOError) # we expose the types of errors that this backend uses (fcntl uses IOError, unlike os module functions...)
-
-from ctypes import create_string_buffer # R/W fixed-length buffer
+from ctypes import create_string_buffer  # R/W fixed-length buffer
 from array import array
 
 import os as _os
 from os import (open,
-               close, # not return value
-               fstat,
-               lseek,
-               ftruncate, # not return value
-               write, # arguments : (fd, string), returns number of bytes written
-               fsync,
-               read
-               ) # directly returns a string
+                close,  # not return value
+                fstat,
+                lseek,
+                ftruncate,  # not return value
+                write,  # arguments : (fd, string), returns number of bytes written
+                fsync,
+                read
+                )  # directly returns a string
+
+# WARNING - On at least some systems, LOCK_EX can only be used if the file descriptor refers to a file opened for
+# writing (RSFile enforces it anyway)
 
 
-# WARNING - On at least some systems, LOCK_EX can only be used if the file descriptor refers to a file opened for writing (RSFile enforces it anyway)
+from fcntl import lockf, fcntl  # used both to lock and unlock !
 
-
-from fcntl import lockf, fcntl # used both to lock and unlock !
 """
 The default for start is 0, which means to start at the 
 beginning of the file. The default for length is 0 which 
 means to lock to the end of the file. The default for whence is also 0.
 """
 
-from raw_unix_defines import * # constants
-
-
+from raw_unix_defines import *  # constants
 
 if hasattr(_os, 'fdatasync'):
     fdatasync = _os.fdatasync
@@ -108,11 +110,8 @@ def ltell(fd):
     return lseek(fd, 0, _os.SEEK_CUR)
 
 
-
-
 def readinto(fd, buffer, count):
-
-    #We mimic here the posix read() system call, which works with buffers.
+    # We mimic here the posix read() system call, which works with buffers.
 
     data = _os.read(fd, count)
 
@@ -120,23 +119,11 @@ def readinto(fd, buffer, count):
         try:
             buffer[0:len(data)] = array(b"b", data)
         except TypeError:
-            buffer[0:len(data)] = array("b", data) # mess between py2k and py3k...
+            buffer[0:len(data)] = array("b", data)  # mess between py2k and py3k...
     else:
         buffer[0:len(data)] = data
 
     return len(data)
 
 
-
 from os import unlink
-
-
-
-
-
-
-
-
-
-
-

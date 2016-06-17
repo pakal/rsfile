@@ -1,13 +1,11 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 from __future__ import unicode_literals, print_function
 
 import sys, os
 import functools
 
-
 # must be FIRST - VERY IMPORTANT !
-from .rsfile_definitions import * # constants, base types and exceptions
-
+from .rsfile_definitions import *  # constants, base types and exceptions
 
 from .rsfileio_abstract import RSFileIOAbstract
 
@@ -19,7 +17,6 @@ from .rsfile_utilities import *
 
 
 
-    
-        
-#contract.checkmod(module)  # UNCOMMENT THIS TO ACTIVATE PYCONTRACT CHECKING    
 
+
+# contract.checkmod(module)  # UNCOMMENT THIS TO ACTIVATE PYCONTRACT CHECKING

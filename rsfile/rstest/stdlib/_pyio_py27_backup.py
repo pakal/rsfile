@@ -10,6 +10,7 @@ import codecs
 import sys
 import warnings
 import errno
+
 # Import thread instead of threading to reduce startup cost
 try:
     from thread import allocate_lock as Lock
@@ -25,13 +26,13 @@ __metaclass__ = type
 # open() uses st_blksize whenever we can
 DEFAULT_BUFFER_SIZE = 8 * 1024  # bytes
 
+
 # NOTE: Base classes defined here are registered with the "official" ABCs
 # defined in io.py. We don't use real inheritance though, because we don't want
 # to inherit the C implementations.
 
 
 class BlockingIOError(IOError):
-
     """Exception raised when I/O would block on a non-blocking I/O stream."""
 
     def __init__(self, errno, strerror, characters_written=0):
@@ -44,7 +45,6 @@ class BlockingIOError(IOError):
 def open(file, mode="r", buffering=-1,
          encoding=None, errors=None,
          newline=None, closefd=True):
-
     r"""Open file and return a stream.  Raise IOError upon failure.
 
     file is either a text or byte string giving the name (and the path
@@ -237,11 +237,13 @@ def open(file, mode="r", buffering=-1,
 class DocDescriptor:
     """Helper for builtins.open.__doc__
     """
+
     def __get__(self, obj, typ):
         return (
             "open(file, mode='r', buffering=-1, encoding=None, "
-                 "errors=None, newline=None, closefd=True)\n\n" +
+            "errors=None, newline=None, closefd=True)\n\n" +
             open.__doc__)
+
 
 class OpenWrapper:
     """Wrapper for builtins.open
@@ -381,7 +383,6 @@ class IOBase:
         if not self.seekable():
             raise IOError("File or stream is not seekable."
                           if msg is None else msg)
-
 
     def readable(self):
         """Return whether object was opened for reading.
@@ -529,11 +530,11 @@ class IOBase:
         for line in lines:
             self.write(line)
 
+
 io.IOBase.register(IOBase)
 
 
 class RawIOBase(IOBase):
-
     """Base class for raw binary I/O."""
 
     # The read() method is implemented by calling readinto(); derived
@@ -592,13 +593,14 @@ class RawIOBase(IOBase):
         """
         self._unsupported("write")
 
+
 io.RawIOBase.register(RawIOBase)
 from _io import FileIO
+
 RawIOBase.register(FileIO)
 
 
 class BufferedIOBase(IOBase):
-
     """Base class for buffered IO objects.
 
     The main difference with RawIOBase is that the read() method
@@ -681,11 +683,11 @@ class BufferedIOBase(IOBase):
         """
         self._unsupported("detach")
 
+
 io.BufferedIOBase.register(BufferedIOBase)
 
 
 class _BufferedIOMixin(BufferedIOBase):
-
     """A mixin implementation of BufferedIOBase with an underlying raw stream.
 
     This passes most requests on to the underlying raw stream.  It
@@ -791,7 +793,6 @@ class _BufferedIOMixin(BufferedIOBase):
 
 
 class BytesIO(BufferedIOBase):
-
     """Buffered I/O implementation using an in-memory bytes buffer."""
 
     def __init__(self, initial_bytes=None):
@@ -826,7 +827,7 @@ class BytesIO(BufferedIOBase):
         if len(self._buffer) <= self._pos:
             return b""
         newpos = min(len(self._buffer), self._pos + n)
-        b = self._buffer[self._pos : newpos]
+        b = self._buffer[self._pos: newpos]
         self._pos = newpos
         return bytes(b)
 
@@ -909,7 +910,6 @@ class BytesIO(BufferedIOBase):
 
 
 class BufferedReader(_BufferedIOMixin):
-
     """BufferedReader(raw[, buffer_size])
 
     A buffer for a readable, sequential BaseRawIO object.
@@ -980,7 +980,7 @@ class BufferedReader(_BufferedIOMixin):
         if n <= avail:
             # Fast path: the data to read is fully buffered.
             self._read_pos += n
-            return buf[pos:pos+n]
+            return buf[pos:pos + n]
         # Slow path: read from the stream until enough bytes are read,
         # or until an EOF occurs or until read() would block.
         chunks = [buf[pos:]]
@@ -1059,8 +1059,8 @@ class BufferedReader(_BufferedIOMixin):
             self._reset_read_buf()
             return pos
 
-class BufferedWriter(_BufferedIOMixin):
 
+class BufferedWriter(_BufferedIOMixin):
     """A buffer for a writeable sequential RawIO object.
 
     The constructor creates a BufferedWriter for the given writeable raw
@@ -1157,7 +1157,6 @@ class BufferedWriter(_BufferedIOMixin):
 
 
 class BufferedRWPair(BufferedIOBase):
-
     """A buffered reader and writer object together.
 
     A buffered reader object and buffered writer object put together to
@@ -1231,7 +1230,6 @@ class BufferedRWPair(BufferedIOBase):
 
 
 class BufferedRandom(BufferedWriter, BufferedReader):
-
     """A buffered interface to random access streams.
 
     The constructor creates a reader and writer for a seekable stream,
@@ -1304,7 +1302,6 @@ class BufferedRandom(BufferedWriter, BufferedReader):
 
 
 class TextIOBase(IOBase):
-
     """Base class for text I/O.
 
     This class provides a character and line based interface to stream
@@ -1366,6 +1363,7 @@ class TextIOBase(IOBase):
         Subclasses should override."""
         return None
 
+
 io.TextIOBase.register(TextIOBase)
 
 
@@ -1376,6 +1374,7 @@ class IncrementalNewlineDecoder(codecs.IncrementalDecoder):
     translate=False, it ensures that the newline sequence is returned in
     one piece.
     """
+
     def __init__(self, decoder, translate, errors='strict'):
         codecs.IncrementalDecoder.__init__(self, errors=errors)
         self.translate = translate
@@ -1404,7 +1403,7 @@ class IncrementalNewlineDecoder(codecs.IncrementalDecoder):
         cr = output.count('\r') - crlf
         lf = output.count('\n') - crlf
         self.seennl |= (lf and self._LF) | (cr and self._CR) \
-                    | (crlf and self._CRLF)
+                       | (crlf and self._CRLF)
 
         if self.translate:
             if crlf:
@@ -1451,11 +1450,10 @@ class IncrementalNewlineDecoder(codecs.IncrementalDecoder):
                 ("\n", "\r\n"),
                 ("\r", "\r\n"),
                 ("\r", "\n", "\r\n")
-               )[self.seennl]
+                )[self.seennl]
 
 
 class TextIOWrapper(TextIOBase):
-
     r"""Character and line based layer over a BufferedIOBase object, buffer.
 
     encoding gives the name of the encoding that the stream will be
@@ -1697,20 +1695,20 @@ class TextIOWrapper(TextIOBase):
         return not eof
 
     def _pack_cookie(self, position, dec_flags=0,
-                           bytes_to_feed=0, need_eof=0, chars_to_skip=0):
+                     bytes_to_feed=0, need_eof=0, chars_to_skip=0):
         # The meaning of a tell() cookie is: seek to position, set the
         # decoder flags to dec_flags, read bytes_to_feed bytes, feed them
         # into the decoder with need_eof as the EOF flag, then skip
         # chars_to_skip characters of the decoded result.  For most simple
         # decoders, tell() will often just give a byte offset in the file.
-        return (position | (dec_flags<<64) | (bytes_to_feed<<128) |
-               (chars_to_skip<<192) | bool(need_eof)<<256)
+        return (position | (dec_flags << 64) | (bytes_to_feed << 128) |
+                (chars_to_skip << 192) | bool(need_eof) << 256)
 
     def _unpack_cookie(self, bigint):
-        rest, position = divmod(bigint, 1<<64)
-        rest, dec_flags = divmod(rest, 1<<64)
-        rest, bytes_to_feed = divmod(rest, 1<<64)
-        need_eof, chars_to_skip = divmod(rest, 1<<64)
+        rest, position = divmod(bigint, 1 << 64)
+        rest, dec_flags = divmod(rest, 1 << 64)
+        rest, bytes_to_feed = divmod(rest, 1 << 64)
+        need_eof, chars_to_skip = divmod(rest, 1 << 64)
         return position, dec_flags, bytes_to_feed, need_eof, chars_to_skip
 
     def tell(self):
@@ -1794,14 +1792,14 @@ class TextIOWrapper(TextIOBase):
             raise ValueError("tell on closed file")
         if not self._seekable:
             raise IOError("underlying stream is not seekable")
-        if whence == 1: # seek relative to current position
+        if whence == 1:  # seek relative to current position
             if cookie != 0:
                 raise IOError("can't do nonzero cur-relative seeks")
             # Seeking to the current position should attempt to
             # sync the underlying buffer with the current position.
             whence = 0
             cookie = self.tell()
-        if whence == 2: # seek relative to end of file
+        if whence == 2:  # seek relative to end of file
             if cookie != 0:
                 raise IOError("can't do nonzero end-relative seeks")
             self.flush()

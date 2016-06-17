@@ -1,10 +1,9 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 from __future__ import unicode_literals, print_function
 
-from .rsfile_definitions import * # constants, base types and exceptions
+from .rsfile_definitions import *  # constants, base types and exceptions
 from .rsfile_streams import *
 from .rsfile_factories import *
-
 
 BUILTIN_OPEN_FUNC_REPLACEMENT = functools.partial(rsopen, handle=None, locking=False, timeout=0,
                                                   thread_safe=False, mutex=None, permissions=0o777)
@@ -28,6 +27,7 @@ def monkey_patch_io_module(module=None):
         """
         Interface to rsFile accepting the limited "fopen()" modes (no file locking, no O_EXCL|O_CREAT semantic...)
         """
+
         def __init__(self, name, mode="r", closefd=True):
 
             (raw_kwargs, extended_kwargs) = parse_standard_args(name, mode, None, None, closefd)
@@ -35,7 +35,7 @@ def monkey_patch_io_module(module=None):
                 raise BadValueTypeError("Raw stream can't be created in text mode")
             RSFileIO.__init__(self, **raw_kwargs)
             if extended_kwargs["truncate"]:
-                self.truncate(0) # this mimicks basic rawFileIO, without file locking
+                self.truncate(0)  # this mimicks basic rawFileIO, without file locking
 
     # Important Patching ! #
     module.FileIO = RSFileIORawWrapper
@@ -64,11 +64,11 @@ def monkey_patch_open_builtin():
         builtins.open = new_open
 
 
-
 # ---------------------
 
 
-def read_from_file(filename, binary=False, buffering=None, encoding=None, errors=None, newline=None, locking=True, timeout=None):
+def read_from_file(filename, binary=False, buffering=None, encoding=None, errors=None, newline=None, locking=True,
+                   timeout=None):
     """
     Returns the *whole* content of the file ``filename``, as a binary or unicode string
     depending on the boolean ``binary``.
@@ -83,7 +83,6 @@ def read_from_file(filename, binary=False, buffering=None, encoding=None, errors
     mode = "R+"
     if binary:
         mode += "B"
-
 
     with rsopen(filename, mode=mode, buffering=buffering, encoding=encoding, errors=errors,
                 newline=newline, locking=locking, timeout=timeout, thread_safe=False) as myfile:
@@ -105,7 +104,6 @@ def read_from_file(filename, binary=False, buffering=None, encoding=None, errors
         return full_data
 
 
-
 def write_to_file(filename, data, sync=False, must_create=False, must_not_create=False,
                   buffering=None, encoding=None, errors=None, newline=None, locking=True, timeout=None):
     """
@@ -116,7 +114,7 @@ def write_to_file(filename, data, sync=False, must_create=False, must_not_create
     This function may raise *EnvironmentError* exceptions.
     """
 
-    mode = "WE" # we erase the file, no need for "S", final sync() will suffice
+    mode = "WE"  # we erase the file, no need for "S", final sync() will suffice
     if must_not_create:
         mode += "N"
     if must_create:
@@ -136,7 +134,6 @@ def write_to_file(filename, data, sync=False, must_create=False, must_not_create
 
 def append_to_file(filename, data, sync=False, must_not_create=False,
                    buffering=None, encoding=None, errors=None, newline=None, locking=True, timeout=None):
-
     """
     Append the binary or unicode string ``data`` to the file ``filename``.
     
@@ -160,7 +157,3 @@ def append_to_file(filename, data, sync=False, must_not_create=False,
         myfile.flush()
         if sync:
             myfile.sync()
-
-
-
-

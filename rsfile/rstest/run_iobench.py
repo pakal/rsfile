@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """
 Run iobench against rsfile drop-in replacements.
 
@@ -16,11 +16,10 @@ RUN_STDLIB_PYIO = True
 RUN_RSFILE = True  # exact OS backend depends on what's installed, see rsfileio_xxx.py and rsbackend
 
 
-
 def launch_benchmark():
-
     # HACK to ignore iobench.pyc file automatically, so that when iobench tries to access his "__file__", it works.
-    # This should solve "UnicodeDecodeError: 'utf8' codec can't decode byte 0xf3 in position 1: invalid continuation byte" error when running iobench.
+    # This should solve "UnicodeDecodeError: 'utf8' codec can't decode byte 0xf3 in position 1: invalid continuation
+    # byte" error when running iobench.
     iobench.__file__ = iobench.__file__.rstrip("c")
     assert iobench.text_open, vars(iobench)
 
@@ -30,42 +29,41 @@ def launch_benchmark():
 
     if RUN_STDLIB_CIO:
         import io
-        print (">>> benchmarking stdlib io module on python %s: module %r <<<" % (sys.version_info, io))
+        print(">>> benchmarking stdlib io module on python %s: module %r <<<" % (sys.version_info, io))
 
         iobench.open = io.open
         iobench.text_open = io.open
         _launch_iobench_tests()
 
-        print ("\n-----------\n")
+        print("\n-----------\n")
 
     if RUN_STDLIB_PYIO:
         import _pyio
-        print (">>> benchmarking stdlib pyio module on python %s: module %r <<<" % (sys.version_info, _pyio))
+        print(">>> benchmarking stdlib pyio module on python %s: module %r <<<" % (sys.version_info, _pyio))
 
         iobench.open = _pyio.open
         iobench.text_open = _pyio.open
         _launch_iobench_tests()
 
-        print ("\n-----------\n")
+        print("\n-----------\n")
 
     if RUN_RSFILE:
-        print (">>> benchmarking rsfile module <<<")
+        print(">>> benchmarking rsfile module <<<")
 
         iobench.open = rsfile.rsopen
         iobench.text_open = rsfile.rsopen
         _launch_iobench_tests()
 
-        print ("\n-----------\n")
+        print("\n-----------\n")
 
 
 if __name__ == '__main__':
     launch_benchmark()
 
-
-
 """ # BACKUP OF LATEST BENCHMARK ITERATION #
 
->>> benchmarking stdlib io module on python sys.version_info(major=2, minor=7, micro=11, releaselevel='final', serial=0): module <module 'io' from 'C:\Python27\lib\io.pyc'> <<<
+>>> benchmarking stdlib io module on python sys.version_info(major=2, minor=7, micro=11, releaselevel='final',
+serial=0): module <module 'io' from 'C:\Python27\lib\io.pyc'> <<<
 Preparing files...
 Binary unit = one byte
 Text unit = one character (utf8-decoded)
@@ -133,7 +131,8 @@ Text unit = one character (utf8-decoded)
 
 -----------
 
->>> benchmarking stdlib pyio module on python sys.version_info(major=2, minor=7, micro=11, releaselevel='final', serial=0): module <module '_pyio' from 'C:\Python27\lib\_pyio.pyc'> <<<
+>>> benchmarking stdlib pyio module on python sys.version_info(major=2, minor=7, micro=11, releaselevel='final',
+serial=0): module <module '_pyio' from 'C:\Python27\lib\_pyio.pyc'> <<<
 Preparing files...
 Binary unit = one byte
 Text unit = one character (utf8-decoded)

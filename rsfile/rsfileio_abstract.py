@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 from __future__ import unicode_literals, print_function
 
 import sys, os, time, threading, multiprocessing, collections, functools, stat
@@ -11,9 +11,7 @@ from . import rsfile_definitions as defs
 from .rsfile_registries import IntraProcessLockRegistry, _default_rsfile_options
 
 
-
 class RSFileIOAbstract(defs.io_module.RawIOBase):
-
     """
     This class is an improved version of the raw stream :class:`io.FileIO`, relying on native OS primitives,
     and offering much more control over the behaviour of the file stream.
@@ -62,35 +60,32 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
     """
 
     def __init__(self,
-                 path=None, # it seems pywin32 already uses unicode versions of these functions, so it's cool  :-)
+                 path=None,  # it seems pywin32 already uses unicode versions of these functions, so it's cool  :-)
                  fileno=None,
                  handle=None,
                  closefd=True,
 
                  read=False,
-                 write=False, append=False, # writing to a file in append mode AUTOMATICALLY moves the file pointer to EOF # PAKAL -A TESTER
+                 write=False, append=False,
+                 # writing to a file in append mode AUTOMATICALLY moves the file pointer to EOF # PAKAL -A TESTER
 
-                 must_create=False, must_not_create=False, # only used on file opening
+                 must_create=False, must_not_create=False,  # only used on file opening
 
                  synchronized=False,
                  inheritable=False,
                  permissions=0o777):
 
-
-
         self.enforced_locking_timeout_value = _default_rsfile_options["enforced_locking_timeout_value"]
         self.default_spinlock_delay = _default_rsfile_options["default_spinlock_delay"]
 
-
         # Preliminary normalization
         if append:
-            write = True # append implies write
+            write = True  # append implies write
 
         # we retrieve the dict of provided arguments, except self
         kwargs = locals()
         del kwargs["self"]
-        del kwargs["closefd"] # not needed at inner level
-
+        del kwargs["closefd"]  # not needed at inner level
 
         # HERE WE CHECK EVERYTHING !!!
 
@@ -103,7 +98,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         if not read and not write:
             raise defs.BadValueTypeError("File can't be both non-writable and non-readable.")
 
-        if must_create and must_not_create :
+        if must_create and must_not_create:
             raise defs.BadValueTypeError("File can't be wanted both as existing and unexisting.")
 
         if not closefd and not (fileno or handle):
@@ -111,7 +106,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
 
         # variables to determine future write/read operations
         self._readable = read
-        self._writable = write # 'append' enforced the value of 'write' to True, just above
+        self._writable = write  # 'append' enforced the value of 'write' to True, just above
         self._append = append
         self._must_create = must_create
         self._must_not_create = must_not_create
@@ -119,7 +114,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         self._synchronized = synchronized
         self._inheritable = inheritable
 
-        name = None # 'name' : descriptor exposed just for retrocompatibility !!!
+        name = None  # 'name' : descriptor exposed just for retrocompatibility !!!
         if path is not None:
             name = path
             self._origin = "path"
@@ -144,10 +139,10 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
                 self._path = os.path.abspath(path)
         """
 
-        self._unique_id = None # unique identifier of the file, eg. (device, inode) pair
-        self._fileno = None # C style file descriptor, might be created only on request
-        self._handle = None # native platform handle other than fileno - if existing
-        self._closefd = closefd # set BEFORE creating streams
+        self._unique_id = None  # unique identifier of the file, eg. (device, inode) pair
+        self._fileno = None  # C style file descriptor, might be created only on request
+        self._handle = None  # native platform handle other than fileno - if existing
+        self._closefd = closefd  # set BEFORE creating streams
 
         if path:
             null_char = ("\0" if isinstance(path, str) else b"\0")
@@ -180,34 +175,31 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
             raise defs.BadValueTypeError(e)  # probably a too big filedescriptor number
 
         if append:
-            self.seek(0, os.SEEK_END) # required by unit tests, might raise if non-seekable file...
-
+            self.seek(0, os.SEEK_END)  # required by unit tests, might raise if non-seekable file...
 
     def __repr__(self):
         return ('<rsfile.RSFileIO name=%s mode="%s" origin="%s" closefd=%s>' %
                 ('"%s"' % self.name if isinstance(self.name, basestring) else self.name,
                  self.mode, self.origin, self._closefd))
 
-
-
     def close(self):
 
         if not self.closed:
 
             try:
-                defs.io_module.RawIOBase.close(self) # we first mark the stream as closed... it flushes, also.
+                defs.io_module.RawIOBase.close(self)  # we first mark the stream as closed... it flushes, also.
             finally:
                 # even if implicit flush() failed, we properly close underlying streams
 
                 with IntraProcessLockRegistry.mutex:
 
-                    for (handle, shared, start, end) in IntraProcessLockRegistry.remove_file_locks(self._lock_registry_inode, self._lock_registry_descriptor):
-                        #print (">>>>>>>> ", (handle, shared, start, end))
+                    for (handle, shared, start, end) in IntraProcessLockRegistry.remove_file_locks(
+                            self._lock_registry_inode, self._lock_registry_descriptor):
+                        # print (">>>>>>>> ", (handle, shared, start, end))
                         length = None if end is None else (end - start)
                         self._inner_file_unlock(length, start)
 
                     self._inner_close_streams()  # should mark the raw stream as closed even if some operations fail
-
 
     def __del__(self):
         """Destructor.  Calls close()."""
@@ -222,26 +214,20 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         except:
             pass
 
-
     def __reduce__(self):
         raise defs.BadValueTypeError("RSFileIO is not pickleable")
-
 
     def seekable(self):
         self._checkClosed()
         return self._seekable
 
-
     def readable(self):
         self._checkClosed()
         return self._readable
 
-
     def writable(self):
         self._checkClosed()
         return self._writable
-
-
 
     # # # Read-only Attributes # # #
 
@@ -266,7 +252,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
                 if self._must_not_create:
                     return "rb+"
                 else:
-                    return "rb+"  #WARNING - python stdlib returns this instead of wb+... let it be
+                    return "rb+"  # WARNING - python stdlib returns this instead of wb+... let it be
             else:
                 return "wb"
         else:
@@ -276,9 +262,10 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
     @property
     def name(self):
         return self._name
+
     @name.setter
     def name(self, value):
-        self._name = value  #used to please the stdlib tests...
+        self._name = value  # used to please the stdlib tests...
 
     @property
     def origin(self):
@@ -288,19 +275,15 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
     def closefd(self):
         return self._closefd
 
-
-
-    # # # Methods that must be overridden in OS-specific file types # # #    
+    # # # Methods that must be overridden in OS-specific file types # # #
 
     def fileno(self):
         self._checkClosed()
         return self._inner_fileno()
 
-
     def handle(self):
         self._checkClosed()
         return self._inner_handle()
-
 
     def unique_id(self):
         self._checkClosed()
@@ -308,35 +291,31 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
             self._unique_id = self._inner_unique_id()
         assert self._unique_id, self._unique_id
         return self._unique_id
-    uid = unique_id  # deprecated alias
 
+    uid = unique_id  # deprecated alias
 
     def times(self):
         self._checkClosed()
         return self._inner_times()
 
-
-    def size(self): # non standard method    
+    def size(self):  # non standard method
         self._checkClosed()
         return self._inner_size()
-
 
     def tell(self):
         self._checkClosed()
         res = self._inner_tell()
         return res
 
-
     def seek(self, offset, whence=os.SEEK_SET):
         self._checkClosed()
 
-        #print ("raw seek called to offset ", offset, " - ", whence, "with size", self._inner_size())
+        # print ("raw seek called to offset ", offset, " - ", whence, "with size", self._inner_size())
         if not isinstance(offset, (int, long)):
             raise defs.BadValueTypeError("Expecting an integer as argument for seek")
         res = self._inner_seek(offset, whence)
 
         return res
-
 
     def readall(self):
         """Reads until EOF, using multiple read() calls.
@@ -356,8 +335,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
             # b'' or None
             return data
 
-
-    def read(self, n= -1):
+    def read(self, n=-1):
         """Reads and returns up to n bytes (a negative value for n means *infinity*).
 
         Returns an empty bytes object on EOF, or None if the object is
@@ -372,7 +350,6 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         mybytes = self._inner_read(n)
         assert mybytes is None or isinstance(mybytes, bytes), type(mybytes)
         return mybytes
-
 
     def readinto(self, buffer):
         """Reads up to len(b) bytes into b.
@@ -390,7 +367,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         assert mybytes is None or isinstance(mybytes, bytes), type(mybytes)
 
         if isinstance(buffer, array):
-            typecode = b"b" if (sys.version_info[:2] < (3, 0)) else "b" # typecode weirdness...
+            typecode = b"b" if (sys.version_info[:2] < (3, 0)) else "b"  # typecode weirdness...
             buffer[0:byteslen] = array(typecode, mybytes)
         else:
             # for bytearray, memoryview...
@@ -398,17 +375,18 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
 
         return byteslen
 
-
     def write(self, buffer):
         """Writes the given data to the IO stream.
 
         Returns the number of bytes written, which may be less than len(b), or None if
         write couldn't be done on a non-blocking device.
         
-        Accepted buffer types are bytes, bytearray, array.array, and memoryview (the last two being inefficient to write).
+        Accepted buffer types are bytes, bytearray, array.array, and memoryview (the last two being inefficient to
+        write).
         """
 
-        #TODO: improve low level routines to accept buffers and arrays as data, so that we don't have to convert/copy stuffs around...
+        # TODO: improve low level routines to accept buffers and arrays as data, so that we don't have to
+        # convert/copy stuffs around...
 
         self._checkClosed()
         self._checkWritable()
@@ -422,14 +400,16 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
             buffer = buffer.tostring()
 
         res = self._inner_write(buffer)
-        #assert res == len(buffer), str(res, len(buffer)) # NOOO - we might have less than that actually if disk full !
+        # assert res == len(buffer), str(res, len(buffer)) # NOOO - we might have less than that actually if disk full !
 
-        assert not (len(buffer) and res == 0), "Abnormal state, 0 bytes from buffer were written to raw stream, write() should return None instead, in this case"
+        assert not (len(
+            buffer) and res == 0), "Abnormal state, 0 bytes from buffer were written to raw stream, write() should " \
+                                   "return None instead, in this case"
         if res is not None and (res < 0 or res > len(buffer)):
-            raise RuntimeError("Madness - %d bytes written instead of max %d for buffer '%r'" % (res, len(buffer), buffer))
+            raise RuntimeError(
+                "Madness - %d bytes written instead of max %d for buffer '%r'" % (res, len(buffer), buffer))
 
         return res  # might be None (nonblocking IO)
-
 
     def truncate(self, size=None, zero_fill=True):
         """
@@ -437,12 +417,13 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         """
 
         self._checkClosed()
-        self._checkWritable() # Important !
+        self._checkWritable()  # Important !
 
         if size is None:
             size = self.tell()
         elif size < 0:
-            raise IOError(errno.EINVAL, "Invalid argument : truncation size must be None or positive integer, not '%s'" % size)
+            raise IOError(errno.EINVAL,
+                          "Invalid argument : truncation size must be None or positive integer, not '%s'" % size)
 
         current_size = self.size()
         if size == current_size:
@@ -454,7 +435,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
             self._inner_extend(size, zero_fill)
 
             current_size = self.size()
-            if(current_size != size): # no native operation worked for it. so we fill with zeros by ourselves
+            if (current_size != size):  # no native operation worked for it. so we fill with zeros by ourselves
 
                 assert current_size < size
                 old_pos = self._inner_tell()
@@ -467,9 +448,8 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
                     self._inner_write(padding)
                 count = self._inner_write(b'\0' * r)
                 assert count == r, (count, r)  # no blocking writes for files, theoretically...
-                self._inner_seek(old_pos) #important
+                self._inner_seek(old_pos)  # important
         return self.size()
-
 
     def flush(self):
         """
@@ -480,14 +460,12 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         """
         self._checkClosed()
 
-
     def sync(self, metadata=True, full_flush=True):
         """
         See RSOpen() doc.
         """
         self._checkClosed()
         self._inner_sync(metadata, full_flush)
-
 
     def _convert_relative_offset_to_absolute(self, offset, whence):
 
@@ -503,14 +481,12 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
 
         return abs_offset
 
-
     @contextmanager
     def _lock_remover(self, length, offset, whence):
         # we do nothing on __enter__()
         yield
         # we unlock on __exit__()
         self.unlock_file(length=length, offset=offset, whence=whence)
-
 
     def lock_file(self, timeout=None, length=None, offset=None, whence=os.SEEK_SET, shared=None):
 
@@ -531,7 +507,6 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         if shared is not None and shared not in (True, False):
             raise defs.BadValueTypeError("shared must be None or True/False.")
 
-
         if shared is None:
             if self._writable:
                 shared = False
@@ -542,36 +517,41 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
             raise IOError("Can't obtain exclusive lock on non-writable stream, or shared lock on non-readable stream.")
 
         abs_offset = self._convert_relative_offset_to_absolute(offset, whence)
-        blocking = timeout is None # here, it means "forever waiting for the lock"
+        blocking = timeout is None  # here, it means "forever waiting for the lock"
         # we enforce spin-locking if a global timeout exists
         low_level_blocking = blocking if (self.enforced_locking_timeout_value is None) else False
 
         start_time = time.time()
+
         def check_timeout(env_error):
             """
             If timeout has expired, raises the exception given as parameter.
             Else, sleeps for a short period.
             """
             delay = time.time() - start_time
-            if not blocking: # we have a timeout set
+            if not blocking:  # we have a timeout set
 
-                if(delay >= timeout): # else, we try again until success or timeout
+                if (delay >= timeout):  # else, we try again until success or timeout
                     (error_code, title) = env_error.args
-                    filename = getattr(self, 'name', 'Unknown File') # to be improved
+                    filename = getattr(self, 'name', 'Unknown File')  # to be improved
                     raise defs.LockingException(error_code, title, filename)
 
-            elif (self.enforced_locking_timeout_value is not None) and (delay >= self.enforced_locking_timeout_value): # for blocking attempts only
-                raise RuntimeError("Locking delay exceeded global 'enforced_locking_timeout_value' option (%d s)." % self.enforced_locking_timeout_value)
+            elif (self.enforced_locking_timeout_value is not None) and (
+                        delay >= self.enforced_locking_timeout_value):  # for blocking attempts only
+                raise RuntimeError(
+                    "Locking delay exceeded global 'enforced_locking_timeout_value' option (%d s)." %
+                    self.enforced_locking_timeout_value)
 
             time.sleep(self.default_spinlock_delay)
 
         success = False
 
-        while(not success):
+        while (not success):
 
             # STEP ONE : acquiring ownership on the lock inside current process
             res = IntraProcessLockRegistry.register_file_lock(self._lock_registry_inode, self._lock_registry_descriptor,
-                                                              length, abs_offset, low_level_blocking, shared, self.enforced_locking_timeout_value)
+                                                              length, abs_offset, low_level_blocking, shared,
+                                                              self.enforced_locking_timeout_value)
 
             if not res:
                 check_timeout(IOError(errno.EPERM, "Current process has already locked this byte range"))
@@ -579,29 +559,31 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
 
             try:
 
-                while(not success):
+                while (not success):
 
                     # STEP TWO : acquiring the lock for real, at kernel level
                     try:
 
-                        #import multiprocessing
-                        #print ("---------->", multiprocessing.current_process().name, " LOCKED ", (length, abs_offset))
+                        # import multiprocessing
+                        # print ("---------->", multiprocessing.current_process().name, " LOCKED ", (length,
+                        # abs_offset))
 
-                        self._inner_file_lock(length=length, abs_offset=abs_offset, blocking=low_level_blocking, shared=shared)
+                        self._inner_file_lock(length=length, abs_offset=abs_offset, blocking=low_level_blocking,
+                                              shared=shared)
 
-                        success = True # we leave the two loops
+                        success = True  # we leave the two loops
 
                     except EnvironmentError as e:
                         check_timeout(e)
 
             finally:
                 if not success:
-                    res = IntraProcessLockRegistry.unregister_file_lock(self._lock_registry_inode, self._lock_registry_descriptor, length, abs_offset)
+                    res = IntraProcessLockRegistry.unregister_file_lock(self._lock_registry_inode,
+                                                                        self._lock_registry_descriptor, length,
+                                                                        abs_offset)
                     assert res in (True, False)  # there may or may not be locks left after that, we dunno
 
-
         return self._lock_remover(length, abs_offset, os.SEEK_SET)
-
 
     def unlock_file(self, length=None, offset=0, whence=os.SEEK_SET):
 
@@ -616,18 +598,20 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         if whence not in defs.SEEK_VALUES:
             raise defs.BadValueTypeError("whence must be a valid SEEK_\* value")
 
-        #import multiprocessing
-        #print ("---------->", multiprocessing.current_process().name, " UNLOCKED ", (unix.LOCK_UN, length, abs_offset, os.SEEK_SET))
+        # import multiprocessing
+        # print ("---------->", multiprocessing.current_process().name, " UNLOCKED ", (unix.LOCK_UN, length,
+        # abs_offset, os.SEEK_SET))
         abs_offset = self._convert_relative_offset_to_absolute(offset, whence)
 
-        with IntraProcessLockRegistry.mutex: # IMPORTANT - keep the registry lock during the whole operation
-            IntraProcessLockRegistry.unregister_file_lock(self._lock_registry_inode, self._lock_registry_descriptor, length, abs_offset)
+        with IntraProcessLockRegistry.mutex:  # IMPORTANT - keep the registry lock during the whole operation
+            IntraProcessLockRegistry.unregister_file_lock(self._lock_registry_inode, self._lock_registry_descriptor,
+                                                          length, abs_offset)
             self._inner_file_unlock(length, abs_offset)
-
 
     # # Private methods - no check is made on their argument or the file object state ! # #
 
-    def _inner_create_streams(self, path, read, write, append, must_create, must_not_create, synchronized, inheritable, fileno, handle, closefd, permissions):
+    def _inner_create_streams(self, path, read, write, append, must_create, must_not_create, synchronized, inheritable,
+                              fileno, handle, closefd, permissions):
         self._unsupported("_inner_create_streams")
 
     def _inner_close_streams(self):
@@ -675,6 +659,5 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
     def _inner_file_unlock(self, length, abs_offset):
         self._unsupported("file_unlock")
 
+
 defs.io_module.RawIOBase.register(RSFileIOAbstract)
-
-
