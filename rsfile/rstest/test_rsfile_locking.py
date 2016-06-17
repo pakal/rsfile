@@ -527,7 +527,7 @@ class TestRSFileLocking(unittest.TestCase):
         logger("Writing test_ipc_semaphore_locking_on_fork to ", self.dummyFileName)
 
         # we open file as INHERITABLE and locked
-        rsfile_stream = io.open(self.dummyFileName, "WEBI", thread_safe=False, locking=True)
+        rsfile_stream = io.open(self.dummyFileName, "WEBI", thread_safe=True, locking=False)
 
         for i in range(self.SUBPROCESS_COUNT):
             target = _worker_process.writer_without_file_locking
