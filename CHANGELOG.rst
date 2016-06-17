@@ -1,0 +1,6 @@
+
+Rsfile 1.0 -> 1.1
+====================
+
+* Fixed bug for old python2.6 version, rejecting unicode strings in **kwargs
+* Fixed indentation problem in exception handlers
