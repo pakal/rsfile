@@ -81,7 +81,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
                 strname = path
 
 
-            flags = 0 #TODO see about unix.O_LARGEFILE on linux filesystems
+            flags = 0  # Note that unix.O_LARGEFILE is actually irrelevant
 
             if synchronized :
                 flags |= unix.O_SYNC

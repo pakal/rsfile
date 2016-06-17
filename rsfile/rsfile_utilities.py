@@ -92,7 +92,7 @@ def read_from_file(filename, binary=False, buffering=None, encoding=None, errors
 
         data_blocks = []
         while True:
-            temp = myfile.read() #FIXME Warning - change rsiopen so that we never get a raw file here !!!
+            temp = myfile.read()  # if unbuffered, might return very little data, so we have to "loop while"
             if not temp:
                 break
 
