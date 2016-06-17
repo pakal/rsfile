@@ -62,7 +62,7 @@ def test_original_io():
             pass
     test_support.unlink = clean_unlink
 
-    # Warning - HEAVY
+    # Obsolete
     #test_support.use_resources = ["largefile"]# -> uncomment this to try 2Gb file operations (long on win32) !
 
     """ OLDIE

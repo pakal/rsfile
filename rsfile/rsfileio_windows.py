@@ -36,7 +36,8 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         def wrapper(self, *args, **kwds):
             try:
                 return f(self, *args, **kwds)
-            except win32.error as e: # WARNING - this is not always a subclass of OSERROR
+            except win32.error as e:
+                # WARNING - this is not always a subclass of OSERROR
 
                 traceback = sys.exc_info()[2]
                 #print repr(e)str(e[1])+" - "+str(e[2
@@ -120,12 +121,13 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
             """
                 
             if synchronized:
-                flagsAndAttributes |= win32.FILE_FLAG_WRITE_THROUGH 
                 # DO NOT USE FILE_FLAG_NO_BUFFERING - too many constraints on data alignments
-                # thanks to this FILE_FLAG_WRITE_THROUGH flag, no need to "fsync" the file with FlushFileBuffers(), it's immediately stored on the disk
-                # Warning - it seems that for some people, metadata is actually NOT written to disk along with data !!!
-                # we can't use FILE_APPEND_DATA flag, because it prevents use from truncating the file later one
-                
+                flagsAndAttributes |= win32.FILE_FLAG_WRITE_THROUGH  # syncs data+metadata
+                # Warning - it seems that for some people, metadata is actually NOT written to disk along with data, when using FILE_FLAG_WRITE_THROUGH
+
+
+            # we can't use FILE_APPEND_DATA flag, because it prevents use from truncating the file later one, so we'll emulate it on each write
+
 
             if isinstance(path, bytes):
                 path = path.decode(sys.getfilesystemencoding())  # pywin32 wants unicode
@@ -167,7 +169,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         #print "<<<File closed : ", self._name
         if self._closefd: # always True except when wrapping external file descriptors
             if self._fileno:
-                # WARNING - necessary to avoid leaks of C file descriptors !!!!!!!!!
+                # WARNING - necessary to avoid leaks of C file descriptors
                 try:
                     os.close(self._fileno) # this closes the underlying native handle as well
                 except OSError as e:
@@ -177,20 +179,22 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
 
 
     @_win32_error_converter    
-    def _inner_reduce(self, size): # warning - no check is done !!! 
+    def _inner_reduce(self, size):
+        assert size >= 0, size
         old_pos = self._inner_tell()
         self.seek(size) 
         #print ("---> inner reduce to ", self.tell())
-        win32.SetEndOfFile(self._handle) #WAAARNING - doesn't raise exceptions !!!!  
+        win32.SetEndOfFile(self._handle) # warning - this might fail silently
         self._inner_seek(old_pos)
     
     @_win32_error_converter    
-    def _inner_extend(self, size, zero_fill): # warning - no check is done !!!  
-        
+    def _inner_extend(self, size, zero_fill):
+        assert size >= 0, size
+        assert zero_fill in (True, False), zero_fill
         if(not zero_fill):
             old_pos = self._inner_tell()
             self.seek(size)
-            win32.SetEndOfFile(self._handle) # this might fail silently !!!   
+            win32.SetEndOfFile(self._handle) # warning - this might fail silently
             self._inner_seek(old_pos)
         else:
             pass # we can't directly truncate with zero-filling on win32, so just upper levels handle it

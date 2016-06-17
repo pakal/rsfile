@@ -84,9 +84,8 @@ from os import (open,
                read
                ) # directly returns a string
 
-# WARNING - On at least some systems, LOCK_EX can 
-# only be used if the file descriptor refers to a file opened for writing !!!!!
-# -> TO BE ENFORCED
+
+# WARNING - On at least some systems, LOCK_EX can only be used if the file descriptor refers to a file opened for writing (RSFile enforces it anyway)
 
 
 from fcntl import lockf, fcntl # used both to lock and unlock !

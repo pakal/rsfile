@@ -848,7 +848,7 @@ class TestRSFileStreams(unittest.TestCase):
             assert "FileTimes" in times_repr and "access" in times_repr and "modification" in times_repr
             myfile.size()
 
-            myfile.mode # Pakal - todo - check how it works !!!
+            myfile.mode
             myfile.name
             myfile.origin
             myfile.closefd

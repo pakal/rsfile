@@ -25,7 +25,8 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         def wrapper(self, *args, **kwds):
             try:
                 return f(self, *args, **kwds)
-            except unix.error as e: # WARNING - this is not a subclass of OSERROR !!!!!!!!!!!!!
+            except unix.error as e:
+                # WARNING - this is not always a subclass of OSERROR on python2
                 if isinstance(e, IOError):
                     raise
                 else:
@@ -144,12 +145,15 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
 
     @_unix_error_converter
     def _inner_reduce(self, size):
+        assert size >= 0, size
         unix.ftruncate(self._fileno, size)
 
 
     @_unix_error_converter
     def _inner_extend(self, size, zero_fill):
-        # posix truncation is ALWAYS "zerofill"
+        assert size >= 0, size
+        assert zero_fill in (True, False), zero_fill
+        # posix truncation is ALWAYS "zerofill" actually...
         unix.ftruncate(self._fileno, size)
 
 
