@@ -53,24 +53,17 @@ def test_original_io():
     def dummyfunc(*args, **kwargs):
         print("<DUMMY>", end='')
 
+    # we patch to deal with stale windows files in spite of SHARE_DELETE flag
+    # (files only removed when last handle is closed)
     def clean_unlink(filename):
         try:
             newname = filename + ".tmp" + str(int(time.time()))
-            os.rename(filename, newname) # to deal with stale windows files due to SHARE_DELETE flag!
-            os.remove(newname) # on windows, file only removed when last handle is closed !
+            os.rename(filename, newname)
+            os.remove(newname)
         except:
             pass
     test_support.unlink = clean_unlink
 
-    # Obsolete
-    #test_support.use_resources = ["largefile"]# -> uncomment this to try 2Gb file operations (long on win32) !
-
-    """ OLDIE
-    if not hasattr(unittest.TestCase, "skipTest"):
-        # we can't just deactivate C tests, considered the way it's implemented...
-        test_largefile.LargeFileTest.test_seekable = dummyfunc
-    #test_largefile.test_main() # beware !
-    """
 
     # Skip C-specific tests, which are anyway often skipped for "_pyio" itself
     test_io.CBufferedRandomTest = dummyklass
@@ -84,38 +77,9 @@ def test_original_io():
 
     test_io.IOTest.test_garbage_collection = dummyfunc # cyclic GC can't work with python classes having __del__() method
     test_io.PyIOTest.test_garbage_collection = dummyfunc # idem
-
     test_io.PyIOTest.test_large_file_ops = dummyfunc  # we just skip because HEAVY AND LONG
-
     test_io.TextIOWrapperTest.test_repr = dummyfunc  # repr() of streams changes of course
 
-
-    # TESTCASES TO FIX !!!!!!!!!!!  #
-    ####test_io.PyIOTest.test_invalid_newline = dummyfunc  # FIXME
-
-    """ OLDIE
-    #test_io.PyBufferedReaderTest.test_uninitialized = dummyfunc  #FIXME
-    test_io.PyBufferedWriterTest.test_uninitialized = dummyfunc  #FIXME
-    test_io.BufferedRWPairTest.test_uninitialized = dummyfunc  #FIXME
-    test_io.PyBufferedRandomTest.test_uninitialized = dummyfunc  #FIXME
-    test_io.PyTextIOWrapperTest.test_uninitialized = dummyfunc  #FIXME
-    """
-
-    """ OLD
-
-    test_io.PyIOTest.test_garbage_collection = dummyfunc # test_support.skip() unexisting
-    test_io.PyIOTest.test_flush_error_on_close = dummyfunc  #FIXME flush on close on rsfile !!
-
-    test_io.PyBufferedWriterTest.test_max_buffer_size_deprecation = dummyfunc  # sometimes lacking check_warnings() implementation
-    test_io.PyBufferedRWPairTest.test_max_buffer_size_deprecation = dummyfunc
-    test_io.PyBufferedRWPairTest.test_constructor_max_buffer_size_deprecation = dummyfunc
-    test_io.PyBufferedRandomTest.test_max_buffer_size_deprecation = dummyfunc
-
-    test_io.BufferedRWPairTest.UnsupportedOperation = rsfile.io_module.UnsupportedOperation
-    if not hasattr(unittest.TestCase, "skipTest"):
-        test_io.IOTest.test_unbounded_file = dummyfunc
-
-    """
 
     # like in _pyio, in rsfile, we do not detect reentrant access, nor raise RuntimeError to avoid deadlocks
     test_io.PySignalsTest.test_reentrant_write_buffered = dummyfunc
@@ -147,17 +111,12 @@ def test_original_io():
     test_fileio.AutoFileTests.testRepr = dummyfunc  # repr() of streams changes of course
     test_fileio.AutoFileTests.testReprNoCloseFD = dummyfunc  # repr() of streams changes of course
 
-    """ OLD
-    test_fileio.OtherFileTests.testWarnings = dummyfunc
-
-
-    """
 
     # bugfix of testErrnoOnClosedWrite() test in python2.7
     deco = test_fileio.AutoFileTests.__dict__["ClosedFDRaises"] # decorator must not become unbound method !
     @deco
     def bugfixed(self, f):
-        f.write(b'a') # in py27 trunk "binary" was lacking...
+        f.write(b'a') # in py27 trunk, "binary" modifier was lacking...
     test_fileio.AutoFileTests.testErrnoOnClosedWrite = bugfixed
 
 
@@ -171,7 +130,7 @@ def test_original_io():
     test_file.CAutoFileTests = dummyklass
 
 
-    ## Custom launching iof single test ##
+    ## To launch a single test ##
     #mytest = test_io.PyIOTest('test_invalid_newline')
     #res = mytest.run()
     #print(res)
