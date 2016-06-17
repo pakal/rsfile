@@ -13,7 +13,11 @@ This version 2.0 drops support for Python2.6, and puts RSFile in compliance with
 
 Tested on python2.7 and python3.3+, on windows and unix-like systems. *Should* work with IronPython/Jython/PyPy too, since it uses stdlib utilities and ctypes bridges.
 
+.. image:: https://travis-ci.org/pakal/rsfile.svg?branch=master
+    :target: https://travis-ci.org/pakal/rsfile
+
 **Learn more about RSFile : http://rsfile.readthedocs.io/**
+
 
 
 INSTALL
@@ -21,7 +25,9 @@ INSTALL
 
 Using pip is recommended, although installing from a checkout of the repository (via setup.py) also works:
 
-$ pip install rsfile
+::
+
+    $ pip install rsfile
 
 
 QUICKSTART
