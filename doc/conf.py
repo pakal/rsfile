@@ -13,7 +13,8 @@
 
 import sys, os
 
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(REPO_ROOT)
 import rsfile
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -53,7 +54,7 @@ copyright = u'2010-2016, Pascal Chambon'
 # built documents.
 #
 # The short X.Y version.
-version = '2.0'
+version = open(os.path.join(REPO_ROOT, "VERSION")).read()
 # The full version, including alpha/beta/rc tags.
 release = version
 

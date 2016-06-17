@@ -24,10 +24,10 @@ Operating System :: MacOS :: MacOS X
 
 setup(
     name='RSFile',
-    version='1.2',
+    version=read("VERSION"),
     author='Pascal Chambon',
     author_email='pythoniks@gmail.com',
-    url='http://bitbucket.org/pchambon/python-rock-solid-tools/',
+    url='https://github.com/pakal/rsfile',
     license="http://www.opensource.org/licenses/mit-license.php",
     platforms=["any"],
     description="RSFile advanced I/O file streams",
