@@ -5,6 +5,7 @@ from __future__ import unicode_literals, print_function
 import os, sys
 import unittest, tempfile, threading, multiprocessing, Queue , random, string, time, traceback
 
+import rsfile.rsfile_definitions as defs
 from rsfile.rstest import _worker_process
 from rsfile.rstest import _utilities
 _utilities.patch_test_supports()
@@ -484,6 +485,25 @@ class TestRSFileLocking(unittest.TestCase):
         self._test_whence_and_timeout(ThreadWithExitCode, self.multithreading_lock, Queue.Queue, multiprocess=False)
 
 
+    def test_intraprocess_duplicated_handle_locking(self):
+
+        TESTFN = "mytestfile"
+        with rsfile.rsopen(TESTFN, "RWB", locking=False) as f:
+
+            f.lock_file(length=100, offset=0)
+
+            other_fileno = os.dup(f.fileno())  # using C compatibility layer on windows
+
+            with rsfile.rsopen(mode="RWB", fileno=other_fileno, locking=False) as g:
+
+                self.assertRaises(defs.LockingException, g.lock_file, timeout=0)  # duplicate handle
+
+                g.lock_file(length=100, offset=100, timeout=0)  # chunk locking works
+
+        os.remove(TESTFN)
+
+
+
     @unittest.skipIf(os.name == 'nt', "test only works on a POSIX-like system")
     def test_ipc_semaphore_locking_on_fork(self):
 
@@ -539,8 +559,8 @@ def test_main():
     print("** RSFILE_LOCKING Test Suite has been run on backends %s **\n" % backends)
 
 if __name__ == '__main__':
-    #TestRSFileLocking("test_ipc_semaphore_locking_on_fork").test_ipc_semaphore_locking_on_fork()
-    #logger("over")
+    #TestRSFileLocking("test_intraprocess_duplicated_handle_locking").test_intraprocess_duplicated_handle_locking()
+    #print("over")
     test_main()
 
 
