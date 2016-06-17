@@ -582,10 +582,13 @@ class TestRSFileStreams(unittest.TestCase):
 
         with rsfile.rsopen(TESTFN, "RWB-", buffering=0, locking=False, permissions=0o555) as f: # creating read-only file
 
+            f.write(b"abc")  # WORKS, because file permissions are only applied on subsequent open()
+            f.flush()
+
             with rsfile.rsopen(TESTFN, "RB+", buffering=0, locking=False) as g:
                 pass # no problem
 
-            self.assertRaises(IOError, rsfile.rsopen, TESTFN, "WB+", buffering=0, locking=False) # can't open for writing
+            self.assertRaises(IOError, rsfile.rsopen, TESTFN, "WB+", buffering=0, locking=False) # now can't open for writing
 
         # no need to test further, as other permissions are non-portable and simply forwarded to underlying system calls...
 
