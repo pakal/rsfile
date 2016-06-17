@@ -7,7 +7,11 @@ RSFile welcomes contributions like Reporting Bugs and Pull Requests.
 TESTING
 ++++++++++
 
-To run the test suites of RSFile (which reuse some stdlib testcases, and add specific ones), against the compatible python interpreters installed on your system, you must install the stdlib test suite if needed (eg. on Ubuntu, install packages like "libpythonX.Y-testsuite", on Windows the stdlib test suite is usually included).
+
+The test suites of RSFile can be run against any compatible python2/3 interpreter installed on your system.
+Since they reuse many stdlib testcases, you must have the "python test suite" installed for the selected interpreter version, else only a subset of RSFile tests will be run.
+On Windows this test suite must have been selected during install, on Linux you must install separate packages like "libpythonX.Y-testsuite", etc.
+
 
 Testing using TOX
 ---------------------
@@ -22,7 +26,7 @@ This will install RSFile into a virtual environment, and launch the test suites.
 If tox fails when creating py35 environment on windows ("The program can't start because VCRUNTIME140.dll is missing from your computer."), you might need to use "virtualenv-rewrite" instead of "virtualenv", for details see https://github.com/pypa/virtualenv/issues/796
 
 
-Manually testing
+Testing manually
 -----------------
 
 To manually launch the test suites against a specific "python" interpreter, use the different commands visible in the "tox.ini", in the form **python -m rsfile.rstest.xxxxxxx**
