@@ -29,14 +29,14 @@ Disk file
     The logical representation of a disk file, is its filesystem **inode**.
 
 Open file object
-    This kernel-level object represents an open stream to a file. As such, it 
-    contains references to the target disk file, as well as transient state information relative 
-    to the open stream (current file offset, miscellaneous caching and locking information...).
-    In the case of stream inheritance, or other stream duplication mechanisms, a single file object
-    can end up being shared by several processes. Creating too many of these objects is what leads to
-    the sly 'too many open files' error.
+    This kernel-level object (also called "open file description", but not to be confused with "open
+    file descriptors") represents an open stream to a file. As such, it contains references to the
+    target disk file, as well as transient state information relative to the open stream (current file
+    offset, miscellaneous caching and locking information...). In the case of stream inheritance,
+    or other stream duplication mechanisms, a single open file object can end up being shared by several
+    processes. Creating too many of these objects is what leads to the sly 'too many open files' error.
 
-File descriptor
+Open file descriptor
     This type (C file descriptor on Posix systems, file Handle on windows platforms)
     mostly acts as a "pointer" to an open file object. It is typically an integer used as an index in
     a per-process "open file table". Several of these "open file references" can target the same open file objects,

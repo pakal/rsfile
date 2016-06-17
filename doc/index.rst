@@ -9,7 +9,7 @@ These new streams aim at providing a cross-platform, reliable, and comprehensive
 
 Note that RSFile only concerns I/O stream manipulation, not filesystem operations like pathutil or shutil do. And that it has no specific support for async I/O (although you may use non-blocking streams with it).
 
-RSFile uses utilities scattered over the python stdlib (os, stat, fnctl, _pyio...), and accesses native APIs (like "Handles" on Windows) when it's necessary to achieve robust cross-platform interoperability. In particular, on Windows, it'll make use of `pywin32 <https://sourceforge.net/projects/pywin32/>`_ extensions if they are available, instead of relying on `ctypes`.
+RSFile uses utilities scattered over the python stdlib (os, stat, fnctl, _pyio...), and accesses native APIs (like "Handles" on Windows) when it's necessary to achieve robust cross-platform interoperability. In particular, on Windows, it'll make use of `pywin32 <https://sourceforge.net/projects/pywin32/>`_ extensions if they are available, instead of relying on `ctypes`. And on Unix-like systems, it provides specific systems to make up for the flaws of `fcntl` locks.
 
 Because RSFile adds multiple layers of securities to I/O streams, and is a pure python package, it is currently 3x to 10x slower than the C-backed :mod:`io` module from the stdlib. Speeding up RSFile would be possible (with cython, or cffi, or ctypes optimizations...), but not necessarily useful, since it can be used in parallel with :mod:`io` (one for security-critical file accesses, the other for high throughput). Be aware of some :ref:`rsfile_locking_caveats` though.
 
