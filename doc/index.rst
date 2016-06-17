@@ -30,7 +30,7 @@ Compatibility-wise, RSFile is compliant with the stdlib test suite (except some 
 	:maxdepth: 4
 
 	rsopen.rst
-	rsfile_streams.rst
+	streams.rst
 	locking_semantic.rst
 	utilities_options.rst
 	native_io_concepts.rst
