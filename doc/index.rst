@@ -15,6 +15,8 @@ Because RSFile adds multiple layers of securities to I/O streams, and is a pure 
 
 Compatibility-wise, RSFile is compliant with the stdlib test suite (except some testcases which check C-extension behaviours or "ResourceWarning" emitting). It may be used on regular files as well as on other stream types (anonymous pipes, named fifos, devices...), although its advanced features only work on "normal", seekable and lockable, files.
 
+.. note::
+    Regarding exceptions: abnormal usage of the library raises RuntimeError. For the rest of file I/O troubles, RSFile will raise subclasses of **EnvironmentError**, which may depend on the backend used, and on whether or not you are under `the new OSError hierarchy <https://docs.python.org/3/library/exceptions.html#OSError>`_, so you should catch them "defensively".
 
 .. note::
     The stdlib io module appeared with python2.6, and was still young on python2.7,

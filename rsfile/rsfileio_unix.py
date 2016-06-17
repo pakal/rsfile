@@ -257,8 +257,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
     @_unix_error_converter
     def _inner_file_lock(self, length, abs_offset, blocking, shared):
 
-        """ MEGAWARNING : On at least some systems, 
-        LOCK_EX can only be used if the file descriptor refers to a file opened for writing."""
+        #TODO - switch to "Open file description locks (non-POSIX)" on recent Linux one day, to have per-file-descriptor (but inheritable alas) locks
 
         fd = self._fileno
 

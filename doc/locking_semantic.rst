@@ -43,7 +43,7 @@ upgrade/downgrade is available in kernels anyway, it seems).
     Being carried by file handles, rsfile locks can be used both as inter-process and intra-process locks.
     However this semantic doesn't say anything about thread-safety, which is
     ensured through other means (like the :class:`RSThreadSafeWrapper` class
-    added by default to stream chains).
+    added by default in front of stream chains).
 
 
 .. _rsfile_locking_caveats:

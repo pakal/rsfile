@@ -286,7 +286,7 @@ Unix Fcntl
   unless mandatory locking has been activated on this particular filesystem and file node (but you had 
   better `avoid mandatory locking <http://www.mjmwired.net/kernel/Documentation/filesystems/mandatory-locking.txt>`_).
  
-- Inside a process, it makes no difference whether a file/range has been locked via one fiel descriptor or another:
+- Inside a process, it makes no difference whether a file/range has been locked via one file descriptor or another:
   fcntl locks concerns the disk file, and belong to the whole process.
     
 - bytes range locking is very flexible:
@@ -295,7 +295,7 @@ Unix Fcntl
     - Locking the same bytes several times simply updates their locking mode (exclusive or shared). Like for flock(),
       this operation is not guaranteed to be atomic, and locked bytes will only have to be released once.
   
-- Such locks are **never** shared with child processes, even those born from a simple fork() without exec(). 
+- Such locks are **never** shared with child processes, even those born from a simple fork() without exec(). These locks are preserved through an exec() though.
 
 - These locks are (theoretically) supported by recent enough NFS servers (> NFS v4).
 
