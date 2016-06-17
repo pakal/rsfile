@@ -88,6 +88,8 @@ class RSIOBase(object):
         """Pushes file (meta)data from application to physical device, through
         kernel cache and other layers of caching.
 
+        An implicit flush() always happens first, to empty python-level buffers.
+
         If ``full_flush`` is True (only works on OSX for now), RSFileIO will
         try to ensure that data is really written to permanent storage, since
         disk devices might else keep data in their cache for out-of-order writing.
@@ -99,8 +101,8 @@ class RSIOBase(object):
         file times and other metadata (this can improve performance, at the cost of some
         incoherence in filesystem state).
 
-        If None of the above works, a standard sync() is attempted, i.e pushing both data and metadata up to the disk
-        device.
+        If None of the above works, a standard sync() is attempted, i.e pushing both data and 
+        metadata up to the disk device.
 
         Note that the file's parent directory is not necessarily updated synchronously, so
         some risks of data loss may remain.
