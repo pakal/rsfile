@@ -66,8 +66,8 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
                  closefd=True,
 
                  read=False,
-                 write=False, append=False,
-                 # writing to a file in append mode AUTOMATICALLY moves the file pointer to EOF # PAKAL -A TESTER
+                 write=False,
+                 append=False,
 
                  must_create=False, must_not_create=False,  # only used on file opening
 

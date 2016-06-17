@@ -26,7 +26,6 @@ INVALID_HANDLE_VALUE = wintypes.HANDLE(-1).value  # for safety, convert to unsig
 """
 QUESTION : can we use buffers via array.Array() ? We must NOT change size !!!
 
-YEEEEEEEEEEEEEEEEEEEh
 IDLE 2.6.4      
 >>> import ctypes
 >>> a ctypes.create_string_buffer(10)
@@ -51,183 +50,7 @@ bytearray(b'abc')
 >>> h[0] = "k"
 >>> a
 bytearray(b'kbc')
->>> 
-
-
-
-
-
-
-
-### Values extracted from pywin32 modules ###
-
-
-
-CREATE_ALWAYS = 0x2
-CREATE_FOR_DIR = 0x2
-CREATE_FOR_IMPORT = 0x1
-CREATE_NEW = 0x1
-OPEN_ALWAYS = 0x4
-OPEN_EXISTING = 0x3
-TRUNCATE_EXISTING = 0x5
-
-FILE_ALL_ACCESS = 0x1f01ff
-FILE_ATTRIBUTE_ARCHIVE = 0x20
-FILE_ATTRIBUTE_COMPRESSED = 0x800
-FILE_ATTRIBUTE_DIRECTORY = 0x10
-FILE_ATTRIBUTE_HIDDEN = 0x2
-FILE_ATTRIBUTE_NORMAL = 0x80
-FILE_ATTRIBUTE_OFFLINE = 0x1000
-FILE_ATTRIBUTE_READONLY = 0x1
-FILE_ATTRIBUTE_SYSTEM = 0x4
-FILE_ATTRIBUTE_TEMPORARY = 0x100
-
-FILE_BEGIN = 0x0
-FILE_CURRENT = 0x1
-FILE_END = 0x2
-
-FILE_ENCRYPTABLE = 0x0
-FILE_IS_ENCRYPTED = 0x1
-
-FILE_FLAG_BACKUP_SEMANTICS = 0x2000000
-FILE_FLAG_DELETE_ON_CLOSE = 0x4000000
-FILE_FLAG_NO_BUFFERING = 0x20000000
-FILE_FLAG_OPEN_REPARSE_POINT = 0x200000
-FILE_FLAG_OVERLAPPED = 0x40000000
-FILE_FLAG_POSIX_SEMANTICS = 0x1000000
-FILE_FLAG_RANDOM_ACCESS = 0x10000000
-FILE_FLAG_SEQUENTIAL_SCAN = 0x8000000
-FILE_FLAG_WRITE_THROUGH = 0x80000000
-
-FILE_GENERIC_READ = 0x120089
-FILE_GENERIC_WRITE = 0x120116
-
-FILE_READ_ONLY = 0x8
-FILE_ROOT_DIR = 0x3
-FILE_SHARE_DELETE = 0x4
-FILE_SHARE_READ = 0x1
-FILE_SHARE_WRITE = 0x2
-FILE_SYSTEM_ATTR = 0x2
-FILE_SYSTEM_DIR = 0x4
-FILE_SYSTEM_NOT_SUPPORT = 0x6
-FILE_TYPE_CHAR = 0x2
-FILE_TYPE_DISK = 0x1
-FILE_TYPE_PIPE = 0x3
-FILE_TYPE_UNKNOWN = 0x0
-FILE_UNKNOWN = 0x5
-FILE_USER_DISALLOWED = 0x7
-
-GENERIC_EXECUTE = 0x20000000
-GENERIC_READ = 0x80000000
-GENERIC_WRITE = 0x40000000
-
-LOCKFILE_FAIL_IMMEDIATELY = 1
-LOCKFILE_EXCLUSIVE_LOCK = 2
-
-SECURITY_ANONYMOUS = 0x0
-SECURITY_CONTEXT_TRACKING = 0x40000
-SECURITY_DELEGATION = 0x30000
-SECURITY_EFFECTIVE_ONLY = 0x80000
-SECURITY_IDENTIFICATION = 0x10000
-SECURITY_IMPERSONATION = 0x20000
-"""
-
-# Constant taken from winerror.py module
-# ERROR_LOCK_VIOLATION = 33
-# Grab other errors !!!!!!!!!
-
-
-"""
-class _inner_struct(ctypes.Structure):
-    _fields_ = [('Offset', wintypes.DWORD),
-                ('OffsetHigh', wintypes.DWORD), 
-               ]
-
-class _inner_union(ctypes.Union):
-    _fields_  = [('anon_struct', _inner_struct), # struct
-                 ('Pointer', ctypes.c_void_p), # PVOID
-                ]
-
-class OVERLAPPED(ctypes.Structure):
-    _fields_ = [('Internal', ctypes.c_void_p), # ULONG_PTR
-                ('InternalHigh', ctypes.c_void_p), # ULONG_PTR
-                ('_inner_union', _inner_union),
-                ('hEvent', ctypes.c_void_p), # HANDLE
-               ]
-               
-_LockFileEx = ctypes.windll.kernel32.LockFileEx
-_LockFileEx.argtypes = [wintypes.HANDLE, wintypes.DWORD, wintypes.DWORD, wintypes.DWORD, wintypes.DWORD,
-ctypes.POINTER(OVERLAPPED)]
-_LockFileEx.restype = wintypes.BOOL
-
-_UnlockFileEx = ctypes.windll.kernel32.UnlockFileEx
-_UnlockFileEx.argtypes = [wintypes.HANDLE, wintypes.DWORD, wintypes.DWORD, wintypes.DWORD, ctypes.POINTER(OVERLAPPED)] 
-_UnlockFileEx.restype = wintypes.BOOL
-
-
-_SetFilePointerEx = ctypes.windll.kernel32.SetFilePointerEx
-_SetFilePointerEx.argtypes = [wintypes.HANDLE, ctypes.c_longlong, ctypes.POINTER(ctypes.c_longlong), wintypes.DWORD]
-_SetFilePointerEx.restype = wintypes.BOOL        
-        
-        
-_SetEndOfFile = ctypes.windll.kernel32.SetEndOfFile
-_SetEndOfFile.argtypes = [wintypes.HANDLE]
-_SetEndOfFile.restype = wintypes.BOOL  
-
-    
-if os.path.supports_unicode_filenames:
-    _CreateFile_function_name = "CreateFileW"
-    myLPTSTR = wintypes.LPCWSTR
-else:
-    _CreateFile_function_name = "CreateFileA"
-    class myLPTSTR(wintypes.LPCSTR):
-      def __new__(cls, obj):
-          if isinstance(obj, unicode) :
-            obj = obj.encode("mbcs")
-          return wintypes.LPCSTR.__new__(cls, obj)
-
-_CreateFile = ctypes.WINFUNCTYPE(
-      wintypes.HANDLE,                # return value !
-      myLPTSTR,                # lpFileName
-      wintypes.DWORD,                 # dwDesiredAccess
-      wintypes.DWORD,                 # dwShareMode
-      ctypes.c_void_p,                # lpSecurityAttributes
-      wintypes.DWORD,                 # dwCreationDisposition
-      wintypes.DWORD,                 # dwFlagsAndAttributes
-      wintypes.HANDLE                 # hTemplateFile
-  )((_CreateFile_function_name, ctypes.windll.kernel32))
-
-  
-_CloseHandle = ctypes.windll.kernel32.CloseHandle
-_CloseHandle.argtypes = [wintypes.HANDLE] 
-_CloseHandle.restype = wintypes.BOOL  
-
-
-
-    USELESS:
-    _GetLastError = ctypes.windll.kernel32.GetLastError
-    _GetLastError.argtypes = [] 
-    _GetLastError.restype = wintypes.BOOL
-
-    Note : If we need an error message :
-    
-    LPVOID lpMsgBuf;
-    DWORD dw = GetLastError(); 
-    FormatMessage(
-        FORMAT_MESSAGE_ALLOCATE_BUFFER | 
-        FORMAT_MESSAGE_FROM_SYSTEM |
-        FORMAT_MESSAGE_IGNORE_INSERTS,
-        NULL,
-        dw,
-        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-        (LPTSTR) &lpMsgBuf,
-        0, NULL );
-        
-        
-ERROR_ACCESS_DENIED = 5
-ERROR_SHARING_VIOLATION = 32
-    
-        
+>>>
 """
 
 error = WindowsError  # we inform client apps that we may throw THIS exception type
@@ -335,7 +158,7 @@ def WriteFile(handle, data, overlapped=None):
         # data_to_write = ctypes.c_char_p(data) # doesn't work, buffer size too small problems...
         data_to_write = ctypes.create_string_buffer(data)
 
-    ''' Not required ATM
+    ''' Not required ATM:
     elif isinstance(data, memoryview):
         data_to_write = ctypes.c_char_p(data.tobytes()) 
     elif isinstance(data, array):

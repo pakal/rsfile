@@ -311,9 +311,9 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         return mybytes
 
     '''
-    @_win32_error_converter
+    @_win32_error_converter  # abandoned for now
     def _inner_readinto(self, buffer):
-        """ PAKAL - Warning - this method is currently inefficient since it converts C string into
+        """ Warning - this method is currently inefficient since it converts C string into
             python str and then into bytearray, but this will be optimized later by rewriting in C module
         """
 
@@ -330,10 +330,6 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
 
     @_win32_error_converter
     def _inner_write(self, buffer):
-        """
-        Gerer write avec filepointer after eof !! que se passe t il sous linux ????????
-        La doc se contredit, est-ce qu'il faut retourner num written ou lancer ioerror ?? PAKAL
-        """
 
         if self._append:  # yep, no atomicity around here, as in truncate(), since FILE_APPEND_DATA can't be used
             self._inner_seek(0, defs.SEEK_END)
@@ -370,12 +366,6 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
     @_win32_error_converter
     def _inner_file_lock(self, length, abs_offset, blocking, shared):
 
-        """
-        # PAKAL - to remove - 
-        timeout = 0
-        print "TIMEOUT IS SET TO 0 TO BE REMOVEd !!!"
-        # TODO PAKAL - HERE, replace timeout by default global value if it is None !!
-        """
         hfile = self._handle
 
         # print(">>>>>>> ctypes windows _inner_file_lock", self.name, length, abs_offset, blocking, shared)

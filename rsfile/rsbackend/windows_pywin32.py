@@ -32,27 +32,8 @@ def SetEndOfFile(handle):
 
     if not res:
         raise pywintypes.error(win32api.GetLastError(), "SetEndOfFile")
-    """
-    TODO : use a REAL error message !!!
-    --->
-    PyObject *PyWin_SetAPIError(char *fnName, long err /*= 0*/)
-    {
-    DWORD errorCode = err == 0 ? GetLastError() : err;
-    DWORD flags = FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ALLOCATE_BUFFER | \
-                  FORMAT_MESSAGE_IGNORE_INSERTS;
-    // try and find the hmodule providing this error.
-    HMODULE hmodule = PyWin_GetErrorMessageModule(errorCode);
-    if (hmodule)
-        flags |= FORMAT_MESSAGE_FROM_HMODULE;
-    TCHAR *buf = NULL;
-    BOOL free_buf = TRUE;
-    if (errorCode)
-        ::FormatMessage(flags, hmodule, errorCode, 0, (LPTSTR)&buf, 0, NULL );
-    if (!buf) {
-        buf = _T("No error message is available");
-        free_buf = FALSE;
-    
-    """
+    #TODO : use a REAL error message !!!
+
 
 
 class BY_HANDLE_FILE_INFORMATION(object):
