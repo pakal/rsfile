@@ -6,7 +6,8 @@ from .rsfile_streams import *
 from .rsfile_factories import *
 
 
-BUILTIN_OPEN_FUNC_REPLACEMENT = functools.partial(rsopen, handle=None, locking=False, timeout=0, thread_safe=False, mutex=None, permissions=0o777)
+BUILTIN_OPEN_FUNC_REPLACEMENT = functools.partial(rsopen, handle=None, locking=False, timeout=0,
+                                                  thread_safe=False, mutex=None, permissions=0o777)
 
 
 def monkey_patch_io_module(module=None):
@@ -64,23 +65,20 @@ def monkey_patch_open_builtin():
 
 
 
-
-
-
-
+# ---------------------
 
 
 def read_from_file(filename, binary=False, buffering=None, encoding=None, errors=None, newline=None, locking=True, timeout=None):
     """
-    Returns the whole content of the file ``filename``, as a binary or unicode string 
+    Returns the *whole* content of the file ``filename``, as a binary or unicode string
     depending on the boolean ``binary``.
     
     Other arguments are similar to those of :func:`rsfile.rsopen`.
-    
+
+    Don't use on huge files, of course.
+
     This function may raise *EnvironmentError* exceptions.
     """
-
-    #TODO - To be added - "limit" argument, to retrieve only part of a file ? Or not ?
 
     mode = "R+"
     if binary:
@@ -96,13 +94,6 @@ def read_from_file(filename, binary=False, buffering=None, encoding=None, errors
             if not temp:
                 break
 
-            '''
-            print(">>>>>>>>", myfile, myfile.readall)
-            if binary:
-                assert not isinstance(temp, unicode)
-            else:
-                assert isinstance(temp, unicode)
-            '''
             data_blocks.append(temp)
 
         if binary:
@@ -110,7 +101,8 @@ def read_from_file(filename, binary=False, buffering=None, encoding=None, errors
         else:
             joiner = ""
 
-        return joiner.join(data_blocks)
+        full_data = joiner.join(data_blocks)
+        return full_data
 
 
 
@@ -124,12 +116,11 @@ def write_to_file(filename, data, sync=False, must_create=False, must_not_create
     This function may raise *EnvironmentError* exceptions.
     """
 
-    mode = "WE" # we erase the file
-    #if sync: mode += "S"   #  NO - final sync() will suffice
+    mode = "WE" # we erase the file, no need for "S", final sync() will suffice
     if must_not_create:
-        mode += "+"
+        mode += "N"
     if must_create:
-        mode += "-"
+        mode += "C"
     if not isinstance(data, unicode):
         mode += "B"
 
@@ -154,10 +145,10 @@ def append_to_file(filename, data, sync=False, must_not_create=False,
     This function may raise *EnvironmentError* exceptions.
     """
 
-    mode = "A"
-    #if sync: mode += "S"   #  NO - final sync() will suffice
+    mode = "A"  # no need for "S", final sync() will suffice
+
     if must_not_create:
-        mode += "+"
+        mode += "N"
     if not isinstance(data, unicode):
         mode += "B"
 

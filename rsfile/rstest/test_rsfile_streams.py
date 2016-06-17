@@ -938,19 +938,19 @@ class TestRSFileStreams(unittest.TestCase):
 
     def testFileUtilities(self):
 
-        # TODO IMPROVE THIS WITH OTHER ARGUMENTS AND COMBINATIONS
+        # quick tests: since most args are just transferred to rsopen, risks of bug are low
 
         self.assertRaises(ValueError, rsfile.write_to_file, TESTFN, b"abc", must_not_create=True, must_create=True)
         self.assertRaises(IOError, rsfile.append_to_file, TESTFN, b"abc", must_not_create=True)
 
         rsfile.write_to_file(TESTFN, b"abcdef", sync=True, must_create=True)
-        rsfile.write_to_file(TESTFN, "abcdef", sync=False, must_not_create=True) # we overwrite TESTFN with unicode data
+        rsfile.write_to_file(TESTFN, "abcdef", sync=False, must_not_create=True, encoding="latin1") # we overwrite TESTFN with unicode data
 
-        rsfile.append_to_file(TESTFN, "ghijkl", sync=True, must_not_create=True)
-        rsfile.append_to_file(TESTFN, "mnopqr", sync=True, must_not_create=False)
+        rsfile.append_to_file(TESTFN, b"ghijkl", sync=True, must_not_create=True)
+        rsfile.append_to_file(TESTFN, "mnopqr", sync=False, must_not_create=False, errors="replace")
 
         mystr = rsfile.read_from_file(TESTFN, binary=True, buffering=0)
-        mytext = rsfile.read_from_file(TESTFN, binary=False, buffering=5)
+        mytext = rsfile.read_from_file(TESTFN, binary=False, buffering=5, newline="\n")
 
         self.assertEqual(mytext, mystr.decode("ascii"))
         self.assertEqual(mytext, "abcdefghijklmnopqr")

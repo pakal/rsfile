@@ -215,7 +215,7 @@ class TestRSFileLocking(unittest.TestCase):
             # IntraProcessLockRegistry was well cleaned up when treating this TypeError:
             f.lock_file(shared=True, timeout=0, length=1, offset=355, whence=os.SEEK_SET)
 
-            # Todo - test locking with duplicate handles, dup() or others ??
+            # Todo - we test locking on duplicated handles, with os.dup() or DuplicateHandle()... but that's very corner-case actually...
             """                     
                 if sys.platform == 'win32':
                     self.fail("Exclusively locking the same disk file twice from different open file objects didn't fail on win32")
