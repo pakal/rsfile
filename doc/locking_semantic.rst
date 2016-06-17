@@ -18,7 +18,7 @@ The strength of the locking depends on the underlying platform.
 - in unix-like platforms, most of the time, locking is only
   **advisory**: unless they use the same type of lock as rsFile (fcntl),
   programs will freely access your files if they have proper filesystem
-  permissions. Note that it is possible to enforce mandatory locking, thanks
+  permissions. It is possible to enforce mandatory locking, thanks
   to some mount options and file flags, but this practice is advised against.
 
 Native locks have very different semantics depending on the platform, but

@@ -116,8 +116,10 @@ Then, to achieve inheritance, three operations must be done.
   Basic IPC mechanisms like command line arguments should suffice most of the time. Once retrieved, 
   just wrap this file descriptor with a python I/O stream, and all should go on well.
 
-Note that if you use libraries like the stdlib's *multiprocessing* package, these two last tasks may be transparently
-performed for you, with python streams being pickled, transferred, and then restored in the new process, sometimes thanks to some low level routines handling the transfer of handle access permissions between processes (eg. windows's DuplicateHandle()).
+Note that if you use libraries like the stdlib's *multiprocessing* package, these two last 
+tasks may be transparently performed for you, with python streams being pickled, transferred, 
+and then restored in the new process, sometimes thanks to some low level routines taking
+care of the transfer of handle access permissions between processes (eg. DuplicateHandle() on windows).
 
 
 .. rubric::
