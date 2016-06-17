@@ -31,23 +31,17 @@ ADVANCED_OPEN_FLAGS = set("RAW+-CNSIEBT")  # + and - are only left for retrocomp
 # beware, using C-backed IO doesn't work ATM because of class layout conflicts
 import _pyio as io_module
 
-BlockingIOError = io_module.BlockingIOError
-UnsupportedOperation = io_module.UnsupportedOperation
-
 
 class BadValueTypeError(ValueError, TypeError):
-    pass  # class to handle differences
+    pass  # joined class to handle differences between different python version...
 
-
-class OverFlowException(IOError):
-    pass
 
 class LockingException(IOError):
+    """
+    Exception raised when rsfile detects a locking problem, but backends
+    might raise their own EnvironmentError subclasses, too so beware.
+    """
     pass
-class TimeoutException(LockingException):
-    pass
-class ViolationException(LockingException):
-    pass # only raised for mandatory locking
 
 
 class FileTimes(object):
