@@ -72,12 +72,14 @@ class TestRSFileStreams(unittest.TestCase):
         fd = os.open(TESTFN, os.O_WRONLY |os.O_CREAT)
         try:
             with io.FileIO(fd, 'w', closefd=False) as f:
+                assert f.closefd == False
                 self.assertEqual(repr(f),
                                  """<rsfile.RSFileIO name=%r mode="wb" origin="fileno" closefd=False>""" % fd)
         finally:
             os.close(fd)
 
         with io.FileIO(TESTFN, 'w') as f:
+            assert f.closefd == True
             self.assertEqual(repr(f),
                              """<rsfile.RSFileIO name="%s" mode="wb" origin="path" closefd=True>""" % TESTFN)
 
