@@ -36,8 +36,7 @@ bytes" that may be written in the future.
 **non-reentrant**: no merging/splitting of byte ranges can be performed with
 this method : the ranges targeted by unlock_file() calls must be exactly the same
 as those previously locked.
-Also, trying to lock the same bytes several times will raise a
-RuntimeError, even if the sharing mode is not the same (no **atomic** lock
+Also, trying to lock the same bytes several times will raise an exception, even if the sharing mode is not the same (no **atomic** lock
 upgrade/downgrade is available in kernels anyway, it seems).
 
 .. note::

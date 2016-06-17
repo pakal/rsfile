@@ -81,7 +81,7 @@ def test_original_io():
     test_io.TextIOWrapperTest.test_repr = dummyfunc  # repr() of streams changes of course
 
 
-    # like in _pyio, in rsfile, we do not detect reentrant access, nor raise RuntimeError to avoid deadlocks
+    # like in _pyio implementation, in rsfile, we do not detect reentrant access, nor raise RuntimeError to avoid deadlocks
     test_io.PySignalsTest.test_reentrant_write_buffered = dummyfunc
     test_io.PySignalsTest.test_reentrant_write_text = dummyfunc
     test_io.CSignalsTest.test_reentrant_write_buffered = dummyfunc

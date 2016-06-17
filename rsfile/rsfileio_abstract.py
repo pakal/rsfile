@@ -561,7 +561,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
                     raise defs.LockingException(error_code, title, filename)
 
             elif (self.enforced_locking_timeout_value is not None) and (delay >= self.enforced_locking_timeout_value): # for blocking attempts only
-                raise RuntimeError("Locking delay exceeded 'enforced_locking_timeout_value' option (%d s)." % self.enforced_locking_timeout_value)
+                raise RuntimeError("Locking delay exceeded global 'enforced_locking_timeout_value' option (%d s)." % self.enforced_locking_timeout_value)
 
             time.sleep(self.default_spinlock_delay)
 
