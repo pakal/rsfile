@@ -80,7 +80,7 @@ def read_from_file(filename, binary=False, buffering=None, encoding=None, errors
     This function may raise *EnvironmentError* exceptions.
     """
 
-    # TODO - To be added - "limit" argument, to retrieve only part of a file ???????? Nope ?
+    #TODO - To be added - "limit" argument, to retrieve only part of a file ? Or not ?
 
     mode = "R+"
     if binary:

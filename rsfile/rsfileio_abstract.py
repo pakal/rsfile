@@ -408,6 +408,8 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         Accepted buffer types are bytes, bytearray, array.array, and memoryview (the last two being inefficient to write).
         """
 
+        #TODO: improve low level routines to accept buffers and arrays as data, so that we don't have to convert/copy stuffs around...
+
         self._checkClosed()
         self._checkWritable()
 
@@ -415,9 +417,9 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
             raise defs.BadValueTypeError("can't write unicode to binary stream")
 
         if isinstance(buffer, memoryview):
-            buffer = buffer.tobytes() #TODO TO BE IMPROVED - try to avoid copies !!
+            buffer = buffer.tobytes()
         elif isinstance(buffer, array):
-            buffer = buffer.tostring() #TODO To be improved hell a lot...
+            buffer = buffer.tostring()
 
         res = self._inner_write(buffer)
         #assert res == len(buffer), str(res, len(buffer)) # NOOO - we might have less than that actually if disk full !
@@ -555,7 +557,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
 
                 if(delay >= timeout): # else, we try again until success or timeout
                     (error_code, title) = env_error.args
-                    filename = getattr(self, 'name', 'Unkown File') # to be improved
+                    filename = getattr(self, 'name', 'Unknown File') # to be improved
                     raise defs.LockingException(error_code, title, filename)
 
             elif (self.enforced_locking_timeout_value is not None) and (delay >= self.enforced_locking_timeout_value): # for blocking attempts only
@@ -572,7 +574,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
                                                               length, abs_offset, low_level_blocking, shared, self.enforced_locking_timeout_value)
 
             if not res:
-                check_timeout(IOError(errno.EAGAIN, "Current process has already locked this byte range")) # TODO CHANGE errno.EPERM??
+                check_timeout(IOError(errno.EPERM, "Current process has already locked this byte range"))
                 continue
 
             try:
