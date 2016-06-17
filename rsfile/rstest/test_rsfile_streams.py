@@ -611,7 +611,7 @@ class TestRSFileStreams(unittest.TestCase):
             f.write(b"abcde")
 
         with rsfile.rsopen(TESTFN, "RAEB", buffering=0) as f:
-            # PAKAL TO REPUT self.assertEqual(f.size(), 0)
+            self.assertEqual(f.size(), 0)
             f.write(b"abcdef")
             f.seek(0)
             f.write(b"abcdef")
