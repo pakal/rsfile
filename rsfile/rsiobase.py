@@ -16,7 +16,7 @@ class RSIOBase(object):
     Advanced streams can be found in the *rsfile* package, as classes named *RSFileIO*, *RSBufferedReader*,
     *RSBufferedWriter*, *RSBufferedRandom*, *RSTextIOWrapper* and *RSThreadSafeWrapper*.
     However, you shouldn't have to deal with them directly, since RSOpen() takes care of instantiating them properly.
-    Also note that the signature of RSFileIO differs quite much from its stdlib counterpart, because of its enhanced
+    Also note that the signature of *RSFileIO* differs quite much from its stdlib counterpart, because of its enhanced
     capabilities.
 
     """

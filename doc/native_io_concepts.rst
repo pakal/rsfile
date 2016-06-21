@@ -67,7 +67,7 @@ Buffering and caching
 Stream layers
 ------------------
 
-In languages liek Python, file I/O streams are actually made of numerous layers, among which:
+In languages like Python, file I/O streams are actually made of numerous layers, among which:
 
 - high level objects (eg. the classes of the :mod:`io` module)
 - file descriptors
@@ -123,7 +123,7 @@ care of the transfer of handle access permissions between processes (eg. Duplica
 
 
 .. rubric::
-    Nota: multiprocessing and multithreading
+    Not: multiprocessing and multithreading
 
 Some race conditions can appear on unix-like systems, if one of your threads forks while another one
 is setting up a stream. Indeed, several stream settings can only be applied by subsequent fcntl() calls,
@@ -425,7 +425,7 @@ If you need constant synchronization data, see the "S" flag of advanced file ope
 on unix and FILE_FLAG_WRITE_THROUGH on windows, to enforce data+metadata synchronization on each flush().
 
 
-Some links to go further
+Some links to go farther
 ---------------------------
 
 `On the Brokenness of File Locking <http://0pointer.de/blog/projects/locking.html>`_

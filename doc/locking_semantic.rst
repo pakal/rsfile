@@ -26,7 +26,7 @@ The strength of the locking depends on the underlying platform.
   to some mount options and file flags, but this practice is advised against.
 
 Native locks have very different semantics depending on the platform, but
-RSFile enforces a single semantic : **per handle, bytes level, non-reentrant locks**.
+RSFile enforces a single semantic : **per handle, bytes level, non reentrant locks**.
 
 **per handle**: once a lock has been acquired via a native handle,
 this handle is the owner of the lock. No other handle, even in the current
@@ -37,7 +37,7 @@ can lock/unlock bytes that are protected by the original lock.
 It's not a problem to have locks beyond the current end of file, locking the "virtual
 bytes" that may be written in the future.
 
-**non-reentrant**: no merging/splitting of byte ranges can be performed with
+**non reentrant**: no merging/splitting of byte ranges can be performed with
 this method : the ranges targeted by unlock_file() calls must be exactly the same
 as those previously locked.
 Also, trying to lock the same bytes several times will raise an exception, even if the sharing mode is not the same (no **atomic** lock
@@ -102,7 +102,7 @@ Interferences with Third-Party Libs (unix)
 -------------------------------------------
 
 
-The workaround explained above, to preserve fcntl() locks on stream closing, will of course only work as long as accesses to disk file are done through the **RSFile API**. Code using other python modules ("io", "_pyio"...),  or low level routines (eg. in C extensions), may still silently break your locks, by opening+closing the same disk files.
+The workaround explained above, to preserve fcntl() locks on stream closing, will of course only work as long as accesses to disk file are done through the **RSFile API**. Code using other python modules (*io*, *_pyio*...),  or low level routines (eg. in C extensions), may still silently break your locks, by opening+closing the same disk files.
 
 If wanted, some of these dangers can be prevented by enforcing the use of RSFile for all python-side stream operations (CF :ref:`rsfile-patching`). But overriding the lowest level I/O routines, like libc's open(), would require tremendous skills and work.
 

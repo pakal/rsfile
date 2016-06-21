@@ -22,7 +22,7 @@ Compatibility-wise, RSFile is compliant with the stdlib test suite (except some 
     - some improper workflows, especially when locking, lead to RuntimeError
     - for the rest of file I/O troubles, the library will raise subclasses of **EnvironmentError**, which may depend on the backend used, and on whether or not you are under `the new OSError hierarchy <https://docs.python.org/3/library/exceptions.html#OSError>`_ ; so better catch them "defensively".
 
-.. note::
+.. warning::
     The stdlib io module appeared with python2.6, and was still young on python2.7,
     so consider upgrading to the latest python2.7.X version to avoid corner-case buglets.
 
