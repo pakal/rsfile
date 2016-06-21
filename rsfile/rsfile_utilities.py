@@ -5,9 +5,22 @@ from .rsfile_definitions import *  # constants, base types and exceptions
 from .rsfile_streams import *
 from .rsfile_factories import *
 
-BUILTIN_OPEN_FUNC_REPLACEMENT = functools.partial(rsopen, handle=None, locking=False, timeout=0,
-                                                  thread_safe=False, mutex=None, permissions=0o777)
 
+def BUILTIN_OPEN_FUNC_REPLACEMENT(*args, **kwargs):
+    """
+    Replacement for the built-in open() function,
+    with rectified default arguments, and
+    tolerant mode for str/unicode mixes in python2.
+    """
+    params = dict(handle=None, locking=False, timeout=0,
+                    thread_safe=False, mutex=None, permissions=0o777)
+    params.update(kwargs)
+    stream = rsopen(*args, **params)
+    stream._tolerant_mode = True  # py27 str/unicode coercion when using open() builtin
+    return stream
+
+# HACK, else, it becomes a bound method in test suites...
+BUILTIN_OPEN_FUNC_REPLACEMENT = functools.partial(BUILTIN_OPEN_FUNC_REPLACEMENT)
 
 def monkey_patch_io_module(module=None):
     """

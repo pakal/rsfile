@@ -1029,6 +1029,16 @@ class TestRSFileStreams(unittest.TestCase):
         f.close()
 
 
+    @unittest.skipIf(sys.version_info >= (3,), "test only works on a python2")
+    def testOpenBuiltinPython2Tolerance(self):
+        with open(TESTFN, "wt") as f:
+            # this doesn't raise str/unicode mixup error, on py27 especially
+            f.write(u"aéc".encode(sys.getfilesystemencoding()))
+        with open(TESTFN, "rt", encoding=sys.getfilesystemencoding()) as f:
+            data = f.read()
+            self.assertEqual(data, u"aéc")  # was well encoded on write() above
+
+
 def test_main():
     def _launch_test_on_single_backend():
         # Historically, these tests have been sloppy about removing TESTFN.
