@@ -66,4 +66,5 @@ class TestBackendUtilities(unittest.TestCase):
         self.assertEqual(winerror_to_errno(9999999), 22)
 
 if __name__ == '__main__':
+    print("Launching tests for low-level backend utilities")
     unittest.main()

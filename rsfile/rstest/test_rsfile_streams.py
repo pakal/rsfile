@@ -12,6 +12,7 @@ from rsfile.rstest import _worker_process
 import sys
 import os
 import unittest
+import copy
 from pprint import pprint
 
 import array
@@ -439,6 +440,13 @@ class TestRSFileStreams(unittest.TestCase):
 
         with io.open(TESTFN, 'rb', buffering=0) as stream:
             times = stream.times()
+
+            # check custom equality operator
+            assert times == times, times
+            changed_time = copy.deepcopy(times)
+            changed_time.access_time = datetime(2001, 10, 1)
+            assert times != changed_time, changed_time
+
             self.assertEqual(int(times.access_time), int(os.fstat(stream.fileno()).st_atime))
             self.assertEqual(int(times.modification_time), int(os.fstat(stream.fileno()).st_mtime))
 
