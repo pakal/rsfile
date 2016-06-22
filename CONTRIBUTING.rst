@@ -38,6 +38,16 @@ Also, double-check that the "rsfile" package imported is well the one you meant,
 If you have installed python-tabulate (https://pypi.python.org/pypi/tabulate), the retrocompatibility test will display a table listing the different file opening modes, and their features.
 
 
+Checking code coverage
+------------------------
+
+The "generate_coverage_report.py" script launches the different tests, and aggregates their results in an HTML coverage report.
+
+Note that because some tests launch subprocesses, not all code executions might be detected, see
+http://coverage.readthedocs.io/en/coverage-4.1/subprocess.html
+for information on how to workaround this problem.
+
+
 Benchmarking
 +++++++++++++
 
