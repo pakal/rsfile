@@ -612,7 +612,7 @@ class TestRSFileStreams(unittest.TestCase):
             self.assertRaises(IOError, rsfile.rsopen, TESTFN, "WB+", buffering=0,
                               locking=False)  # now can't open for writing
 
-            os.chmod(TESTFN, 0x777)
+            os.chmod(TESTFN, 0o777)
             os.remove(TESTFN)
 
             # no need to test more, as other permissions are non-portable and simply forwarded to underlying system calls...
