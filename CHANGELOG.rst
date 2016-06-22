@@ -1,4 +1,13 @@
 
+Rsfile 2.1
+============
+
+* Add some tweaks to mimick the more tolerant behaviour of python2.7 open(), 
+  regarding the mixing of str and unicode
+* Add script for aggregate coverage reporting
+* Strengthen tests of rsopen() usage errors
+
+
 Rsfile 2.0
 =============
 
@@ -47,6 +56,7 @@ Rsfile 2.0
 * Cleanup/DRY tons of obsolete TODOs and comments
 * Better document the CAVEATS of rsfile, regarding fcntl and interoperability with other I/O libs
 * Add standard files to the repository (readme, contributing, changelog etc.)
+* Integrate with Travis CI
 
 
 Rsfile 1.1
