@@ -148,7 +148,7 @@ class RSTextIOWrapper(_text_forwarder_mixin, defs.io_module.TextIOWrapper):
         Override to mimick more tolerant behaviour of files created by open() builtin on py27,
         which allow mixing str and unicode.
         """
-        if isinstance(s, str) and sys.version_info < (3,) and getattr(self, "_tolerant_mode", False):
+        if isinstance(s, bytes) and sys.version_info < (3,) and getattr(self, "_tolerant_mode", False):
             #print("We have to coerce value %r in RSTextIOWrapper" % s)
             s = s.decode(sys.getfilesystemencoding())  #
         return super(RSTextIOWrapper, self).write(s)
