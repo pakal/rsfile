@@ -186,12 +186,12 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
 
     """
 
-    # Quick type checking
-    if name and not isinstance(name, (basestring, int, long)):
+    # Quick type checking (beware, submitting True/False values instead of ints might break stuffs here...)
+    if name is not None and (isinstance(name, bool) or not isinstance(name, (basestring, int, long))):
         raise defs.BadValueTypeError("invalid file: %r" % name)
     if not isinstance(mode, basestring):
         raise defs.BadValueTypeError("invalid mode: %r" % mode)
-    if buffering is not None and not isinstance(buffering, (int, long)):
+    if buffering is not None and ((isinstance(buffering, bool)) or not isinstance(buffering, (int, long))):
         raise defs.BadValueTypeError("invalid buffering: %r" % buffering)
     if encoding is not None and not isinstance(encoding, basestring):
         raise defs.BadValueTypeError("invalid encoding: %r" % encoding)
@@ -232,11 +232,11 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
     if extended_kwargs["binary"] and extended_kwargs["text"]:
         raise defs.BadValueTypeError("can't have text and binary mode at once")
     if extended_kwargs["binary"] and encoding is not None:
-        raise defs.BadValueTypeError("binary mode doesn't take an encoding argument")
+        raise defs.BadValueTypeError("binary mode doesn't take an 'encoding' argument")
     if extended_kwargs["binary"] and errors is not None:
         raise defs.BadValueTypeError("binary mode doesn't take an 'errors' argument")
     if extended_kwargs["binary"] and newline is not None:
-        raise defs.BadValueTypeError("binary mode doesn't take a newline argument")
+        raise defs.BadValueTypeError("binary mode doesn't take a 'newline' argument")
 
     raw_kwargs['permissions'] = permissions
     # print("We get RSFileIO", RSFileIO)
@@ -270,8 +270,8 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
                 else:
                     if bs > 1:
                         buffering = bs
-        if buffering < 0:
-            raise defs.BadValueTypeError("invalid buffering size")
+
+        assert buffering >= 0, "abnormal buffering size %r encountered" % buffering
         if buffering == 0:
             if extended_kwargs["binary"]:
                 if thread_safe:

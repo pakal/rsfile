@@ -14,6 +14,7 @@ import os
 import unittest
 import copy
 from pprint import pprint
+import functools
 
 import array
 import tempfile
@@ -58,6 +59,36 @@ class TestRSFileStreams(unittest.TestCase):
 
     def tearDown(self):
         _cleanup()
+
+    def testRsopenUsageErrors(self):
+
+        # else deadlocks in these tests...
+        open = functools.partial(rsfile.rsopen, locking=False)
+        print("Using open function %r" % open)
+        MyExceptionClass = TypeError
+
+        self.assertRaises(MyExceptionClass, open, True)
+        self.assertRaises(MyExceptionClass, open, {})
+        self.assertRaises(MyExceptionClass, open, [])
+
+        self.assertRaises(MyExceptionClass, open, TESTFN, mode=111)
+        self.assertRaises(MyExceptionClass, open, TESTFN, mode="")
+        self.assertRaises(MyExceptionClass, open, TESTFN, mode="rW")
+        self.assertRaises(MyExceptionClass, open, TESTFN, mode="RE")
+        self.assertRaises(MyExceptionClass, open, TESTFN, mode="RBT")
+        self.assertRaises(MyExceptionClass, open, TESTFN, mode="RB", encoding="latin1")
+        self.assertRaises(MyExceptionClass, open, TESTFN, mode="RB", errors="ignore")
+        self.assertRaises(MyExceptionClass, open, TESTFN, mode="RB", newline="\n")
+
+        self.assertRaises(MyExceptionClass, open, TESTFN, buffering=True)
+        self.assertRaises(MyExceptionClass, open, TESTFN, buffering="unbuffered")
+        self.assertRaises(MyExceptionClass, open, TESTFN, mode="wt", buffering=0)
+
+        self.assertRaises(MyExceptionClass, open, TESTFN, encoding=22)
+
+        self.assertRaises(MyExceptionClass, open, TESTFN, errors=99)
+
+        self.assertRaises(MyExceptionClass, open, TESTFN, thread_safe=False, mutex=threading.RLock())
 
     def testSeekBehaviour(self):
         with io.open(TESTFN, "w+b") as f:

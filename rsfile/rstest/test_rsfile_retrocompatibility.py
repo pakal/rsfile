@@ -240,6 +240,8 @@ class TestStreamsRetrocompatibility(unittest.TestCase):
 
             selected_adv_flags = "".join(subset)  # the sames flags will come in various orders
 
+            #print("-> Testing mode equivalences for", selected_adv_flags)
+
             _selected_adv_flags_normalized = "".join(sorted(selected_adv_flags))
             is_abnormal_mode = _selected_adv_flags_normalized not in file_modes
             selected_stdlib_flags = file_modes.get(_selected_adv_flags_normalized, None)
