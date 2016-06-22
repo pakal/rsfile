@@ -12,6 +12,13 @@ The test suites of RSFile can be run against any compatible python2/3 interprete
 Since they reuse many stdlib testcases, you must have the "python test suite" installed for the selected interpreter version, else only a subset of RSFile tests will be run.
 On Windows this test suite must have been selected during install, on Linux you must install separate packages like "libpythonX.Y-testsuite", etc.
 
+.. note::
+    Some tests, like those concerning open() mode equivalences, or locking, are very long to execute,
+    so as long as the test process consumes CPU, they're probably still working normally. Some tests, mainly
+    concerning large files, are disabled by default and must be manually enabled by editing flags in test
+    files.
+
+
 
 Testing using TOX
 ---------------------
