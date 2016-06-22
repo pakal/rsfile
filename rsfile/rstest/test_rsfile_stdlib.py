@@ -35,6 +35,8 @@ rsfile.monkey_patch_open_builtin()
 from test import test_support  # NOW ONLY we can import it
 
 
+ENABLE_LARGE_FILE_TESTS = False
+
 def test_original_io():
     """
     Beware, We patch stdlib tests to remove C extension tests, or other tests that can't apply to our python
@@ -141,7 +143,7 @@ def test_original_io():
 
     test_modules = [test_io, test_file, test_fileio, test_bufio, test_memoryio]
 
-    if False:
+    if ENABLE_LARGE_FILE_TESTS:
         # BEWARE - heavy test, activate it it wisely
         test_modules.insert(0, test_largefile)
 
