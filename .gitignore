@@ -5,8 +5,10 @@ ___*
 *.pyo
 
 .tox
+.coverage
 _build/
 build/*
 dist/*
+htmlcov/*
 MANIFEST
 
