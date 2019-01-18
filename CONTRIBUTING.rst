@@ -40,7 +40,7 @@ To manually launch the test suites against a specific "python" interpreter, use 
 
 Note that these *.py test files can't all be executed inside the same runner process, since they monkey-patch their python environment differently.
 
-Also, double-check that the "rsfile" package imported is well the one you meant, since the current working directory is usually automatically added to your python "sys.path" on launch.
+Also, double-check that the "rsfile" package imported is well the one you meant, since the current working directory is usually automatically added by python to your "sys.path" on launch.
 
 If you have installed python-tabulate (https://pypi.python.org/pypi/tabulate), the retrocompatibility test will display a table listing the different file opening modes, and their features.
 

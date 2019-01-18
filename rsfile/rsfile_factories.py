@@ -5,6 +5,7 @@ import os, stat
 from . import rsfile_definitions as defs
 from .rsfile_streams import *
 
+USE_FSPATH = hasattr(os, 'fspath')
 
 def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newline=None,
            fileno=None, handle=None, closefd=True, opener=None,
@@ -186,8 +187,11 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
 
     """
 
+    if USE_FSPATH and name is not None and not isinstance(name, (int, long)):
+        name = os.fspath(name)
+
     # Quick type checking (beware, submitting True/False values instead of ints might break stuffs here...)
-    if name is not None and (isinstance(name, bool) or not isinstance(name, (basestring, int, long))):
+    if name is not None and (isinstance(name, bool) or not isinstance(name, (unicode, bytes, int, long))):
         raise defs.BadValueTypeError("invalid file: %r" % name)
     if not isinstance(mode, basestring):
         raise defs.BadValueTypeError("invalid mode: %r" % mode)
@@ -220,6 +224,8 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
             raise defs.BadValueTypeError("can't provide both fileno and opener")
         raw_kwargs["fileno"] = opener(name,
                                       mode)  # we give it the original "name" as parameter, not the normalized path
+        if int(raw_kwargs["fileno"]) < 0:  # easrly catch, just to please the test suite...
+            raise defs.BadValueTypeError("opener returned %s" % raw_kwargs["fileno"])
         raw_kwargs["path"] = None  # irrelevant in this case
 
     if extended_kwargs["truncate"]:
@@ -250,7 +256,8 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
 
         if extended_kwargs["truncate"]:
             # NOW that we've potentially locked the file, we may truncate
-            raw.truncate(0)  # does nothing on PIPES
+            if raw.seekable():  # thus we skip PIPES
+                raw.truncate(0)
 
         if buffering is None:
             buffering = -1

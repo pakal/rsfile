@@ -10,6 +10,7 @@ import errno
 from . import rsfile_definitions as defs
 from .rsfile_registries import IntraProcessLockRegistry, _default_rsfile_options
 
+USE_MEMORYVIEW_CAST = hasattr(memoryview, "cast")
 
 class RSFileIOAbstract(defs.io_module.RawIOBase):
     """
@@ -362,6 +363,9 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         self._checkClosed()
         self._checkReadable()
 
+        if USE_MEMORYVIEW_CAST:
+            buffer = memoryview(buffer).cast('B')
+
         mybytes = self._inner_read(len(buffer))
         byteslen = len(mybytes)
         assert mybytes is None or isinstance(mybytes, bytes), type(mybytes)
@@ -418,6 +422,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
 
         self._checkClosed()
         self._checkWritable()  # Important !
+        self._checkSeekable()  # handles PIPES
 
         if size is None:
             size = self.tell()

@@ -5,6 +5,8 @@ RSFile provides pure-python drop-in replacements for the classes of the **io** m
 
 Its goal is to provide a cross-platform, reliable, and comprehensive synchronous file I/O API, with advanced features like fine-grained opening modes, shared/exclusive file record locking, thread-safety, cache synchronization, file descriptor inheritability, and handy stat getters (size, inode, times...).
 
+Locking is performed using actual file locking capabilities of the OS, not by using separate files/directories as locking markers, or other fragile gimmicks.
+
 .. END OF PART KINDA SHARED WITH SPHINX DOC INDEX ..
 
 Possible use cases for this library: concurrently writing to logs without ending up with garbled data, manipulating sensitive data like disk-based databases, synchronizing heterogeneous producer/consumer processes when multiprocessing semaphores aren't an option...
@@ -42,3 +44,6 @@ QUICKSTART
 
     with rsopen("myfile.txt", "WANISB", locking=False, thread_safe=False) as f:
         f.write(b"See the docs for info on these cool new modes and parameters.")
+
+
+See CONTRIBUTING.rst for other cases of the module (testing, benchmarking...)

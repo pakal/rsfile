@@ -231,6 +231,8 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
             # print ("<<< inner read", e.__class__)
             if e.args[0] == errno.EAGAIN:
                 return None
+            if e.__class__.__name__ == "BrokenPipeError":  # only in Python3
+                return b''  # conform to stdlib behaviour
             raise
 
     '''

@@ -353,16 +353,15 @@ class TestRSFileStreams(unittest.TestCase):
                 self.assertEqual(reader.times(), times)
                 self.assertNotEqual(reader.times(), old_times)
 
-                writer.buffer.raw.truncate(0)
+                self.assertRaises(IOError, writer.buffer.raw.truncate)
                 self.assertRaises(IOError, reader.buffer.raw.truncate)
-
-                writer.truncate(0)
+                self.assertRaises(IOError, writer.buffer.raw.truncate, 0)
                 self.assertRaises(IOError, reader.buffer.raw.truncate, 0)
 
-                self.assertRaises(IOError, writer.truncate)  # fails because "relative truncation"
+                self.assertRaises(IOError, writer.truncate)
                 self.assertRaises(IOError, reader.truncate)
-                self.assertRaises(IOError, writer.truncate, 10)  # fails because "not full truncation"
-                self.assertRaises(IOError, reader.truncate, 10)
+                self.assertRaises(IOError, writer.truncate, 0)
+                self.assertRaises(IOError, reader.truncate, 0)
 
                 self.assertRaises(IOError, writer.tell)
                 self.assertRaises(IOError, reader.tell)

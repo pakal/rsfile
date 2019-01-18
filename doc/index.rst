@@ -7,6 +7,8 @@ RSFile provides drop-in replacements for the classes of the :mod:`io` module, an
 
 Its goal is to provide a cross-platform, reliable, and comprehensive file I/O API, with advanced features like fine-grained opening modes, shared/exclusive file record locking, thread-safety, cache synchronization, file descriptor inheritability, and handy stat getters (size, inode, times...).
 
+Locking is performed using actual file locking capabilities of the OS, not by using separate files/directories as locking markers, or other fragile gimmicks.
+
 Note that RSFile only concerns I/O stream manipulation, not filesystem operations like pathutil or shutil do. And that it has no specific support for async I/O (although you may use non-blocking streams with it).
 
 RSFile uses utilities scattered over the python stdlib (os, stat, fnctl, _pyio...), and accesses native APIs (like "Handles" on Windows) when it's necessary to achieve robust cross-platform interoperability. In particular, on Windows, it'll make use of `pywin32 <https://sourceforge.net/projects/pywin32/>`_ extensions if they are available, instead of relying on `ctypes`. And on Unix-like systems, it provides specific systems to make up for the flaws of `fcntl` locks.

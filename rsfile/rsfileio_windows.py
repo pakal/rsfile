@@ -56,6 +56,19 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
 
         return wrapper
 
+
+    def _broken_pipe_ignorer(f):  # @NoSelf
+        @functools.wraps(f)
+        def wrapper(self, *args, **kwds):
+            try:
+                return f(self, *args, **kwds)
+            except OSError as e:
+                if e.__class__.__name__ == "BrokenPipeError":  # only in Python3
+                    return b''  # conform to stdlib behaviour
+                raise
+        return wrapper
+
+
     @_win32_error_converter
     def _inner_create_streams(self, path, read, write, append, must_create, must_not_create, synchronized, inheritable,
                               fileno, handle, permissions):
@@ -303,6 +316,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         new_offset = win32.SetFilePointer(self._handle, offset, reference)
         return new_offset
 
+    @_broken_pipe_ignorer
     @_win32_error_converter
     def _inner_read(self, n):
         (res, mybytes) = win32.ReadFile(self._handle, n)  # returns bytes

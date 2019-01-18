@@ -1,4 +1,10 @@
 
+Rsfile 2.2
+============
+
+* Python 3.6 and Python 3.7 compatibility
+
+
 Rsfile 2.1
 ============
 
