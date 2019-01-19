@@ -47,7 +47,7 @@ def monkey_patch_io_module(module=None):
             if extended_kwargs["text"]:
                 raise BadValueTypeError("Raw stream can't be created in text mode")
             RSFileIO.__init__(self, **raw_kwargs)
-            if extended_kwargs["truncate"]:
+            if self.seekable() and extended_kwargs["truncate"]:
                 self.truncate(0)  # this mimicks basic rawFileIO, without file locking
 
     # Important Patching ! #
