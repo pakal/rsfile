@@ -79,6 +79,15 @@ def test_original_io():
     test_io.CMiscIOTest = dummyklass
     test_io.CIOTest = dummyklass
 
+    if sys.version_info < (3, 6):
+        test_io.CommonBufferedTests.test_override_destructor = dummyfunc  # different flushing
+
+    if hasattr(test_io, "MockUnseekableIO"):
+        # missing in python<=3.5
+        def truncate_blocker(self, *args):
+            raise self.UnsupportedOperation("not seekable")
+        test_io.MockUnseekableIO.truncate = truncate_blocker
+
     test_io.IOTest.test_garbage_collection = dummyfunc  # cyclic GC can't work with python classes having __del__()
     # method
     test_io.PyIOTest.test_garbage_collection = dummyfunc  # idem
