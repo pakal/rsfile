@@ -17,6 +17,8 @@ Because RSFile adds multiple layers of securities to I/O streams, and is a pure 
 
 Compatibility-wise, RSFile is compliant with the stdlib test suite (except some testcases which check C-extension behaviours or "ResourceWarning" emitting). It may be used on regular files as well as on other stream types (anonymous pipes, named fifos, devices...), although its advanced features only work on "normal", seekable and lockable, files.
 
+Beware Windows users: `os.pipe()` returns anonymous pipes which appear seekable for stdlib io module ; `rsfile` corrects this and shows them as non-seekable.
+
 .. note::
     Regarding exceptions encountered in RSFile:
 

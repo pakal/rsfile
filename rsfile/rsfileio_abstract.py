@@ -305,11 +305,13 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
 
     def tell(self):
         self._checkClosed()
+        self._checkSeekable()
         res = self._inner_tell()
         return res
 
     def seek(self, offset, whence=os.SEEK_SET):
         self._checkClosed()
+        self._checkSeekable()
 
         # print ("raw seek called to offset ", offset, " - ", whence, "with size", self._inner_size())
         if not isinstance(offset, (int, long)):
@@ -518,6 +520,8 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
             else:
                 shared = True
 
+        self._checkSeekable()  # pipes and such can't be locked...
+
         if (shared and not self._readable) or (not shared and not self._writable):
             raise IOError("Can't obtain exclusive lock on non-writable stream, or shared lock on non-readable stream.")
 
@@ -593,6 +597,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
     def unlock_file(self, length=None, offset=0, whence=os.SEEK_SET):
 
         self._checkClosed()
+        self._checkSeekable()  # pipes and such can't be locked...
 
         if length is not None and (not isinstance(length, (int, long)) or length < 0):
             raise defs.BadValueTypeError("length must be None or positive integer.")

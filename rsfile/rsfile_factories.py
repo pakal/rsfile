@@ -45,6 +45,8 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
         Like for io.open(), if buffering is 0, this function returns a raw stream, the methods of which
         only issue one system call. So in this case, checking the number of bytes written/read after 
         each operation is highly advised.
+
+        For non-seekable streams (like pipes), initial locking and truncation are ignored, for retrocompatibility.
     
     If ``locking`` is True, the *whole* file will be immediately locked on opening, with an automatically determined
     share mode (exclusive for writable streams, shared for read-only streams), and the ``timeout`` argument provided
@@ -250,13 +252,14 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
     result = raw
     try:
 
-        if locking:
-            # print "we enforce file locking with %s - %s" %(shared, timeout)
-            raw.lock_file(timeout=timeout)
+        if raw.seekable():  # thus we skip PIPES silently...
 
-        if extended_kwargs["truncate"]:
-            # NOW that we've potentially locked the file, we may truncate
-            if raw.seekable():  # thus we skip PIPES
+            if locking:
+                # print "we enforce file locking with %s - %s" %(shared, timeout)
+                raw.lock_file(timeout=timeout)
+
+            if extended_kwargs["truncate"]:
+                # NOW that we've potentially locked the file, we NOW may truncate
                 raw.truncate(0)
 
         if buffering is None:

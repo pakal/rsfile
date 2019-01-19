@@ -282,8 +282,54 @@ class TestRSFileStreams(unittest.TestCase):
 
         self.assertEqual(string, b"i" * nbytes + b"j" * nbytes)
 
+
+    def testCommonAnonymousPipesBehaviour(self):
+
+        piper, pipew = os.pipe()
+
+        with io.open(piper, "r") as reader, io.open(pipew, "w") as writer:
+
+            assert not reader.buffer.raw.seekable()
+            assert not writer.buffer.raw.seekable()
+            assert not reader.seekable()
+            assert not writer.seekable()
+
+            assert writer.buffer.raw.size() == 0
+            assert reader.buffer.raw.size() == 0
+
+            assert writer.size() == 0
+            assert reader.size() == 0
+
+            # we can't be sure about tell() and seek(), because they are used to detect seekability on unix,
+            # and on windows they might lie about working...
+
+            self.assertRaises(IOError, writer.buffer.raw.truncate)
+            self.assertRaises(IOError, reader.buffer.raw.truncate)
+            #self.assertRaises(IOError, writer.buffer.raw.tell)
+            #self.assertRaises(IOError, reader.buffer.raw.tell)
+            #self.assertRaises(IOError, writer.buffer.raw.seek, 1)
+            #self.assertRaises(IOError, reader.buffer.raw.seek, 1)
+
+            self.assertRaises(IOError, writer.truncate)
+            self.assertRaises(IOError, reader.truncate)
+            #self.assertRaises(IOError, writer.tell)
+            #self.assertRaises(IOError, reader.tell)
+            #self.assertRaises(IOError, writer.seek, 1)
+            #self.assertRaises(IOError, reader.seek, 1)
+
+            self.assertRaises(IOError, writer.buffer.raw.lock_file, timeout=1)
+            self.assertRaises(IOError, reader.buffer.raw.lock_file, timeout=1)
+            self.assertRaises(IOError, writer.buffer.raw.unlock_file)
+            self.assertRaises(IOError, reader.buffer.raw.unlock_file)
+
+            self.assertRaises(IOError, writer.lock_file, timeout=1)
+            self.assertRaises(IOError, reader.lock_file, timeout=1)
+            self.assertRaises(IOError, writer.unlock_file)
+            self.assertRaises(IOError, reader.unlock_file)
+
+
     @unittest.skipIf(os.name == 'nt', "test only works on a POSIX-like system")
-    def testPipesBehaviour(self):
+    def testUnixPipesBehaviour(self):
 
         named_fifo = "named_fifo_%s" % random.randint(1, 10000)  # local file
         os.mkfifo(named_fifo)
@@ -305,7 +351,7 @@ class TestRSFileStreams(unittest.TestCase):
 
             # print("Testing pipe of type %s" % case)
 
-            with io.open(w, "w") as writer, io.open(r, "r") as reader:
+            with io.open(r, "r") as reader, io.open(w, "w") as writer:
 
                 self.assertEqual(reader.name, r)
                 self.assertEqual(writer.name, w)
@@ -363,13 +409,23 @@ class TestRSFileStreams(unittest.TestCase):
                 self.assertRaises(IOError, writer.truncate, 0)
                 self.assertRaises(IOError, reader.truncate, 0)
 
+                self.assertRaises(IOError, writer.buffer.raw.tell)
+                self.assertRaises(IOError, reader.buffer.raw.tell)
+                self.assertRaises(IOError, writer.buffer.raw.seek, 0)
+                self.assertRaises(IOError, reader.buffer.raw.seek, 0)
+
                 self.assertRaises(IOError, writer.tell)
                 self.assertRaises(IOError, reader.tell)
                 self.assertRaises(IOError, writer.seek, 0)
                 self.assertRaises(IOError, reader.seek, 0)
 
-                self.assertRaises(IOError, writer.lock_file)
-                self.assertRaises(IOError, reader.lock_file)
+                self.assertRaises(IOError, writer.buffer.raw.lock_file, timeout=1)
+                self.assertRaises(IOError, reader.buffer.raw.lock_file, timeout=1)
+                self.assertRaises(IOError, writer.buffer.raw.unlock_file)
+                self.assertRaises(IOError, reader.buffer.raw.unlock_file)
+
+                self.assertRaises(IOError, writer.lock_file, timeout=1)
+                self.assertRaises(IOError, reader.lock_file, timeout=1)
                 self.assertRaises(IOError, writer.unlock_file)
                 self.assertRaises(IOError, reader.unlock_file)
 
