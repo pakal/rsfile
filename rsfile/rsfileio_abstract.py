@@ -305,13 +305,11 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
 
     def tell(self):
         self._checkClosed()
-        self._checkSeekable()
         res = self._inner_tell()
         return res
 
     def seek(self, offset, whence=os.SEEK_SET):
         self._checkClosed()
-        self._checkSeekable()
 
         # print ("raw seek called to offset ", offset, " - ", whence, "with size", self._inner_size())
         if not isinstance(offset, (int, long)):
@@ -422,9 +420,9 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         See RSOpen() doc.
         """
 
-        self._checkClosed()
+        self._checkSeekable()  # handles PIPES, already checks if closed
         self._checkWritable()  # Important !
-        self._checkSeekable()  # handles PIPES
+
 
         if size is None:
             size = self.tell()
@@ -497,7 +495,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
 
     def lock_file(self, timeout=None, length=None, offset=None, whence=os.SEEK_SET, shared=None):
 
-        self._checkClosed()
+        self._checkSeekable()  # pipes and such can't be locked... already checks if closed
 
         if timeout is not None and (not isinstance(timeout, (int, long, float)) or timeout < 0):
             raise defs.BadValueTypeError("timeout must be None or positive float.")
@@ -519,8 +517,6 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
                 shared = False
             else:
                 shared = True
-
-        self._checkSeekable()  # pipes and such can't be locked...
 
         if (shared and not self._readable) or (not shared and not self._writable):
             raise IOError("Can't obtain exclusive lock on non-writable stream, or shared lock on non-readable stream.")
@@ -596,8 +592,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
 
     def unlock_file(self, length=None, offset=0, whence=os.SEEK_SET):
 
-        self._checkClosed()
-        self._checkSeekable()  # pipes and such can't be locked...
+        self._checkSeekable()  # pipes and such can't be locked... already checks if closed
 
         if length is not None and (not isinstance(length, (int, long)) or length < 0):
             raise defs.BadValueTypeError("length must be None or positive integer.")
