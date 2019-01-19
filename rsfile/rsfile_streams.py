@@ -125,13 +125,23 @@ class _text_forwarder_mixin(object):
 
 ### EXTENDED BUFFER AND TEXT STREAMS !!!!!!!!
 
-class RSBufferedReader(_buffer_forwarder_mixin, defs.io_module.BufferedReader):
-    pass
 
+# We have to tweak readable/writable methods of RSBufferedReader and RSBufferedWriter, buggy on python<=3.5 #
+
+if defs.io_module._BufferedIOMixin.__dict__.get("readable"):
+    del defs.io_module._BufferedIOMixin.readable
+if defs.io_module._BufferedIOMixin.__dict__.get("writable"):
+    del defs.io_module._BufferedIOMixin.writable
+
+class RSBufferedReader(_buffer_forwarder_mixin, defs.io_module.BufferedReader):
+
+    def readable(self):  # drop when py3.5 not supported anymore
+        return self.raw.readable()
 
 class RSBufferedWriter(_buffer_forwarder_mixin, defs.io_module.BufferedWriter):
-    pass
 
+    def writable(self):  # drop when py3.5 not supported anymore
+        return self.raw.writable()
 
 # class RSBufferedRandom(defs.io_module.BufferedRandom, _buffer_forwarder_mixin):  # future C extension version
 #    pass
