@@ -88,6 +88,9 @@ def test_original_io():
             raise self.UnsupportedOperation("not seekable")
         test_io.MockUnseekableIO.truncate = truncate_blocker
 
+    if sys.version_info < (3,):
+        test_io.MiscIOTest.test_io_after_close = dummyfunc  # confusion ValueError/IOError on closed files
+
     test_io.IOTest.test_garbage_collection = dummyfunc  # cyclic GC can't work with python classes having __del__()
     # method
     test_io.PyIOTest.test_garbage_collection = dummyfunc  # idem
