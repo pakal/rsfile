@@ -11,9 +11,7 @@ Locking is performed using actual file locking capabilities of the OS, not by us
 
 Possible use cases for this library: concurrently writing to logs without ending up with garbled data, manipulating sensitive data like disk-based databases, synchronizing heterogeneous producer/consumer processes when multiprocessing semaphores aren't an option...
 
-This version 2 of the lib drops support for Python2.6, and puts RSFile in compliance with the numerous evolutions that happened to the I/O modules of the stdlib, over the past years.
-
-Tested on python2.7 and python3.3+, on windows and unix-like systems. *Should* work with IronPython/Jython/PyPy too, since it uses stdlib utilities and ctypes bridges.
+Tested on python2.7 and python3.5+, on windows and unix-like systems. *Should* work with IronPython/Jython/PyPy too, since it uses stdlib utilities and ctypes bridges.
 
 .. image:: https://travis-ci.org/pakal/rsfile.svg?branch=master
     :target: https://travis-ci.org/pakal/rsfile

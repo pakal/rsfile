@@ -423,7 +423,6 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         self._checkSeekable()  # handles PIPES, already checks if closed
         self._checkWritable()  # Important !
 
-
         if size is None:
             size = self.tell()
         elif size < 0:
