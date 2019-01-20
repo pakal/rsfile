@@ -7,7 +7,7 @@ RSFile provides drop-in replacements for the classes of the :mod:`io` module, an
 
 Its goal is to provide a cross-platform, reliable, and comprehensive file I/O API, with advanced features like fine-grained opening modes, shared/exclusive file record locking, thread-safety, cache synchronization, file descriptor inheritability, and handy stat getters (size, inode, times...).
 
-Locking is performed using actual file locking capabilities of the OS, not by using separate files/directories as locking markers, or other fragile gimmicks.
+Locking is performed using actual file locking capabilities of the OS, not by using separate files/directories as locking markers, or other fragile gimmicks. Unix users might particularly be interested by the workaround that this library provides, concerning the weird semantic of fcntl() locks (when any descriptor to a disk file is closed, the process loses ALL locks acquired on this file through any descriptor).
 
 Note that RSFile only concerns I/O stream manipulation, not filesystem operations like pathutil or shutil do. And that it has no specific support for async I/O (although you may use non-blocking streams with it).
 
