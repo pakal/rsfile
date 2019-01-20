@@ -232,7 +232,7 @@ class TestStreamsRetrocompatibility(unittest.TestCase):
 
         def gen_all_combinations(values):
             for L in range(0, len(values) + 1):
-                for subset in itertools.permutations(values, L):
+                for subset in itertools.combinations(values, L):
                     yield subset
 
         adv_flags = list("RAWCNEBT")  # remove deprecated and isolated flags
@@ -330,7 +330,7 @@ class TestStreamsRetrocompatibility(unittest.TestCase):
             self.assertEqual(theoretical_abilities, abilities_via_handle, msg)
             '''
 
-        assert idx > 1000, idx  # we've well browsed lots of combinations
+        assert idx > 200, idx  # we've well browsed lots of combinations
 
     def testMiscStreamBehavioursRetrocompatibility(self):
 
