@@ -3,7 +3,7 @@ Handy Utilities and Options
 
 
 .. module:: rsfile
-
+    :noindex:
 
 
 RSFile Utilities
