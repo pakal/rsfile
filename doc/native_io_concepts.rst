@@ -351,13 +351,13 @@ Kernel-level caching
 Contrary to common beliefs, if you open a file, issue read/write operations on it, and close 
 it (with an implicit flush), this doesn't imply that your modifications have been saved to disk.
 Most likely, they have just been acknowledged by a cache located in the kernel, and will be "written
-to oxyde" later, along with other changes, by a lazy writer (eg. *pdflush* on linux). On laptops in
+to oxide" later, along with other changes, by a lazy writer (eg. *pdflush* on linux). On laptops in
 particular, disks can be left asleep for dozens of minutes in order to preserve energy - your data will
 then remain in memory for all that time.
     
 Since this kernel caching is fully transparent to applications (no desynchronization should occur between
 what different processes see of a file), it usually doesn't matter. But in case of crash, data which 
-hasn't yet been written to oxyde will be lost - which can be quite embarrassing (goodbye to the 3 paragraphs
+hasn't yet been written to the oxide will be lost - which can be quite embarrassing (goodbye to the 3 paragraphs
 you've just written) or more than embarrassing (bank files management, database applications...).
 
 That's why operating system offer ways of flushing this kernel cache, to ensure that data gets
@@ -367,7 +367,7 @@ properly written to the device before starting other operations. Such a flush ca
 
 Note that several variants of kernel cache flushing exist (dsync, rsync, datasync semantics...),
 eg. to also enforce flushing of read buffers, or to bypass the flushing of metadata, but the main
-point of concern is, anyway, that the file data itself be properly pushed to oxyde when you command it.
+point of concern is, anyway, that the file data itself be properly pushed to the oxide when you command it.
 
 A problem you might encounter at that level, is that on some platforms, sync-like calls actually do not wait
 for the write operation to complete, they just plan write operations and immediately return (Posix1-2001 doesn't 
@@ -396,7 +396,7 @@ deceiving behaviours. Luckily, your data won't always be sensitive enough to req
 extreme measures.
 
 If your data is stored on remote shares (samba, nfs...), then chances are big 
-that your sync calls won't make it to the oxyde, and only a careful study of 
+that your sync calls won't make it to the oxide, and only a careful study of
 involved hardware/OS/applications may give you some certainties in this case 
 (a good old "unplug the cable violently and check the result" might also help).
 

@@ -107,7 +107,7 @@ class RSIOBase(object):
         Note that the file's parent directory is not necessarily updated synchronously, so
         some risks of data loss may remain.
 
-        For a constant synchronization between the kernel cache and the disk oxyde,
+        For a constant synchronization between the kernel cache and the disk oxide,
         see the "synchronized" argument at stream opening.
 
         Raises IOError if no sync operation is possible on the stream (eg. for pipes).
