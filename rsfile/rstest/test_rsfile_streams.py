@@ -716,9 +716,9 @@ class TestRSFileStreams(unittest.TestCase):
             self.assertRaises(IOError, rsfile.rsopen, TESTFN, "R+", buffering=0)
             self.assertRaises(IOError, rsfile.rsopen, TESTFNBIS, "R+", buffering=0)
 
-            if (defs.RSFILE_IMPLEMENTATION == "windows"):
+            if False:  #(defs.RSFILE_IMPLEMENTATION == "windows"):
                 # on windows the file remains but in a weird state, awaiting deletion, so we can't reopen it...
-                self.assertRaises(IOError, rsfile.rsopen, TESTFNBIS, "w", buffering=0)
+                self.assertRaises(IOError, rsfile.rsopen, TESTFNBIS, "wb", buffering=0)
             else:
                 with rsfile.rsopen(TESTFN, "wb", buffering=0):
                     pass
