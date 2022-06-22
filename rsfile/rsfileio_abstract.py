@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals, print_function
+
 
 import sys, os, time, threading, multiprocessing, collections, functools, stat
 from array import array
@@ -90,7 +90,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
 
         # HERE WE CHECK EVERYTHING !!!
 
-        if path is not None and not isinstance(path, (bytes, unicode)):
+        if path is not None and not isinstance(path, (bytes, str)):
             raise defs.BadValueTypeError("If provided, path must be a string.")
 
         if bool(path) + (fileno is not None) + (handle is not None) != 1:
@@ -154,7 +154,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
             self._inner_create_streams(**kwargs)
 
             seekable = True
-            if isinstance(self._fileno, (int, long)):
+            if isinstance(self._fileno, int):
                 # we bypass Rsfile for file descriptors that are pipes, devices, directories, symlinks etc.
                 st_mode = os.fstat(self._fileno).st_mode  # might raise
                 if stat.S_ISDIR(st_mode):
@@ -180,7 +180,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
 
     def __repr__(self):
         return ('<rsfile.RSFileIO name=%s mode="%s" origin="%s" closefd=%s>' %
-                ('"%s"' % self.name if isinstance(self.name, basestring) else self.name,
+                ('"%s"' % self.name if isinstance(self.name, str) else self.name,
                  self.mode, self.origin, self._closefd))
 
     def close(self):
@@ -312,7 +312,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         self._checkClosed()
 
         # print ("raw seek called to offset ", offset, " - ", whence, "with size", self._inner_size())
-        if not isinstance(offset, (int, long)):
+        if not isinstance(offset, int):
             raise defs.BadValueTypeError("Expecting an integer as argument for seek")
         res = self._inner_seek(offset, whence)
 
@@ -395,7 +395,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         self._checkClosed()
         self._checkWritable()
 
-        if isinstance(buffer, unicode):
+        if isinstance(buffer, str):
             raise defs.BadValueTypeError("can't write unicode to binary stream")
 
         if isinstance(buffer, memoryview):
@@ -496,13 +496,13 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
 
         self._checkSeekable()  # pipes and such can't be locked... already checks if closed
 
-        if timeout is not None and (not isinstance(timeout, (int, long, float)) or timeout < 0):
+        if timeout is not None and (not isinstance(timeout, (int, float)) or timeout < 0):
             raise defs.BadValueTypeError("timeout must be None or positive float.")
 
-        if length is not None and (not isinstance(length, (int, long)) or length < 0):
+        if length is not None and (not isinstance(length, int) or length < 0):
             raise defs.BadValueTypeError("length must be None or positive integer.")
 
-        if offset is not None and not isinstance(offset, (int, long)):
+        if offset is not None and not isinstance(offset, int):
             raise defs.BadValueTypeError("offset must be None or an integer.")
 
         if whence not in defs.SEEK_VALUES:
@@ -593,10 +593,10 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
 
         self._checkSeekable()  # pipes and such can't be locked... already checks if closed
 
-        if length is not None and (not isinstance(length, (int, long)) or length < 0):
+        if length is not None and (not isinstance(length, int) or length < 0):
             raise defs.BadValueTypeError("length must be None or positive integer.")
 
-        if offset is not None and (not isinstance(offset, (int, long)) or offset < 0):
+        if offset is not None and (not isinstance(offset, int) or offset < 0):
             raise defs.BadValueTypeError("offset must be None or positive integer.")
 
         if whence not in defs.SEEK_VALUES:

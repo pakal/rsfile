@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals, print_function
+
 
 import os, threading
 
@@ -100,7 +100,7 @@ class IntraProcessLockRegistryClass(object):
         Returns True iff the entry existed before the call.
         """
         assert unique_id, unique_id
-        if self._lock_registry.has_key(unique_id):
+        if unique_id in self._lock_registry:
             return True
         else:
             if create:
@@ -279,7 +279,7 @@ class IntraProcessLockRegistryClass(object):
 
             self._check_forking()
 
-            if self._lock_registry.has_key(unique_id) and self._lock_registry[unique_id][1]:
+            if unique_id in self._lock_registry and self._lock_registry[unique_id][1]:
                 return True
             else:
                 return False

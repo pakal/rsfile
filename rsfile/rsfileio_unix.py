@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals, print_function
+
 
 """
 Reimplementation of raw streams for unix-like OS, with advanced abilities.
@@ -29,12 +29,12 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
                 else:
                     traceback = sys.exc_info()[2]
 
-                    if not isinstance(e.strerror, unicode):
+                    if not isinstance(e.strerror, str):
                         strerror = e.strerror.decode(UNIX_MSG_ENCODING, 'replace')
                     else:
                         strerror = e.strerror
 
-                    raise IOError, (e.errno, strerror, unicode(self._name)), traceback
+                    raise IOError(e.errno, strerror, str(self._name)).with_traceback(traceback)
 
         return wrapper
 
@@ -72,7 +72,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
 
         else:  # we open the file with low level posix IO - the unix "open()"  function
 
-            if isinstance(path, unicode):
+            if isinstance(path, str):
                 strname = path.encode(
                     sys.getfilesystemencoding())  # let's take no risks - and do not use locale.getpreferredencoding(
                 # ) here

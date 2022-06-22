@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals, print_function
+
 
 import os, sys
-import unittest, tempfile, threading, multiprocessing, Queue, random, string, time, traceback
+import unittest, tempfile, threading, multiprocessing, queue, random, string, time, traceback
 
 import rsfile.rsfile_definitions as defs
 from rsfile.rstest import _worker_process
@@ -432,7 +432,7 @@ class TestRSFileLocking(unittest.TestCase):
                              "Process '%s' encountered some trouble during execution" % process.name)
 
         real_results = []
-        if isinstance(results, basestring):
+        if isinstance(results, str):
             for line in io.open(results, "rb"):
                 (process_name, locking_is_successful, time_spent) = line.split("|")
                 locking_is_successful = int(locking_is_successful)
@@ -471,7 +471,7 @@ class TestRSFileLocking(unittest.TestCase):
                                       multiprocess=True)
 
     def test_whence_and_timeout_multithreading(self):
-        self._test_whence_and_timeout(ThreadWithExitCode, self.multithreading_lock, Queue.Queue, multiprocess=False)
+        self._test_whence_and_timeout(ThreadWithExitCode, self.multithreading_lock, queue.Queue, multiprocess=False)
 
     def test_intraprocess_duplicated_handle_locking(self):
 

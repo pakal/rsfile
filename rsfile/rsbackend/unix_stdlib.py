@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals, print_function
+
 
 
 error = (OSError,
@@ -27,7 +27,7 @@ from os import (open,
 from fcntl import lockf, fcntl  # used both to lock and unlock !
 
 
-from raw_unix_defines import *  # constants
+from .raw_unix_defines import *  # constants
 
 if hasattr(_os, 'fdatasync'):
     fdatasync = _os.fdatasync

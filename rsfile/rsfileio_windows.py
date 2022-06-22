@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals, print_function
+
 
 """
 Reimplementation of raw streams for windows OS, with advanced abilities.
@@ -47,12 +47,12 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
                 # we must convert to unicode the local error message
                 if not e.strerror:
                     strerror = "<no error msg>"
-                elif isinstance(e.strerror, unicode):
+                elif isinstance(e.strerror, str):
                     strerror = e.strerror
                 else:
                     strerror = e.strerror.decode(WIN32_MSG_ENCODING, 'replace')
 
-                raise IOError, (errno, strerror, unicode(self._name)), traceback
+                raise IOError(errno, strerror, str(self._name)).with_traceback(traceback)
 
         return wrapper
 
@@ -309,7 +309,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         in the intervening bytes uninitialized.
         """
 
-        if not isinstance(offset, (int, long)):
+        if not isinstance(offset, int):
             raise defs.BadValueTypeError("Offset should be an integer in seek(), not %s object" % type(offset))
 
         reference = self.__POSITION_REFERENCES[whence]

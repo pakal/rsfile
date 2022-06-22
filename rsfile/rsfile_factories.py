@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals, print_function
+
 
 import os, stat
 from . import rsfile_definitions as defs
@@ -189,19 +189,19 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
 
     """
 
-    if USE_FSPATH and name is not None and not isinstance(name, (int, long)):
+    if USE_FSPATH and name is not None and not isinstance(name, int):
         name = os.fspath(name)
 
     # Quick type checking (beware, submitting True/False values instead of ints might break stuffs here...)
-    if name is not None and (isinstance(name, bool) or not isinstance(name, (unicode, bytes, int, long))):
+    if name is not None and (isinstance(name, bool) or not isinstance(name, (str, bytes, int))):
         raise defs.BadValueTypeError("invalid file: %r" % name)
-    if not isinstance(mode, basestring):
+    if not isinstance(mode, str):
         raise defs.BadValueTypeError("invalid mode: %r" % mode)
-    if buffering is not None and ((isinstance(buffering, bool)) or not isinstance(buffering, (int, long))):
+    if buffering is not None and ((isinstance(buffering, bool)) or not isinstance(buffering, int)):
         raise defs.BadValueTypeError("invalid buffering: %r" % buffering)
-    if encoding is not None and not isinstance(encoding, basestring):
+    if encoding is not None and not isinstance(encoding, str):
         raise defs.BadValueTypeError("invalid encoding: %r" % encoding)
-    if errors is not None and not isinstance(errors, basestring):
+    if errors is not None and not isinstance(errors, str):
         raise defs.BadValueTypeError("invalid errors: %r" % errors)
 
     if not thread_safe and mutex:
@@ -342,9 +342,9 @@ def parse_standard_args(name, mode, fileno, handle, closefd):
         raise defs.BadValueTypeError("must have exactly one of create/read/write/append mode flags")
 
     # real semantic
-    if name is None or isinstance(name, (bytes, unicode)):
+    if name is None or isinstance(name, (bytes, str)):
         path = name  # OK valid
-    elif isinstance(name, (int, long)):
+    elif isinstance(name, int):
         if fileno is not None:
             raise defs.BadValueTypeError("Impossible to provide a file descriptor via both name and fileno arguments")
         fileno = name

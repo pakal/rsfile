@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals, print_function
+
 
 from .rsfile_definitions import *  # constants, base types and exceptions
 from .rsfile_streams import *
@@ -70,8 +70,8 @@ def monkey_patch_open_builtin():
     new_open = BUILTIN_OPEN_FUNC_REPLACEMENT
 
     try:
-        import __builtin__
-        __builtin__.open = new_open
+        import builtins
+        builtins.open = new_open
     except ImportError:
         import builtins
         builtins.open = new_open
@@ -132,7 +132,7 @@ def write_to_file(filename, data, sync=False, must_create=False, must_not_create
         mode += "N"
     if must_create:
         mode += "C"
-    if not isinstance(data, unicode):
+    if not isinstance(data, str):
         mode += "B"
 
     with rsopen(filename, mode=mode,
@@ -159,7 +159,7 @@ def append_to_file(filename, data, sync=False, must_not_create=False,
 
     if must_not_create:
         mode += "N"
-    if not isinstance(data, unicode):
+    if not isinstance(data, str):
         mode += "B"
 
     with rsopen(filename, mode=mode,

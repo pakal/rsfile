@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals, print_function
+
 
 # must be FIRST - VERY IMPORTANT !
 from .rsfile_definitions import *  # constants, base types and exceptions

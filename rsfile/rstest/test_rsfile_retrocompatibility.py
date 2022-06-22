@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals, print_function
+
 
 """
 BEWARE - in this test, we DO NOT monkey patch the stdlib, so that we can compare the original io and rsfile.
@@ -105,11 +105,11 @@ def complete_and_normalize_possible_modes(file_modes):
     file_modes = file_modes.copy()
 
     # we add redundant (useless) but accepted forms: "W" when "A", and "E", when "C"
-    for k, v in file_modes.items():
+    for k, v in list(file_modes.items()):
         if "A" in k:
             assert "W" not in k, k  # initial data must be DRY
             file_modes[k + "W"] = v
-    for k, v in file_modes.items():
+    for k, v in list(file_modes.items()):
         if "C" in k:  # EVEN if file not writable, eg. "RCE" is weird but possible
             assert "E" not in k, k  # initial data must be DRY
             file_modes[k + "E"] = v
@@ -121,11 +121,11 @@ def complete_and_normalize_possible_modes(file_modes):
     }
     # we add binary/text suffixes
     file_modes = dict((mode1 + suf1, (mode2 + suf2 if mode2 else mode2))
-                      for (mode1, mode2) in file_modes.items()
-                      for (suf1, suf2) in suffixes.items())
+                      for (mode1, mode2) in list(file_modes.items())
+                      for (suf1, suf2) in list(suffixes.items()))
 
     file_modes = {"".join(sorted(k)): v
-                  for (k, v) in file_modes.items()}
+                  for (k, v) in list(file_modes.items())}
 
     return file_modes
 
@@ -355,7 +355,7 @@ class TestStreamsRetrocompatibility(unittest.TestCase):
 def display_open_modes_correlations_table():
     file_modes_correlation = FILE_MODES_CORRELATION
 
-    _ref_stdlib_modes = set(m for m in file_modes_correlation.values() if m)
+    _ref_stdlib_modes = set(m for m in list(file_modes_correlation.values()) if m)
     sorted_stdlib_modes = ["r", "r+", "w", "w+", "a", "a+"] + (["x", "x+"] if HAS_X_OPEN_FLAG else [])
     assert set(sorted_stdlib_modes) == _ref_stdlib_modes  # sanity check
 
@@ -364,13 +364,13 @@ def display_open_modes_correlations_table():
     for stdlib_mode in sorted_stdlib_modes:
         # print("Analysing stdlib mode %r" % stdlib_mode)
 
-        advanced_modes = [k for (k, v) in file_modes_correlation.items() if v == stdlib_mode]
+        advanced_modes = [k for (k, v) in list(file_modes_correlation.items()) if v == stdlib_mode]
         advanced_mode = min(advanced_modes, key=len)
 
         abilities = TestStreamsRetrocompatibility.determine_stream_capabilities(io.open, stdlib_mode)
 
         abilities = {k: ("true" if v else " ")
-                     for (k, v) in abilities.items()}
+                     for (k, v) in list(abilities.items())}
 
         abilities["std_mode"] = stdlib_mode
         abilities["adv_mode"] = advanced_mode

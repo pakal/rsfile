@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals, print_function
+
 
 import rsfile.rsfile_definitions as defs
 
@@ -462,16 +462,16 @@ class TestRSFileStreams(unittest.TestCase):
         with io.open(TESTFN, 'rb') as f:
             result = b"abcdefghABCDEF" + extra
 
-            self.assertEquals(f.read(), result)
+            self.assertEqual(f.read(), result)
             f.seek(0)
-            self.assertEquals(f.read(), result)
+            self.assertEqual(f.read(), result)
             f.seek(0)
 
             target = array.array(array_type, b" " * 20)
             assert len(target) == 20, target
             f.readinto(target)
             assert len(target) == 20, target
-            self.assertEquals(target.tostring().decode("ascii").strip(), result.decode("ascii"))  # actually BYTES
+            self.assertEqual(target.tostring().decode("ascii").strip(), result.decode("ascii"))  # actually BYTES
 
             f.seek(0)
 
@@ -479,7 +479,7 @@ class TestRSFileStreams(unittest.TestCase):
             assert len(target) == 20, target
             f.readinto(target)
             assert len(target) == 20, target
-            self.assertEquals(target.decode("ascii").strip(), result.decode("ascii"))
+            self.assertEqual(target.decode("ascii").strip(), result.decode("ascii"))
 
             f.seek(0)
 
@@ -487,7 +487,7 @@ class TestRSFileStreams(unittest.TestCase):
             assert len(target) == 20, target
             f.readinto(target)
             assert len(target) == 20, target
-            self.assertEquals(target.tobytes().decode("ascii").strip(), result.decode("ascii"))
+            self.assertEqual(target.tobytes().decode("ascii").strip(), result.decode("ascii"))
 
             f.seek(0)
 
@@ -509,10 +509,10 @@ class TestRSFileStreams(unittest.TestCase):
             (dev, inode) = unique_id
 
             self.assertTrue(dev)
-            assert isinstance(dev, (int, long))
+            assert isinstance(dev, int)
 
             self.assertTrue(inode)
-            assert isinstance(inode, (int, long))
+            assert isinstance(inode, int)
 
             f.write(b"hhhh")
 
@@ -592,8 +592,8 @@ class TestRSFileStreams(unittest.TestCase):
 
         copy1 = io.open(mode='AB', buffering=0, fileno=f.fileno(), closefd=False)
         self.assertEqual(copy1.origin, "fileno")
-        assert isinstance(copy1.fileno(), (int, long))
-        assert isinstance(copy1.handle(), (int, long))
+        assert isinstance(copy1.fileno(), int)
+        assert isinstance(copy1.handle(), int)
         self.assertEqual(copy1.fileno(), f.fileno())
         if defs.RSFILE_IMPLEMENTATION == "windows":
             self.assertNotEqual(copy1.handle(), f.fileno())
@@ -628,8 +628,8 @@ class TestRSFileStreams(unittest.TestCase):
         copy1 = io.open(mode='AB', buffering=0, handle=f.handle(),
                         closefd=False)  # We trick the functools.partial object there...
         self.assertEqual(copy1.origin, "handle")
-        assert isinstance(copy1.fileno(), (int, long))
-        assert isinstance(copy1.handle(), (int, long))
+        assert isinstance(copy1.fileno(), int)
+        assert isinstance(copy1.handle(), int)
         self.assertEqual(copy1.handle(), f.handle())
         if defs.RSFILE_IMPLEMENTATION == "windows":
             self.assertNotEqual(copy1.fileno(), f.handle())
@@ -1121,10 +1121,10 @@ class TestRSFileStreams(unittest.TestCase):
     def testOpenBuiltinPython2Tolerance(self):
         with open(TESTFN, "wt") as f:
             # this doesn't raise str/unicode mixup error, on py27 especially
-            f.write(u"aéc".encode(sys.getfilesystemencoding()))
+            f.write("aéc".encode(sys.getfilesystemencoding()))
         with open(TESTFN, "rt", encoding=sys.getfilesystemencoding()) as f:
             data = f.read()
-            self.assertEqual(data, u"aéc")  # was well encoded on write() above
+            self.assertEqual(data, "aéc")  # was well encoded on write() above
 
 
 def test_main():

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals, print_function
+
 
 import sys, os, time, random, string, multiprocessing, threading
 import rsfile
@@ -126,7 +126,7 @@ def chunk_writer_reader(targetFileName, multiprocessing_lock, character, ioOffse
                         targetFile.seek(ioOffset)
                         targetFile.write(character * payLoad)
                     else:
-                        for k in reversed(range(payLoad)):
+                        for k in reversed(list(range(payLoad))):
                             targetFile.seek(ioOffset + k)
                             targetFile.write(character)
 
@@ -237,7 +237,7 @@ def lock_tester(resultQueue, targetFileName, multiprocessing_lock, multiprocess,
 
         if resultQueue is not None:
 
-            if isinstance(resultQueue, basestring):
+            if isinstance(resultQueue, str):
                 with io.open(resultQueue, "ab", 0) as f:
                     f.write(b"%s|%d|%f\n" % (myname.encode("ascii"), 1 if success else 0, total))
             else:

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals, print_function
+
 
 import sys, os
 from rsfile.rsbackend import _utilities
@@ -57,7 +57,7 @@ error = WindowsError  # we inform client apps that we may throw THIS exception t
 
 
 def CreateFile(fileName, desiredAccess, shareMode, attributes, creationDisposition, flagsAndAttributes, hTemplateFile):
-    if isinstance(fileName, unicode):
+    if isinstance(fileName, str):
         CreateFile = win32api.CreateFileW
     else:
         CreateFile = win32api.CreateFileA
@@ -197,7 +197,7 @@ def FlushFileBuffers(handle):
 def ReadFile(handle, buffer_or_int, overlapped=None):
     # TODO - optimize to work directly with ctypes array types, and to avoid copies for readinto() ?
 
-    if isinstance(buffer_or_int, (int, long)):
+    if isinstance(buffer_or_int, int):
         bytes_to_read = buffer_or_int
         target_buffer = ctypes.create_string_buffer(bytes_to_read)
     else:
@@ -232,7 +232,7 @@ def ReadFile(handle, buffer_or_int, overlapped=None):
 
     if overlapped:
         return (err, bytearray(target_buffer))  # untested feature
-    elif isinstance(buffer_or_int, (int, long)):
+    elif isinstance(buffer_or_int, int):
         return (err, target_buffer.raw[0:bytes_read.value])
     else:
         return (err, buffer_or_int[0:bytes_read.value])

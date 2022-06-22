@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals, print_function
+
 
 import sys
 from os import SEEK_SET, SEEK_CUR, SEEK_END

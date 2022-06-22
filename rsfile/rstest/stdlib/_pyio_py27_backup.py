@@ -13,9 +13,9 @@ import errno
 
 # Import thread instead of threading to reduce startup cost
 try:
-    from thread import allocate_lock as Lock
+    from _thread import allocate_lock as Lock
 except ImportError:
-    from dummy_thread import allocate_lock as Lock
+    from _dummy_thread import allocate_lock as Lock
 
 import io
 from io import (__all__, SEEK_SET, SEEK_CUR, SEEK_END)
@@ -37,7 +37,7 @@ class BlockingIOError(IOError):
 
     def __init__(self, errno, strerror, characters_written=0):
         super(IOError, self).__init__(errno, strerror)
-        if not isinstance(characters_written, (int, long)):
+        if not isinstance(characters_written, int):
             raise TypeError("characters_written must be a integer")
         self.characters_written = characters_written
 
@@ -152,15 +152,15 @@ def open(file, mode="r", buffering=-1,
     opened in a text mode, and for bytes a BytesIO can be used like a file
     opened in a binary mode.
     """
-    if not isinstance(file, (basestring, int, long)):
+    if not isinstance(file, (str, int)):
         raise TypeError("invalid file: %r" % file)
-    if not isinstance(mode, basestring):
+    if not isinstance(mode, str):
         raise TypeError("invalid mode: %r" % mode)
-    if not isinstance(buffering, (int, long)):
+    if not isinstance(buffering, int):
         raise TypeError("invalid buffering: %r" % buffering)
-    if encoding is not None and not isinstance(encoding, basestring):
+    if encoding is not None and not isinstance(encoding, str):
         raise TypeError("invalid encoding: %r" % encoding)
-    if errors is not None and not isinstance(errors, basestring):
+    if errors is not None and not isinstance(errors, str):
         raise TypeError("invalid errors: %r" % errors)
     modes = set(mode)
     if modes - set("arwb+tU") or len(mode) > len(modes):
@@ -263,9 +263,7 @@ class UnsupportedOperation(ValueError, IOError):
     pass
 
 
-class IOBase:
-    __metaclass__ = abc.ABCMeta
-
+class IOBase(metaclass=abc.ABCMeta):
     """The abstract base class for all I/O classes, acting on streams of
     bytes. There is no public constructor.
 
@@ -483,7 +481,7 @@ class IOBase:
                 return 1
         if limit is None:
             limit = -1
-        elif not isinstance(limit, (int, long)):
+        elif not isinstance(limit, int):
             raise TypeError("limit must be an integer")
         res = bytearray()
         while limit < 0 or len(res) < limit:
@@ -499,7 +497,7 @@ class IOBase:
         self._checkClosed()
         return self
 
-    def next(self):
+    def __next__(self):
         line = self.readline()
         if not line:
             raise StopIteration
@@ -512,7 +510,7 @@ class IOBase:
         lines will be read if the total size (in bytes/characters) of all
         lines so far exceeds hint.
         """
-        if hint is not None and not isinstance(hint, (int, long)):
+        if hint is not None and not isinstance(hint, int):
             raise TypeError("integer or None expected")
         if hint is None or hint <= 0:
             return list(self)
@@ -819,7 +817,7 @@ class BytesIO(BufferedIOBase):
             raise ValueError("read from closed file")
         if n is None:
             n = -1
-        if not isinstance(n, (int, long)):
+        if not isinstance(n, int):
             raise TypeError("integer argument expected, got {0!r}".format(
                 type(n)))
         if n < 0:
@@ -839,7 +837,7 @@ class BytesIO(BufferedIOBase):
     def write(self, b):
         if self.closed:
             raise ValueError("write to closed file")
-        if isinstance(b, unicode):
+        if isinstance(b, str):
             raise TypeError("can't write unicode to binary stream")
         n = len(b)
         if n == 0:
@@ -1088,7 +1086,7 @@ class BufferedWriter(_BufferedIOMixin):
     def write(self, b):
         if self.closed:
             raise ValueError("write to closed file")
-        if isinstance(b, unicode):
+        if isinstance(b, str):
             raise TypeError("can't write unicode to binary stream")
         with self._write_lock:
             # XXX we can implement some more tricks to try and avoid
@@ -1480,7 +1478,7 @@ class TextIOWrapper(TextIOBase):
 
     def __init__(self, buffer, encoding=None, errors=None, newline=None,
                  line_buffering=False):
-        if newline is not None and not isinstance(newline, basestring):
+        if newline is not None and not isinstance(newline, str):
             raise TypeError("illegal newline type: %r" % (type(newline),))
         if newline not in (None, "", "\n", "\r", "\r\n"):
             raise ValueError("illegal newline value: %r" % (newline,))
@@ -1493,7 +1491,7 @@ class TextIOWrapper(TextIOBase):
             else:
                 encoding = locale.getpreferredencoding()
 
-        if not isinstance(encoding, basestring):
+        if not isinstance(encoding, str):
             raise ValueError("invalid encoding: %r" % encoding)
 
         if sys.py3kwarning and not codecs.lookup(encoding)._is_text_encoding:
@@ -1504,7 +1502,7 @@ class TextIOWrapper(TextIOBase):
         if errors is None:
             errors = "strict"
         else:
-            if not isinstance(errors, basestring):
+            if not isinstance(errors, str):
                 raise ValueError("invalid errors: %r" % errors)
 
         self._buffer = buffer
@@ -1605,7 +1603,7 @@ class TextIOWrapper(TextIOBase):
     def write(self, s):
         if self.closed:
             raise ValueError("write to closed file")
-        if not isinstance(s, unicode):
+        if not isinstance(s, str):
             raise TypeError("can't write %s to text stream" %
                             s.__class__.__name__)
         length = len(s)
@@ -1884,7 +1882,7 @@ class TextIOWrapper(TextIOBase):
                 result += self._get_decoded_chars(n - len(result))
             return result
 
-    def next(self):
+    def __next__(self):
         self._telling = False
         line = self.readline()
         if not line:
@@ -1898,7 +1896,7 @@ class TextIOWrapper(TextIOBase):
             raise ValueError("read from closed file")
         if limit is None:
             limit = -1
-        elif not isinstance(limit, (int, long)):
+        elif not isinstance(limit, int):
             raise TypeError("limit must be an integer")
 
         # Grab all the decoded text (we will rewind any extra bits later).
@@ -2003,8 +2001,8 @@ class StringIO(TextIOWrapper):
         if newline is None:
             self._writetranslate = False
         if initial_value:
-            if not isinstance(initial_value, unicode):
-                initial_value = unicode(initial_value)
+            if not isinstance(initial_value, str):
+                initial_value = str(initial_value)
             self.write(initial_value)
             self.seek(0)
 
