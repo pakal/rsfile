@@ -11,13 +11,12 @@ Locking is performed using actual file locking capabilities of the OS, not by us
 
 Possible use cases for this library: concurrently writing to logs without ending up with garbled data, manipulating sensitive data like disk-based databases, synchronizing heterogeneous producer/consumer processes when multiprocessing semaphores aren't an option...
 
-Tested on python2.7 and python3.5+, on windows and unix-like systems. *Should* work with IronPython/Jython/PyPy too, since it uses stdlib utilities and ctypes bridges.
+Tested on Python 3.6+, on windows and unix-like systems. *Should* work with IronPython/Jython/PyPy too, since it uses stdlib utilities and ctypes bridges.
 
 .. image:: https://travis-ci.org/pakal/rsfile.svg?branch=master
     :target: https://travis-ci.org/pakal/rsfile
 
-**Learn more about RSFile : http://rsfile.readthedocs.io/**
-
+**Read the documentation here: http://rsfile.readthedocs.io/**
 
 
 INSTALL

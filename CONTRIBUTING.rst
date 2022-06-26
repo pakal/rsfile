@@ -73,6 +73,6 @@ To build the rsfile package:
 
     $ python setup.py sdist --formats=gztar,zip
 
-No need for `bdist_msi` or the weaker `bdist_wininst`: there is no automated 2to3 conversion when using them, and rsfile is pure-python anyway, so no binary distribution is needed.
+No need for `bdist_msi` or the weaker `bdist_wininst`: rsfile is pure-python
 
 
