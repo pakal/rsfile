@@ -48,7 +48,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'RSFile'
-copyright = '2010-2016, Pascal Chambon'
+copyright = '2010-2022, Pascal Chambon'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
