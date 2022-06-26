@@ -1,5 +1,5 @@
 sudo: false
-dist: focal
+dist: xenial
 language: python
 python:
   - "3.6"
@@ -10,13 +10,13 @@ python:
 # There is no Windows support on travis for now, so no pypiwin32 required
 install:
     - "pip install sphinx tabulate"
-
 # commands to run tests (we "cd" to ensure that we don't import the wrong rsfile package)
 script:
     - "python setup.py install"
     - "cd doc"
-    - "python -m  rsfile.rstest.test_rsfile_streams"
-    - "python -m  rsfile.rstest.test_rsfile_locking"
-    - "python -m  rsfile.rstest.test_rsfile_retrocompatibility"
-    - "python -m  rsfile.rstest.test_rsfile_stdlib"
+    - "python -m rsfile.rstest.test_rsfile_streams"
+    - "python -m rsfile.rstest.test_rsfile_stdlib"
+    - "python -m rsfile.rstest.test_rsfile_locking"
+    - "python -m rsfile.rstest.test_rsfile_retrocompatibility"
+    - "python -m rsfile.rstest.test_backend_utilities"
     - 'sphinx-build -W -b html -d "{envtmpdir}/doctrees" .  "{envtmpdir}/html"'
