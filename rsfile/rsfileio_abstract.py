@@ -179,7 +179,12 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
             raise defs.BadValueTypeError(e)  # probably a too big filedescriptor number
 
         if append:
-            self.seek(0, os.SEEK_END)  # required by unit tests, might raise if non-seekable file...
+            try:
+                self.seek(0, os.SEEK_END)  # required by unit tests, might raise if non-seekable file...
+            except OSError as exc:
+                if exc.errno != errno.ESPIPE:
+                    raise
+                # Else it's an Illegal Seek, probably because of a Pipe stream, so we let go
 
     def __repr__(self):
         return '<rsfile.RSFileIO name=%s mode="%s" origin="%s" closefd=%s>' % (
