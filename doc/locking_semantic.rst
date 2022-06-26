@@ -73,11 +73,10 @@ Note that since locks are per-handle, a **single thread can easily block itself*
 Shortage of Open Files (unix)
 ------------------------------
 
-Another caveat comes from the strange semantic of fcntl() calls, on unix-like systems: native file descriptors can't
-be released as long as locks still exist on the same target file, somewhere else in the process ; else all these locks run the risk of being silently released.
+Another caveat comes from the strange semantic of fcntl() calls, on unix-like systems: native file descriptors should not be released as long as locks still exist on the same target file, somewhere else in the process ; else all these locks run the risk of being silently released.
 
-So in RSFile on unx, file closing operations have been modified to work around that flaw: when
-a stream is closed, RSFile may actually **keep the native file descriptor alive**, in an internal registry.
+So in RSFile on unix, file closing operations have been modified to work around that flaw: when
+an rsfile stream is closed, RSFile may actually **keep the native file descriptor alive**, in an internal registry.
 As long as the process has some locks taken on the same disk file (identified by its device+inode),
 this file descriptor won't be released.
 
@@ -96,6 +95,8 @@ In practice, if you really need to constantly lock parts of the file (eg. for a 
 Anyway, if your application behaves that way, it also creates some kind of denial-of-service against any other process
 which would want to lock the whole file, so it could be the sign that other means of protection (file permissions,
 immediate deletion of the filesystem entry...) would be more appropriate for your needs.
+
+PS: if you open/close a file using native Python API, in parallel, you WILL lose the fcntl() locks concurrently held on that file by rsfile.
 
 
 Interferences with Third-Party Libs (unix)
