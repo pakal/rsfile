@@ -401,7 +401,11 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         if isinstance(buffer, memoryview):
             buffer = buffer.tobytes()
         elif isinstance(buffer, array):
-            buffer = buffer.tostring()
+            try:
+                buffer = buffer.tobytes()  # New API
+            except AttributeError:
+                buffer = buffer.tostring()
+
 
         res = self._inner_write(buffer)
         # assert res == len(buffer), str(res, len(buffer)) # NOOO - we might have less than that actually if disk full !

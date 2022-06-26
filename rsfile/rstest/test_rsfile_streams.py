@@ -471,7 +471,12 @@ class TestRSFileStreams(unittest.TestCase):
             assert len(target) == 20, target
             f.readinto(target)
             assert len(target) == 20, target
-            self.assertEqual(target.tostring().decode("ascii").strip(), result.decode("ascii"))  # actually BYTES
+            try:
+                expected_bytes = target.tobytes()  # New API
+            except AttributeError:
+                expected_bytes = target.tostring()
+
+            self.assertEqual(expected_bytes.decode("ascii").strip(), result.decode("ascii"))  # actually BYTES
 
             f.seek(0)
 
