@@ -15,6 +15,7 @@ import unittest
 import copy
 from pprint import pprint
 import functools
+import inspect
 
 import array
 import tempfile
@@ -783,6 +784,22 @@ class TestRSFileStreams(unittest.TestCase):
             os.remove(TESTFN + ".temp")
 
         self.assertRaises(IOError, rsfile.rsopen, TESTFN, "WB+", buffering=0)
+
+        # Check that rsopen() has, like io.open(), staticmethod protection #
+
+        class SomeKlass:
+            opener = rsfile.rsopen
+
+        some_instance = SomeKlass()
+
+        opener = some_instance.opener
+        assert not inspect.ismethod(opener)  # Not BOUND method
+
+        assert not os.path.exists(TESTFN)
+        with rsfile.rsopen(TESTFN, mode="WB") as f:  # No "self" expected
+            f.write(b"somestring")
+        assert os.path.exists(TESTFN)
+
 
     def testFileInheritance(self):
         # # """Checks that handles are well inherited iff this creation option is set to True"""

@@ -7,6 +7,8 @@ from .rsfile_streams import *
 
 USE_FSPATH = hasattr(os, 'fspath')
 
+
+@staticmethod  # So that it can safely be stored in classes, like io.open()
 def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newline=None,
            fileno=None, handle=None, closefd=True, opener=None,
            locking=True, timeout=None, thread_safe=True, mutex=None, permissions=0o777):
