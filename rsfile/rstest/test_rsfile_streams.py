@@ -53,6 +53,19 @@ def _cleanup():
         os.remove(TESTFN + ".temp")
 
 
+def _make_bad_fd():
+    """
+    Create an invalid file descriptor by opening and closing a file and return
+    its fd.
+    """
+    file = open(TESTFN, "wb")
+    try:
+        return file.fileno()
+    finally:
+        file.close()
+        os.unlink(TESTFN)
+
+
 class TestRSFileStreams(unittest.TestCase):
     def setUp(self):
         _cleanup()
@@ -136,7 +149,7 @@ class TestRSFileStreams(unittest.TestCase):
 
     def testInvalidFd(self):  # replaces that of the stdlib
         self.assertRaises(ValueError, io.open, -10, 'wb', buffering=0, )
-        bad_fd = test_support.make_bad_fd()
+        bad_fd = _make_bad_fd()
         self.assertRaises(IOError, io.open, bad_fd, 'wb', buffering=0)
 
     def testRSFileIORepr(self):

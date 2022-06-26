@@ -65,7 +65,7 @@ class _buffer_forwarder_mixin(object):
     def __getattr__(self, name):
         # print ("--> taking ", name, "in ", self)
         raw = self.__dict__.get("_raw")  # beware here - we avoid infinite recursion on getattr !
-        if raw is None or isinstance(raw, collections.Callable):
+        if raw is None or callable(raw):
             raise AttributeError("Attribute '_raw' not found on RSBufferedStream (uninitialized?)")  # problem...
         return getattr(raw, name)
 
@@ -125,7 +125,7 @@ class _text_forwarder_mixin(object):
     def __getattr__(self, name):
         # print ("--> taking ", name, "in ", self)
         buffer = self.__dict__.get("_buffer")  # beware here - we avoid infinite recursion on getattr !
-        if buffer is None or isinstance(buffer, collections.Callable):
+        if buffer is None or callable(buffer):
             raise AttributeError("Attribute '_buffer' not found on RSTextIO (uninitialized?)")  # problem...
         return getattr(buffer, name)
 
@@ -199,7 +199,7 @@ class RSThreadSafeWrapper(object):
 
         attr = getattr(self.wrapped_stream, name)  # might raise AttributeError
 
-        if not name.startswith("_") and isinstance(attr, collections.Callable):
+        if not name.startswith("_") and callable(attr):
             # print ("<<<<<<< WRAPPING METHOD", name)
             attr = functools.partial(self._secure_call, name)
             # IMPORTANT : cache the thread-safe caller in object, so that we bypass this __getattr__ next time
