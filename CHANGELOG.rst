@@ -1,4 +1,11 @@
 
+Rsfile 3.0
+============
+
+* Drop compatibility for Python 2.7 to 3.5 included
+* Add support for python 3.8, 3.9, and 3.10
+
+
 Rsfile 2.2
 ============
 
