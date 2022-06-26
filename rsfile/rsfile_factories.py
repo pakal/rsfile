@@ -245,6 +245,11 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
         raise defs.BadValueTypeError("binary mode doesn't take an 'errors' argument")
     if extended_kwargs["binary"] and newline is not None:
         raise defs.BadValueTypeError("binary mode doesn't take a 'newline' argument")
+    if extended_kwargs["binary"] and buffering == 1:
+        import warnings
+        warnings.warn("line buffering (buffering=1) isn't supported in binary "
+                      "mode, the default buffer size will be used",
+                      RuntimeWarning, 2)
 
     raw_kwargs['permissions'] = permissions
     # print("We get RSFileIO", RSFileIO)
@@ -264,6 +269,7 @@ def rsopen(name=None, mode="r", buffering=None, encoding=None, errors=None, newl
 
         if buffering is None:
             buffering = -1
+
         line_buffering = False
         if buffering == 1 or buffering < 0 and raw.isatty():
             buffering = -1
