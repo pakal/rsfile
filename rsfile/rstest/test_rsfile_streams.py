@@ -370,6 +370,7 @@ class TestRSFileStreams(unittest.TestCase):
         for (case, r, w) in [("anonymous", piper, pipew), ("named", namedr, namedw)]:
 
             # print("Testing pipe of type %s" % case)
+            is_named_pipe = (case == "named")
 
             with io.open(r, "r", encoding="utf8") as reader, io.open(w, "w", encoding="utf8") as writer:
 
@@ -377,7 +378,7 @@ class TestRSFileStreams(unittest.TestCase):
                 self.assertEqual(writer.name, w)
                 self.assertEqual(reader.origin, "fileno")
                 self.assertEqual(
-                    writer.origin, "path" if (case == "named" and not use_fileno_for_named_writer) else "fileno"
+                    writer.origin, "path" if (is_named_pipe and not use_fileno_for_named_writer) else "fileno"
                 )
                 self.assertEqual(reader.mode, "r")
                 self.assertEqual(writer.mode, "w")
@@ -385,7 +386,7 @@ class TestRSFileStreams(unittest.TestCase):
                 self.assertEqual(reader.fileno(), r)
                 self.assertEqual(reader.handle(), r)
 
-                if not (case == "named" and not use_fileno_for_named_writer):
+                if not (is_named_pipe and not use_fileno_for_named_writer):
                     self.assertEqual(writer.fileno(), w)
                     self.assertEqual(writer.handle(), w)
 
@@ -398,15 +399,15 @@ class TestRSFileStreams(unittest.TestCase):
                 writer.write("aé")
                 writer.flush()
 
-                if IS_OSX and case == "named":  # Named PIPES can be sync'ed, on OSX only
+                if IS_OSX and is_named_pipe:  # Named PIPES can be sync'ed, on OSX only
                     writer.sync()
                     reader.sync()
                 else:  # By default, PIPES can't be sync'ed
                     self.assertRaises(IOError, writer.sync)
                     self.assertRaises(IOError, reader.sync)
 
-                # Only OSX gives buffer size here!
-                expected_size = 3 if (IS_OSX and case != "named") else 0
+                # Only OSX gives buffer size here, for anonymous pipes!
+                expected_size = 3 if (IS_OSX and not is_named_pipe) else 0
                 self.assertEqual(writer.size(), expected_size)
                 self.assertEqual(reader.size(), expected_size)
 
@@ -419,14 +420,14 @@ class TestRSFileStreams(unittest.TestCase):
                 unique_id = writer.unique_id()
                 assert unique_id and all(x is not None for x in unique_id), unique_id
 
-                if IS_OSX and case != "named":
+                if IS_OSX and not is_named_pipe:
                     self.assertNotEqual(reader.unique_id(), unique_id)  # different anonymous PIPES for OSX
                 else:
                     self.assertEqual(reader.unique_id(), unique_id)  # same PIPE for Linux
 
                 times = writer.times()
                 assert times, times
-                if IS_OSX and case != "named":
+                if IS_OSX and not is_named_pipe:
                     self.assertNotEqual(reader.times(), times)  # different times for OSX
                 else:
                     self.assertEqual(reader.times(), times)  # same times ofr Linux
