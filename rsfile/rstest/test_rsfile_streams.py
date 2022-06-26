@@ -791,15 +791,19 @@ class TestRSFileStreams(unittest.TestCase):
             opener = rsfile.rsopen
 
         some_instance = SomeKlass()
-
         opener = some_instance.opener
-        assert not inspect.ismethod(opener)  # Not BOUND method
 
-        assert not os.path.exists(TESTFN)
-        with rsfile.rsopen(TESTFN, mode="WB") as f:  # No "self" expected
-            f.write(b"somestring")
-        assert os.path.exists(TESTFN)
+        if sys.version_info >= (3, 10):
 
+            assert not inspect.ismethod(opener)  # Not BOUND method
+
+            assert not os.path.exists(TESTFN)
+            with rsfile.rsopen(TESTFN, mode="WB") as f:  # No "self" expected
+                f.write(b"somestring")
+            assert os.path.exists(TESTFN)
+
+        else:
+            assert inspect.ismethod(opener)  # Is a BOUND method
 
     def testFileInheritance(self):
         # # """Checks that handles are well inherited iff this creation option is set to True"""
