@@ -14,7 +14,6 @@ def BUILTIN_OPEN_FUNC_REPLACEMENT(*args, **kwargs):
     params = dict(handle=None, locking=False, timeout=0, thread_safe=False, mutex=None, permissions=0o777)
     params.update(kwargs)
     stream = rsopen(*args, **params)
-    stream._tolerant_mode = True  # py27 str/unicode coercion when using open() builtin
     return stream
 
 

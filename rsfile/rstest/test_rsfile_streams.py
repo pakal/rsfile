@@ -45,6 +45,9 @@ rsfile.monkey_patch_io_module(_pyio)  # (almost) pure python version
 rsfile.monkey_patch_open_builtin()
 
 
+IS_OSX = sys.platform.startswith("darwin")
+
+
 def _cleanup():
     if os.path.exists(TESTFN):
         os.chmod(TESTFN, 0o777)
@@ -368,7 +371,7 @@ class TestRSFileStreams(unittest.TestCase):
 
             # print("Testing pipe of type %s" % case)
 
-            with io.open(r, "r") as reader, io.open(w, "w") as writer:
+            with io.open(r, "r", encoding="utf8") as reader, io.open(w, "w", encoding="utf8") as writer:
 
                 self.assertEqual(reader.name, r)
                 self.assertEqual(writer.name, w)
@@ -395,12 +398,17 @@ class TestRSFileStreams(unittest.TestCase):
                 writer.write("aé")
                 writer.flush()
 
-                # PIPES can't be sync'ed!
-                self.assertRaises(IOError, writer.sync)
-                self.assertRaises(IOError, reader.sync)
+                if IS_OSX and case == "named":  # Named PIPES can be sync'ed, on OSX only
+                    writer.sync()
+                    reader.sync()
+                else:  # By default, PIPES can't be sync'ed
+                    self.assertRaises(IOError, writer.sync)
+                    self.assertRaises(IOError, reader.sync)
 
-                self.assertEqual(writer.size(), 0)
-                self.assertEqual(reader.size(), 0)
+                # Only OSX gives buffer size here!
+                expected_size = 3 if (IS_OSX and case != "named") else 0
+                self.assertEqual(writer.size(), expected_size)
+                self.assertEqual(reader.size(), expected_size)
 
                 res = reader.read()
                 assert res == "aé"
@@ -409,12 +417,19 @@ class TestRSFileStreams(unittest.TestCase):
                 self.assertEqual(reader.size(), 0)
 
                 unique_id = writer.unique_id()
-                assert unique_id and all(unique_id), unique_id
-                self.assertEqual(reader.unique_id(), unique_id)  # same PIPE
+                assert unique_id and all(x is not None for x in unique_id), unique_id
+
+                if IS_OSX and case != "named":
+                    self.assertNotEqual(reader.unique_id(), unique_id)  # different anonymous PIPES for OSX
+                else:
+                    self.assertEqual(reader.unique_id(), unique_id)  # same PIPE for Linux
 
                 times = writer.times()
                 assert times, times
-                self.assertEqual(reader.times(), times)
+                if IS_OSX and case != "named":
+                    self.assertNotEqual(reader.times(), times)  # different times for OSX
+                else:
+                    self.assertEqual(reader.times(), times)  # same times ofr Linux
                 self.assertNotEqual(reader.times(), old_times)
 
                 self.assertRaises(IOError, writer.buffer.raw.truncate)

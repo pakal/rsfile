@@ -6,6 +6,7 @@ import os
 import queue
 import random
 import string
+import sys
 import tempfile
 import threading
 import time
@@ -29,6 +30,11 @@ rsfile.monkey_patch_io_module()
 RESULT_FILE = "@RESULTFILE"
 
 logger = _worker_process.logger
+
+
+# IMPORTANT : we use fork in tests, file streams can't be pickled for multiprocessing anyway!
+if not sys.platform.startswith("win32"):
+    multiprocessing.set_start_method("fork")
 
 
 def get_character():

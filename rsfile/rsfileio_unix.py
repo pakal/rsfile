@@ -208,8 +208,9 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         """
         stats = unix.fstat(self._fileno)
         _unique_id = (stats.st_dev, stats.st_ino)
-        if not all(_unique_id):
-            raise IOError(errno.ENOSYS, "No unique dev/inode identifier available")
+        if not all(x is not None for x in _unique_id):
+            raise IOError(errno.ENOSYS, "No unique dev/inode identifiers available: %s" %
+                          str([stats.st_dev, stats.st_ino]))
         return _unique_id
 
     @_unix_error_converter
