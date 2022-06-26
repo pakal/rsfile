@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 
 
-import os, sys
-import subprocess
+import sys
 
 
 def launch_rsfile_tests_on_backends(test_main):
     backends = []
 
-    if sys.platform == 'win32':
+    if sys.platform == "win32":
         import rsfile.rsfileio_windows as rsfileio_win32
 
         try:
@@ -42,14 +41,12 @@ def launch_rsfile_tests_on_backends(test_main):
 
 
 def patch_test_supports():
-    import unittest
-    from unittest import TestCase
-
     try:
         # in python3, test.test_support contains almost nothing, stuffs have moved to test.support...
         from test.test_support import run_unittest
     except ImportError:
         import test
         from test import support as test_support
+
         sys.modules["test.test_support"] = test_support
         test.test_support = test_support

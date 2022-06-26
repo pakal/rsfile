@@ -4,7 +4,7 @@
 ## THIS CLASS IS CURRENTLY ONLY USED FOR DOCUMENTATION PURPOSE ##
 
 
-import sys, os
+import os
 
 
 class RSIOBase(object):
@@ -101,7 +101,7 @@ class RSIOBase(object):
         file times and other metadata (this can improve performance, at the cost of some
         incoherence in filesystem state).
 
-        If None of the above works, a standard sync() is attempted, i.e pushing both data and 
+        If None of the above works, a standard sync() is attempted, i.e pushing both data and
         metadata up to the disk device.
 
         Note that the file's parent directory is not necessarily updated synchronously, so
@@ -177,7 +177,7 @@ class RSIOBase(object):
 
         .. rubric::
             Parameters
-        
+
         - *timeout* (None or positive integer):
           If timeout is None, the process will block on this operation
           until it manages to get the lock;
@@ -187,30 +187,30 @@ class RSIOBase(object):
           Low level APIs do not support lock timeout, so it's currently emulated via repeated
           non-blocking calls (spin-lock).
           See :ref:`rsfile-options` for customization.
-    
+
         - *length* (None or positive integer): Specifies how many bytes must be locked.
-          If length is None or 0, it means *infinity*, i.e all the bytes after the 
-          locking offset will be locked. It is not an error to lock bytes farther 
+          If length is None or 0, it means *infinity*, i.e all the bytes after the
+          locking offset will be locked. It is not an error to lock bytes farther
           than the current end of file.
-          
+
         - *offset* (None or positive integer):
-          Relative offset, starting at which bytes should be locked. 
+          Relative offset, starting at which bytes should be locked.
           This position can be beyond the end of file.
-        
+
         - *whence* (SEEK_SET, SEEK_CUR or SEEK_END):
           Whence is the same as in :meth:`io.IOBase.seek`, and specifies what the offset is
           referring to (beginning, current position, or end of file).
-                
-        - *shared* (None or boolean): 
+
+        - *shared* (None or boolean):
           If ``shared`` is True, the lock is a "reader", non-exclusive lock, which can be
           shared by several "reader" streams, but prevents "writer" locks from being taken
           on the locked portion.
           The owner of the lock shall himself not attempt to write to the locked area if it's *shared*,
           even if file open mode allows it: it'll fail if locking is mandatory, eg. on windows.
-          
-          If ``shared`` is False, the lock is a "writer", exclusive lock, preventing both writer 
+
+          If ``shared`` is False, the lock is a "writer", exclusive lock, preventing both writer
           and reader locks from being taken by other processes on the locked portion.
-          
+
           By default, ``shared`` is set to False for writable streams, and to True for others.
           Note that this sharing mode can be compatible with the stream permission, i.e shared locks can only
           by taken by stream having read access, and exclusive locks are reserved to writable streams.
@@ -221,7 +221,7 @@ class RSIOBase(object):
         areas of the files several times through the *same* file handle, whatever the "shared" mode provided).
 
         On success, ``lock_file`` returns a context manager for use inside a *with* statement,
-        to automatically release the lock. However, it is advised that you don't release locks 
+        to automatically release the lock. However, it is advised that you don't release locks
         if you close the stream just after that: letting the close() operation release the locks
         is as efficient, and prevents some corner-case problems as described in :ref:`rsfile_locking_caveats`.
 
@@ -231,15 +231,15 @@ class RSIOBase(object):
     def unlock_file(self, length=None, offset=0, whence=os.SEEK_SET):
         """
         Unlocks a portion of regular file previously locked through the same native handle.
-        
-        The specifications of the locked area (absolute offset and length) must 
+
+        The specifications of the locked area (absolute offset and length) must
         be the same as those used when calling lock_file(),
-        else errors will occur; its is thus not possible to release only 
+        else errors will occur; its is thus not possible to release only
         a part of a locked area, or to unlock with only one call
         two consecutive ranges.
-        
+
         This function will usually be implicitly called thanks to a context manager
-        returned by :meth:`lock_file`. But as stated above, don't use it if you plan 
+        returned by :meth:`lock_file`. But as stated above, don't use it if you plan
         to close the file immediately - the closing system will handle the unlocking
         in a safer manner.
         """

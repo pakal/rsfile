@@ -5,8 +5,8 @@ Run iobench against rsfile drop-in replacements.
 """
 
 
-
 import sys
+
 import rsfile
 from rsfile.rstest.stdlib import iobench
 
@@ -29,6 +29,7 @@ def launch_benchmark():
 
     if RUN_STDLIB_CIO:
         import io
+
         print(">>> benchmarking stdlib io module on python %s: module %r <<<" % (sys.version_info, io))
 
         iobench.open = io.open
@@ -39,6 +40,7 @@ def launch_benchmark():
 
     if RUN_STDLIB_PYIO:
         import _pyio
+
         print(">>> benchmarking stdlib pyio module on python %s: module %r <<<" % (sys.version_info, _pyio))
 
         iobench.open = _pyio.open
@@ -57,7 +59,7 @@ def launch_benchmark():
         print("\n-----------\n")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     launch_benchmark()
 
 """ # BACKUP OF LATEST BENCHMARK ITERATION #

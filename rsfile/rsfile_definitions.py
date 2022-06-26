@@ -12,12 +12,12 @@ DEFAULT_BUFFER_SIZE = 8 * 1024  # in bytes
 from io import open as original_io_open
 from _pyio import open as original_pyio_open
 
-if sys.platform == 'win32':  # even on 64bits windows OS
+if sys.platform == "win32":  # even on 64bits windows OS
     RSFILE_IMPLEMENTATION = "windows"
 else:
     RSFILE_IMPLEMENTATION = "unix"
 
-HAS_X_OPEN_FLAG = (sys.version_info >= (3, 3))
+HAS_X_OPEN_FLAG = sys.version_info >= (3, 3)
 
 STDLIB_OPEN_FLAGS = set("xarw+btU")
 ADVANCED_OPEN_FLAGS = set("RAW+-CNSIEBT")  # + and - are only left for retrocompatibility
@@ -35,6 +35,7 @@ class LockingException(IOError):
     Exception raised when rsfile detects a locking problem, but backends
     might raise their own EnvironmentError subclasses, too so beware.
     """
+
     pass
 
 
@@ -44,9 +45,7 @@ class FileTimes(object):
         self.modification_time = modification_time
 
     def __repr__(self):
-        return "<FileTimes access_time=%s modification_time=%s>" % \
-               (self.access_time, self.modification_time)
+        return "<FileTimes access_time=%s modification_time=%s>" % (self.access_time, self.modification_time)
 
     def __eq__(self, other):
-        return (self.access_time == other.access_time and
-                self.modification_time == other.modification_time)
+        return self.access_time == other.access_time and self.modification_time == other.modification_time

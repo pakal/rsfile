@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 
 
-import sys, os
-import multiprocessing, threading, functools, collections
+import functools
+import multiprocessing
+import os
+import threading
 
 from . import rsfile_definitions as defs
 
@@ -118,15 +120,16 @@ if defs.io_module._BufferedIOMixin.__dict__.get("readable"):
 if defs.io_module._BufferedIOMixin.__dict__.get("writable"):
     del defs.io_module._BufferedIOMixin.writable
 
-class RSBufferedReader(_buffer_forwarder_mixin, defs.io_module.BufferedReader):
 
+class RSBufferedReader(_buffer_forwarder_mixin, defs.io_module.BufferedReader):
     def readable(self):  # drop when py3.5 not supported anymore
         return self.raw.readable()
 
-class RSBufferedWriter(_buffer_forwarder_mixin, defs.io_module.BufferedWriter):
 
+class RSBufferedWriter(_buffer_forwarder_mixin, defs.io_module.BufferedWriter):
     def writable(self):  # drop when py3.5 not supported anymore
         return self.raw.writable()
+
 
 # class RSBufferedRandom(defs.io_module.BufferedRandom, _buffer_forwarder_mixin):  # future C extension version
 #    pass
@@ -143,7 +146,7 @@ class RSTextIOWrapper(_text_forwarder_mixin, defs.io_module.TextIOWrapper):
 class RSThreadSafeWrapper(object):
     """
     A quick wrapper, to ensure thread safety !
-    
+
     If a threading or multiprocessing mutex is provided, it will be used for locking,
     else a multiprocessing or multithreading (depending on *is_interprocess* boolean value) will be created.
     """

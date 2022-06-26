@@ -2,19 +2,17 @@
 # This file should be kept compatible with both Python 2.6 and Python >= 3.0.
 # GRABBED FROM http://svn.python.org/projects/python/trunk/Tools/iobench/, last checked 2016-05-20 #
 
-import time
+import itertools
 import os
 import re
 import sys
-import hashlib
-import functools
-import itertools
+import time
 from optparse import OptionParser
 
 out = sys.stdout
 
-TEXT_ENCODING = 'utf8'
-NEWLINES = 'lf'
+TEXT_ENCODING = "utf8"
+NEWLINES = "lf"
 
 # Compatibility
 try:
@@ -31,10 +29,10 @@ def text_open(fn, mode, encoding=None):
 
 
 def get_file_sizes():
-    for s in ['20 KB', '400 KB', '10 MB']:
+    for s in ["20 KB", "400 KB", "10 MB"]:
         size, unit = s.split()
-        size = int(size) * {'KB': 1024, 'MB': 1024 ** 2}[unit]
-        yield s.replace(' ', ''), size
+        size = int(size) * {"KB": 1024, "MB": 1024**2}[unit]
+        yield s.replace(" ", ""), size
 
 
 def get_binary_files():
@@ -42,8 +40,7 @@ def get_binary_files():
 
 
 def get_text_files():
-    return (("%s-%s-%s.txt" % (name, TEXT_ENCODING, NEWLINES), size)
-            for name, size in get_file_sizes())
+    return (("%s-%s-%s.txt" % (name, TEXT_ENCODING, NEWLINES), size) for name, size in get_file_sizes())
 
 
 def with_open_mode(mode):
@@ -64,10 +61,11 @@ def with_sizes(*sizes):
 
 # Here begin the tests
 
+
 @with_open_mode("r")
 @with_sizes("medium")
 def read_bytewise(f):
-    """ read one unit at a time """
+    """read one unit at a time"""
     f.seek(0)
     while f.read(1):
         pass
@@ -76,7 +74,7 @@ def read_bytewise(f):
 @with_open_mode("r")
 @with_sizes("medium")
 def read_small_chunks(f):
-    """ read 20 units at a time """
+    """read 20 units at a time"""
     f.seek(0)
     while f.read(20):
         pass
@@ -85,7 +83,7 @@ def read_small_chunks(f):
 @with_open_mode("r")
 @with_sizes("medium")
 def read_big_chunks(f):
-    """ read 4096 units at a time """
+    """read 4096 units at a time"""
     f.seek(0)
     while f.read(4096):
         pass
@@ -94,7 +92,7 @@ def read_big_chunks(f):
 @with_open_mode("r")
 @with_sizes("small", "medium", "large")
 def read_whole_file(f):
-    """ read whole contents at once """
+    """read whole contents at once"""
     f.seek(0)
     while f.read():
         pass
@@ -103,7 +101,7 @@ def read_whole_file(f):
 @with_open_mode("rt")
 @with_sizes("medium")
 def read_lines(f):
-    """ read one line at a time """
+    """read one line at a time"""
     f.seek(0)
     for line in f:
         pass
@@ -112,7 +110,7 @@ def read_lines(f):
 @with_open_mode("r")
 @with_sizes("medium")
 def seek_forward_bytewise(f):
-    """ seek forward one unit at a time """
+    """seek forward one unit at a time"""
     f.seek(0, 2)
     size = f.tell()
     f.seek(0, 0)
@@ -123,7 +121,7 @@ def seek_forward_bytewise(f):
 @with_open_mode("r")
 @with_sizes("medium")
 def seek_forward_blockwise(f):
-    """ seek forward 1000 units at a time """
+    """seek forward 1000 units at a time"""
     f.seek(0, 2)
     size = f.tell()
     f.seek(0, 0)
@@ -134,7 +132,7 @@ def seek_forward_blockwise(f):
 @with_open_mode("rb")
 @with_sizes("medium")
 def read_seek_bytewise(f):
-    """ alternate read & seek one unit """
+    """alternate read & seek one unit"""
     f.seek(0)
     while f.read(1):
         f.seek(1, 1)
@@ -143,7 +141,7 @@ def read_seek_bytewise(f):
 @with_open_mode("rb")
 @with_sizes("medium")
 def read_seek_blockwise(f):
-    """ alternate read & seek 1000 units """
+    """alternate read & seek 1000 units"""
     f.seek(0)
     while f.read(1000):
         f.seek(1000, 1)
@@ -152,79 +150,79 @@ def read_seek_blockwise(f):
 @with_open_mode("w")
 @with_sizes("small")
 def write_bytewise(f, source):
-    """ write one unit at a time """
+    """write one unit at a time"""
     for i in range(0, len(source)):
-        f.write(source[i:i + 1])
+        f.write(source[i : i + 1])
 
 
 @with_open_mode("w")
 @with_sizes("medium")
 def write_small_chunks(f, source):
-    """ write 20 units at a time """
+    """write 20 units at a time"""
     for i in range(0, len(source), 20):
-        f.write(source[i:i + 20])
+        f.write(source[i : i + 20])
 
 
 @with_open_mode("w")
 @with_sizes("medium")
 def write_medium_chunks(f, source):
-    """ write 4096 units at a time """
+    """write 4096 units at a time"""
     for i in range(0, len(source), 4096):
-        f.write(source[i:i + 4096])
+        f.write(source[i : i + 4096])
 
 
 @with_open_mode("w")
 @with_sizes("large")
 def write_large_chunks(f, source):
-    """ write 1e6 units at a time """
+    """write 1e6 units at a time"""
     for i in range(0, len(source), 1000000):
-        f.write(source[i:i + 1000000])
+        f.write(source[i : i + 1000000])
 
 
 @with_open_mode("w+")
 @with_sizes("small")
 def modify_bytewise(f, source):
-    """ modify one unit at a time """
+    """modify one unit at a time"""
     f.seek(0)
     for i in range(0, len(source)):
-        f.write(source[i:i + 1])
+        f.write(source[i : i + 1])
 
 
 @with_open_mode("w+")
 @with_sizes("medium")
 def modify_small_chunks(f, source):
-    """ modify 20 units at a time """
+    """modify 20 units at a time"""
     f.seek(0)
     for i in range(0, len(source), 20):
-        f.write(source[i:i + 20])
+        f.write(source[i : i + 20])
 
 
 @with_open_mode("w+")
 @with_sizes("medium")
 def modify_medium_chunks(f, source):
-    """ modify 4096 units at a time """
+    """modify 4096 units at a time"""
     f.seek(0)
     for i in range(0, len(source), 4096):
-        f.write(source[i:i + 4096])
+        f.write(source[i : i + 4096])
 
 
 @with_open_mode("wb+")
 @with_sizes("medium")
 def modify_seek_forward_bytewise(f, source):
-    """ alternate write & seek one unit """
+    """alternate write & seek one unit"""
     f.seek(0)
     for i in range(0, len(source), 2):
-        f.write(source[i:i + 1])
+        f.write(source[i : i + 1])
         f.seek(i + 2)
 
 
 @with_open_mode("wb+")
 @with_sizes("medium")
 def modify_seek_forward_blockwise(f, source):
-    """ alternate write & seek 1000 units """
+    """alternate write & seek 1000 units"""
     f.seek(0)
     for i in range(0, len(source), 2000):
-        f.write(source[i:i + 1000])
+        f.write(source[i : i + 1000])
         f.seek(i + 2000)
 
 
@@ -232,39 +230,53 @@ def modify_seek_forward_blockwise(f, source):
 @with_open_mode("wb+")
 @with_sizes("medium")
 def read_modify_bytewise(f, source):
-    """ alternate read & write one unit """
+    """alternate read & write one unit"""
     f.seek(0)
     for i in range(0, len(source), 2):
         f.read(1)
-        f.write(source[i + 1:i + 2])
+        f.write(source[i + 1 : i + 2])
 
 
 @with_open_mode("wb+")
 @with_sizes("medium")
 def read_modify_blockwise(f, source):
-    """ alternate read & write 1000 units """
+    """alternate read & write 1000 units"""
     f.seek(0)
     for i in range(0, len(source), 2000):
         f.read(1000)
-        f.write(source[i + 1000:i + 2000])
+        f.write(source[i + 1000 : i + 2000])
 
 
 read_tests = [
-    read_bytewise, read_small_chunks, read_lines, read_big_chunks,
-    None, read_whole_file, None,
-    seek_forward_bytewise, seek_forward_blockwise,
-    read_seek_bytewise, read_seek_blockwise,
+    read_bytewise,
+    read_small_chunks,
+    read_lines,
+    read_big_chunks,
+    None,
+    read_whole_file,
+    None,
+    seek_forward_bytewise,
+    seek_forward_blockwise,
+    read_seek_bytewise,
+    read_seek_blockwise,
 ]
 
 write_tests = [
-    write_bytewise, write_small_chunks, write_medium_chunks, write_large_chunks,
+    write_bytewise,
+    write_small_chunks,
+    write_medium_chunks,
+    write_large_chunks,
 ]
 
 modify_tests = [
-    modify_bytewise, modify_small_chunks, modify_medium_chunks,
+    modify_bytewise,
+    modify_small_chunks,
+    modify_medium_chunks,
     None,
-    modify_seek_forward_bytewise, modify_seek_forward_blockwise,
-    read_modify_bytewise, read_modify_blockwise,
+    modify_seek_forward_bytewise,
+    modify_seek_forward_blockwise,
+    read_modify_bytewise,
+    read_modify_blockwise,
 ]
 
 
@@ -291,20 +303,16 @@ def warm_cache(filename):
 
 def run_all_tests(options):
     def print_label(filename, func):
-        name = re.split(r'[-.]', filename)[0]
-        out.write(
-            ("[%s] %s... "
-             % (name.center(7), func.__doc__.strip())
-             ).ljust(52))
+        name = re.split(r"[-.]", filename)[0]
+        out.write(("[%s] %s... " % (name.center(7), func.__doc__.strip())).ljust(52))
         out.flush()
 
     def print_results(size, n, real, cpu):
-        bw = n * float(size) / 1024 ** 2 / real
+        bw = n * float(size) / 1024**2 / real
         bw = ("%4d MB/s" if bw > 100 else "%.3g MB/s") % bw
         out.write(bw.rjust(12) + "\n")
         if cpu < 0.90 * real:
-            out.write("   warning: test above used only %d%% CPU, "
-                      "result may be flawed!\n" % (100.0 * cpu / real))
+            out.write("   warning: test above used only %d%% CPU, " "result may be flawed!\n" % (100.0 * cpu / real))
 
     def run_one_test(name, size, open_func, test_func, *args):
         mode = test_func.file_open_mode
@@ -326,8 +334,7 @@ def run_all_tests(options):
                 name, size = files[size_names[s]]
                 # name += file_ext
                 args = tuple(f(name, size) for f in make_args)
-                run_one_test(name, size,
-                             open_func, test_func, *args)
+                run_one_test(name, size, open_func, test_func, *args)
 
     size_names = {
         "small": 0,
@@ -360,8 +367,7 @@ def run_all_tests(options):
             with open(name, "rb") as f:
                 return f.read()
 
-        run_test_family(write_tests, "t", binary_files,
-                        lambda fn: open(os.devnull, "wb"), make_test_source)
+        run_test_family(write_tests, "t", binary_files, lambda fn: open(os.devnull, "wb"), make_test_source)
 
     # Text writes
     if "t" in options and "w" in options:
@@ -371,8 +377,7 @@ def run_all_tests(options):
             with text_open(name, "r") as f:
                 return f.read()
 
-        run_test_family(write_tests, "b", text_files,
-                        lambda fn: text_open(os.devnull, "w"), make_test_source)
+        run_test_family(write_tests, "b", text_files, lambda fn: text_open(os.devnull, "w"), make_test_source)
 
     # Binary overwrites
     if "b" in options and "w" in options:
@@ -382,8 +387,7 @@ def run_all_tests(options):
             with open(name, "rb") as f:
                 return f.read()
 
-        run_test_family(modify_tests, "t", binary_files,
-                        lambda fn: open(fn, "r+b"), make_test_source)
+        run_test_family(modify_tests, "t", binary_files, lambda fn: open(fn, "r+b"), make_test_source)
 
     # Text overwrites
     if "t" in options and "w" in options:
@@ -393,8 +397,7 @@ def run_all_tests(options):
             with text_open(name, "r") as f:
                 return f.read()
 
-        run_test_family(modify_tests, "b", text_files,
-                        lambda fn: open(fn, "r+"), make_test_source)
+        run_test_family(modify_tests, "b", text_files, lambda fn: open(fn, "r+"), make_test_source)
 
 
 def prepare_files():
@@ -408,27 +411,25 @@ def prepare_files():
     # Text files
     chunk = []
     # print(">> Opening %s to look for chunk markers" % __file__)
-    with text_open(__file__, "rU", encoding='utf8') as f:
+    with text_open(__file__, "rU", encoding="utf8") as f:
         for line in f:
             if line.startswith("# <iobench text chunk marker>"):
                 break
         else:
-            raise RuntimeError(
-                "Couldn't find chunk marker in %s !" % __file__)
+            raise RuntimeError("Couldn't find chunk marker in %s !" % __file__)
         if NEWLINES == "all":
             it = itertools.cycle(["\n", "\r", "\r\n"])
         else:
-            it = itertools.repeat(
-                {"cr": "\r", "lf": "\n", "crlf": "\r\n"}[NEWLINES])
+            it = itertools.repeat({"cr": "\r", "lf": "\n", "crlf": "\r\n"}[NEWLINES])
         chunk = "".join(line.replace("\n", next(it)) for line in f)
         if isinstance(chunk, bytes):
-            chunk = chunk.decode('utf8')
+            chunk = chunk.decode("utf8")
         chunk = chunk.encode(TEXT_ENCODING)
     for name, size in get_text_files():
         if os.path.isfile(name) and os.path.getsize(name) == size:
             continue
         head = chunk * (size // len(chunk))
-        tail = chunk[:size % len(chunk)]
+        tail = chunk[: size % len(chunk)]
         # Adjust tail to end on a character boundary
         while True:
             try:
@@ -446,30 +447,33 @@ def main():
 
     usage = "usage: %prog [-h|--help] [options]"
     parser = OptionParser(usage=usage)
-    parser.add_option("-b", "--binary",
-                      action="store_true", dest="binary", default=False,
-                      help="run binary I/O tests")
-    parser.add_option("-t", "--text",
-                      action="store_true", dest="text", default=False,
-                      help="run text I/O tests")
-    parser.add_option("-r", "--read",
-                      action="store_true", dest="read", default=False,
-                      help="run read tests")
-    parser.add_option("-w", "--write",
-                      action="store_true", dest="write", default=False,
-                      help="run write & modify tests")
-    parser.add_option("-E", "--encoding",
-                      action="store", dest="encoding", default=None,
-                      help="encoding for text tests (default: %s)" % TEXT_ENCODING)
-    parser.add_option("-N", "--newlines",
-                      action="store", dest="newlines", default='lf',
-                      help="line endings for text tests "
-                           "(one of: {lf (default), cr, crlf, all})")
+    parser.add_option("-b", "--binary", action="store_true", dest="binary", default=False, help="run binary I/O tests")
+    parser.add_option("-t", "--text", action="store_true", dest="text", default=False, help="run text I/O tests")
+    parser.add_option("-r", "--read", action="store_true", dest="read", default=False, help="run read tests")
+    parser.add_option(
+        "-w", "--write", action="store_true", dest="write", default=False, help="run write & modify tests"
+    )
+    parser.add_option(
+        "-E",
+        "--encoding",
+        action="store",
+        dest="encoding",
+        default=None,
+        help="encoding for text tests (default: %s)" % TEXT_ENCODING,
+    )
+    parser.add_option(
+        "-N",
+        "--newlines",
+        action="store",
+        dest="newlines",
+        default="lf",
+        help="line endings for text tests " "(one of: {lf (default), cr, crlf, all})",
+    )
     options, args = parser.parse_args()
     if args:
         parser.error("unexpected arguments")
     NEWLINES = options.newlines.lower()
-    if NEWLINES not in ('lf', 'cr', 'crlf', 'all'):
+    if NEWLINES not in ("lf", "cr", "crlf", "all"):
         parser.error("invalid 'newlines' option: %r" % NEWLINES)
 
     test_options = ""

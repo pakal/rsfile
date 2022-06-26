@@ -5,10 +5,15 @@
 Reimplementation of raw streams for unix-like OS, with advanced abilities.
 """
 
-import sys, os, functools, errno, time, stat, threading, locale
-from . import rsfileio_abstract
-from . import rsfile_definitions as defs
+import errno
+import functools
+import locale
+import os
+import stat
+import sys
 
+from . import rsfile_definitions as defs
+from . import rsfileio_abstract
 from .rsbackend import unix_stdlib as unix
 from .rsfile_registries import IntraProcessLockRegistry
 
@@ -30,7 +35,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
                     traceback = sys.exc_info()[2]
 
                     if not isinstance(e.strerror, str):
-                        strerror = e.strerror.decode(UNIX_MSG_ENCODING, 'replace')
+                        strerror = e.strerror.decode(UNIX_MSG_ENCODING, "replace")
                     else:
                         strerror = e.strerror
 
@@ -56,8 +61,20 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
 
     # # Private methods - no check is made on their argument or the file object state ! # #
     @_unix_error_converter
-    def _inner_create_streams(self, path, read, write, append, must_create, must_not_create, synchronized, inheritable,
-                              fileno, handle, permissions):
+    def _inner_create_streams(
+        self,
+        path,
+        read,
+        write,
+        append,
+        must_create,
+        must_not_create,
+        synchronized,
+        inheritable,
+        fileno,
+        handle,
+        permissions,
+    ):
 
         # Note : opening broken links works if we're in "w" mode, and raises error in "r" mode,
         # like for normal unexisting files.
@@ -74,7 +91,8 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
 
             if isinstance(path, str):
                 strname = path.encode(
-                    sys.getfilesystemencoding())  # let's take no risks - and do not use locale.getpreferredencoding(
+                    sys.getfilesystemencoding()
+                )  # let's take no risks - and do not use locale.getpreferredencoding(
                 # ) here
             else:
                 strname = path
@@ -115,9 +133,9 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
             else:
                 # before PEP0446, newly created file descriptors were inheritable by default
                 if not inheritable:
-                    old_flags = unix.fcntl(self._fileno, unix.F_GETFD, 0);
+                    old_flags = unix.fcntl(self._fileno, unix.F_GETFD, 0)
                     if not (old_flags & unix.FD_CLOEXEC):
-                        unix.fcntl(self._fileno, unix.F_SETFD, old_flags | unix.FD_CLOEXEC);
+                        unix.fcntl(self._fileno, unix.F_SETFD, old_flags | unix.FD_CLOEXEC)
 
         # WHATEVER the origin of the stream, we initialize these fields:
         self._lock_registry_inode = self.unique_id()  # enforces caching of unique_id
@@ -205,8 +223,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         updated if a file is opened with the O_NOATIME; see open(2).
         """
         stats = unix.fstat(self._fileno)
-        return defs.FileTimes(access_time=stats.st_atime,
-                              modification_time=stats.st_mtime)
+        return defs.FileTimes(access_time=stats.st_atime, modification_time=stats.st_mtime)
 
     @_unix_error_converter
     def _inner_size(self):
@@ -232,14 +249,14 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
             if e.args[0] == errno.EAGAIN:
                 return None
             if e.__class__.__name__ == "BrokenPipeError":  # only in Python3
-                return b''  # conform to stdlib behaviour
+                return b""  # conform to stdlib behaviour
             raise
 
-    '''
+    """
     @_unix_error_converter
     def _inner_readinto(self, buffer):
         return unix.readinto(self._fileno, buffer, len(buffer))
-    '''
+    """
 
     @_unix_error_converter
     def _inner_write(self, bytes):
@@ -260,7 +277,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
 
         fd = self._fileno
 
-        if (shared):
+        if shared:
             operation = unix.LOCK_SH
         else:
             operation = unix.LOCK_EX

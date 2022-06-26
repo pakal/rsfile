@@ -9,9 +9,7 @@ _default_rsfile_options = {
     # all locking attempts which have no timeout set will actually fail after this time in seconds (prevents denial
     # of service)
     "enforced_locking_timeout_value": None,
-
     "default_spinlock_delay": 0.1,  # how many seconds the program must sleep between attempts at locking a file
-
     # "max_input_load_bytes": None  # Problem - hard to implement, we'd need to hack into every readall() and read()
     # method from io...
     # makes readall() and other greedy operations fail when the data gotten exceeds this size (prevents memory overflow)
@@ -21,25 +19,25 @@ _default_rsfile_options = {
 def set_rsfile_options(**options):
     """
     Sets process-global options for rsfile, according to keyword arguments provided.
-    
+
     .. warning::
         These options shall not be set by libraries, only from main scripts,
         since they affect the behaviour of rsfile in the whole program.
-    
+
     The following keyword arguments are currently available:
-    
-    - *enforced_locking_timeout_value* (None or positive float, defaults to None): if set, this value is enforced 
+
+    - *enforced_locking_timeout_value* (None or positive float, defaults to None): if set, this value is enforced
       as a timeout value (in seconds) for all *blocking* :meth:`rsfile.lock_file()` calls (i.e those having a timeout
       argument
       set to None).
       If that timeout is reached, a RuntimeError is raised. This exception is not meant to be caught, as it's
-      normally the sign that a deadlock is occurring around the locking of that file. This feature is for 
+      normally the sign that a deadlock is occurring around the locking of that file. This feature is for
       debugging purpose only.
     - *default_spinlock_delay* (positive float, defaults to 0.1): this value represents the sleeping time between two
       attempts
-      at locking a file, when using :meth:`rsfile.lock_file()` with a non-zero timeout argument. Modify this 
+      at locking a file, when using :meth:`rsfile.lock_file()` with a non-zero timeout argument. Modify this
       value with care, as some libraries might expect a sufficient reactivity for file locking operations.
-      """
+    """
 
     new_options = set(options.keys())
     all_options = set(_default_rsfile_options.keys())
@@ -67,19 +65,13 @@ def get_rsfile_options():
 ############################################
 
 
-
-
-
-
-
-
 class IntraProcessLockRegistryClass(object):
     def __init__(self):
 
         self._original_pid = os.getpid()
 
         # keys : file unique_id
-        # values : event + (list of locked ranges [handle, shared, start, end] where end=None 
+        # values : event + (list of locked ranges [handle, shared, start, end] where end=None
         # means 'infinity') + attached data
         self._lock_registry = {}
 
@@ -104,8 +96,12 @@ class IntraProcessLockRegistryClass(object):
             return True
         else:
             if create:
-                self._lock_registry[unique_id] = [threading.Condition(self.mutex), [], [],
-                                                  0]  # [condition, locks, data, number of threads waiting]
+                self._lock_registry[unique_id] = [
+                    threading.Condition(self.mutex),
+                    [],
+                    [],
+                    0,
+                ]  # [condition, locks, data, number of threads waiting]
             return False
 
     def _try_locking_range(self, unique_id, handle, new_length, new_start, new_shared):
@@ -117,8 +113,6 @@ class IntraProcessLockRegistryClass(object):
 
         # print (">Thread %s handle %s TRYING TO TAKE lock with %s" % (threading.current_thread().name, handle,
         # (new_shared, new_start, new_end)))
-
-
 
         if self._ensure_entry_exists(unique_id, create=True):
 
@@ -136,14 +130,14 @@ class IntraProcessLockRegistryClass(object):
                 if min_end is None or max_start < min_end:  # areas are overlapping
                     if other_handle == handle:
                         # we don't merge lock areas
-                        raise RuntimeError("Same area of file locked twice by the same file descriptor")  
+                        raise RuntimeError("Same area of file locked twice by the same file descriptor")
                     else:
                         return False
 
         # print (">Thread %s handle %s takes lock with %s" % (threading.current_thread().name, handle, (new_shared,
         # new_start, new_end)))
         # we register as owner of this lock inside this process
-        self._lock_registry[unique_id][1].append((handle, new_shared, new_start, new_end))  
+        self._lock_registry[unique_id][1].append((handle, new_shared, new_start, new_end))
         return True  # no badly overlapping range was found
 
     def _try_unlocking_range(self, unique_id, handle, new_length, new_start):
@@ -164,7 +158,7 @@ class IntraProcessLockRegistryClass(object):
 
         locks = self._lock_registry[unique_id][1]
         for index, (other_handle, shared, start, end) in enumerate(locks):
-            if (other_handle == handle and start == new_start and end == new_end):
+            if other_handle == handle and start == new_start and end == new_end:
                 del locks[index]
                 # print ("THREAD %s NOTIFYING %s" % ( threading.current_thread().name, unique_id))
                 self._lock_registry[unique_id][0].notify_all()  # we awake potential waiters - ALL of them
@@ -241,8 +235,11 @@ class IntraProcessLockRegistryClass(object):
 
             if not self._ensure_entry_exists(unique_id, create=False):
                 return False
-            elif self._lock_registry[unique_id][1] or self._lock_registry[unique_id][2] or \
-                    self._lock_registry[unique_id][3]:  # locks, data, or waiting threads
+            elif (
+                self._lock_registry[unique_id][1]
+                or self._lock_registry[unique_id][2]
+                or self._lock_registry[unique_id][3]
+            ):  # locks, data, or waiting threads
                 return False
             else:
                 del self._lock_registry[unique_id]

@@ -7,11 +7,15 @@ Reimplementation of raw streams for windows OS, with advanced abilities.
 Note that, like in sys.platform or pywin32, "win32" actually means both x86 and x64 platforms.
 """
 
-import sys, os, functools, time, errno, stat, locale
-from array import array
+import errno
+import functools
+import locale
+import os
+import stat
+import sys
 
-from . import rsfileio_abstract
 from . import rsfile_definitions as defs
+from . import rsfileio_abstract
 from .rsbackend import _utilities as utilities
 
 try:
@@ -23,8 +27,11 @@ WIN32_MSG_ENCODING = locale.getpreferredencoding()
 
 
 class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
-    __POSITION_REFERENCES = {defs.SEEK_SET: win32.FILE_BEGIN, defs.SEEK_CUR: win32.FILE_CURRENT,
-                             defs.SEEK_END: win32.FILE_END}
+    __POSITION_REFERENCES = {
+        defs.SEEK_SET: win32.FILE_BEGIN,
+        defs.SEEK_CUR: win32.FILE_CURRENT,
+        defs.SEEK_END: win32.FILE_END,
+    }
 
     # Warning - this is to be used as a static method ! #
     def _win32_error_converter(f):  # @NoSelf
@@ -50,12 +57,11 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
                 elif isinstance(e.strerror, str):
                     strerror = e.strerror
                 else:
-                    strerror = e.strerror.decode(WIN32_MSG_ENCODING, 'replace')
+                    strerror = e.strerror.decode(WIN32_MSG_ENCODING, "replace")
 
                 raise IOError(errno, strerror, str(self._name)).with_traceback(traceback)
 
         return wrapper
-
 
     def _broken_pipe_ignorer(f):  # @NoSelf
         @functools.wraps(f)
@@ -64,16 +70,28 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
                 return f(self, *args, **kwds)
             except OSError as e:
                 if e.__class__.__name__ == "BrokenPipeError":  # only in Python3
-                    return b''  # conform to stdlib behaviour
+                    return b""  # conform to stdlib behaviour
                 raise
+
         return wrapper
 
-
     @_win32_error_converter
-    def _inner_create_streams(self, path, read, write, append, must_create, must_not_create, synchronized, inheritable,
-                              fileno, handle, permissions):
+    def _inner_create_streams(
+        self,
+        path,
+        read,
+        write,
+        append,
+        must_create,
+        must_not_create,
+        synchronized,
+        inheritable,
+        fileno,
+        handle,
+        permissions,
+    ):
 
-        assert not (fileno and handle), (fileno and handle)
+        assert not (fileno and handle), fileno and handle
 
         # # # real opening of the file stream # # #
         if handle is not None:
@@ -86,6 +104,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
             self._fileno = fileno
             # print "FILE OPENED VIA FILENO ", fileno
             import msvcrt
+
             assert msvcrt.get_osfhandle == win32._get_osfhandle
             self._handle = win32._get_osfhandle(fileno)  # required immediately
 
@@ -135,7 +154,6 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
             # we can't use FILE_APPEND_DATA flag, because it prevents use from truncating the file later one,
             # so we'll emulate it on each write
 
-
             if isinstance(path, bytes):
                 path = path.decode(sys.getfilesystemencoding())  # pywin32 wants unicode
 
@@ -146,7 +164,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
                 securityAttributes,
                 creationDisposition,
                 flagsAndAttributes,
-                None  # hTemplateFile
+                None,  # hTemplateFile
             )
 
             handle = win32.CreateFile(*args)  # should raise if it's a DIRECTORY
@@ -164,8 +182,8 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
     @_win32_error_converter
     def _inner_close_streams(self):
         """
-        MSDN note : To close a file opened with _get_osfhandle, call _close. The underlying handle 
-        is also closed by a call to _close, so it is not necessary to 
+        MSDN note : To close a file opened with _get_osfhandle, call _close. The underlying handle
+        is also closed by a call to _close, so it is not necessary to
         call the Win32 function CloseHandle on the original handle.
 
         This function may raise IOError !
@@ -195,7 +213,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
     def _inner_extend(self, size, zero_fill):
         assert size >= 0, size
         assert zero_fill in (True, False), zero_fill
-        if (not zero_fill):
+        if not zero_fill:
             old_pos = self._inner_tell()
             self.seek(size)
             win32.SetEndOfFile(self._handle)  # warning - this might fail silently
@@ -236,8 +254,11 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         inode = utilities.double_dwords_to_pyint(handle_info.nFileIndexLow, handle_info.nFileIndexHigh)
 
         if device <= 0 or inode <= 0:
-            raise win32.error(win32.ERROR_NOT_SUPPORTED, "RsfileInnerUniqueId",
-                              "Impossible to retrieve win32 device/file-id information")
+            raise win32.error(
+                win32.ERROR_NOT_SUPPORTED,
+                "RsfileInnerUniqueId",
+                "Impossible to retrieve win32 device/file-id information",
+            )
 
         _unique_id = (device, inode)
         return _unique_id
@@ -249,7 +270,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
             # print "EXTRACTING FILENO !"
             # traceback.print_stack()
 
-            # NOTE: these flags seem to be actually IGNORED by libc compatibility 
+            # NOTE: these flags seem to be actually IGNORED by libc compatibility
             # layer, but let's be cautious...
             if self._readable and self._writable:
                 flags = os.O_RDWR
@@ -283,12 +304,14 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         """
         handle_info = win32.GetFileInformationByHandle(self._handle)
 
-        return defs.FileTimes(access_time=utilities.win32_filetime_to_python_timestamp(
-            handle_info.ftLastAccessTime.dwLowDateTime,
-            handle_info.ftLastAccessTime.dwHighDateTime),
+        return defs.FileTimes(
+            access_time=utilities.win32_filetime_to_python_timestamp(
+                handle_info.ftLastAccessTime.dwLowDateTime, handle_info.ftLastAccessTime.dwHighDateTime
+            ),
             modification_time=utilities.win32_filetime_to_python_timestamp(
-                handle_info.ftLastWriteTime.dwLowDateTime,
-                handle_info.ftLastWriteTime.dwHighDateTime))
+                handle_info.ftLastWriteTime.dwLowDateTime, handle_info.ftLastWriteTime.dwHighDateTime
+            ),
+        )
 
     @_win32_error_converter
     def _inner_size(self):
@@ -303,7 +326,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
     @_win32_error_converter
     def _inner_seek(self, offset, whence=defs.SEEK_SET):
         """
-        It is not an error to set a file pointer to a position beyond the end of the file. The size of the file does 
+        It is not an error to set a file pointer to a position beyond the end of the file. The size of the file does
         not increase until you call the  SetEndOfFile,  WriteFile, or  WriteFileEx function. A write operation
         increases the size of the file to the file pointer position plus the size of the buffer written, which results
         in the intervening bytes uninitialized.
@@ -363,7 +386,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         if abs_offset is None:
             abs_offset = 0
 
-        if (not length):  # 0 or None
+        if not length:  # 0 or None
             (nNumberOfBytesToLockLow, nNumberOfBytesToLockHigh) = (utilities.MAX_DWORD, utilities.MAX_DWORD)
         else:
             (nNumberOfBytesToLockLow, nNumberOfBytesToLockHigh) = utilities.pyint_to_double_dwords(length)
@@ -386,7 +409,8 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
             flags |= win32.LOCKFILE_FAIL_IMMEDIATELY
 
         (nNumberOfBytesToLockLow, nNumberOfBytesToLockHigh, overlapped) = self._win32_convert_file_range_arguments(
-            length, abs_offset)
+            length, abs_offset
+        )
 
         # print(">>>>>>> ctypes windows LockFileEx", hfile, nNumberOfBytesToLockLow, nNumberOfBytesToLockHigh,
         # overlapped.Offset, overlapped.OffsetHigh)
@@ -405,7 +429,8 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         hfile = self._handle
 
         (nNumberOfBytesToLockLow, nNumberOfBytesToLockHigh, overlapped) = self._win32_convert_file_range_arguments(
-            length, abs_offset)
+            length, abs_offset
+        )
 
         win32.UnlockFileEx(hfile, nNumberOfBytesToLockLow, nNumberOfBytesToLockHigh, overlapped)
         # error: 158 - ERROR_NOT_LOCKED - The segment is already unlocked.

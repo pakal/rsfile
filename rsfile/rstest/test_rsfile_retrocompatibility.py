@@ -11,13 +11,10 @@ from rsfile.rstest import _utilities
 
 _utilities.patch_test_supports()
 
-import sys
 import os
 import unittest
-from pprint import pprint
 
 import tempfile
-import time
 import itertools
 import random
 
@@ -36,19 +33,16 @@ FILE_MODES_CORRELATION = {
     "R": None,
     "RN": "r",
     "RC": None,  # makes little sense, but possible
-
     "W": None,
     "WE": "w",
     "WN": None,
     "WEN": None,
     "WC": "x" if HAS_X_OPEN_FLAG else None,
-
     "A": "a",
     "AE": None,
     "AC": None,
     "AN": None,
     "ANE": None,
-
     "RW": None,
     "RWE": "w+",
     "RA": "a+",
@@ -90,7 +84,7 @@ def __BROKEN__reopener_via_handle(name, mode):
     assert handle, handle
     new_f = rsfile.rsopen(mode=mode, handle=handle, closefd=True)
     assert new_f.handle() == handle
-    if (defs.RSFILE_IMPLEMENTATION == "windows"):
+    if defs.RSFILE_IMPLEMENTATION == "windows":
         assert f._fileno is None, f._fileno  # we take care of NOT exhausting these emulated resources here
     else:
         assert new_f.fileno() == f.fileno()
@@ -114,18 +108,15 @@ def complete_and_normalize_possible_modes(file_modes):
             assert "E" not in k, k  # initial data must be DRY
             file_modes[k + "E"] = v
 
-    suffixes = {
-        "": "",
-        "B": "b",
-        "T": "t"
-    }
+    suffixes = {"": "", "B": "b", "T": "t"}
     # we add binary/text suffixes
-    file_modes = dict((mode1 + suf1, (mode2 + suf2 if mode2 else mode2))
-                      for (mode1, mode2) in list(file_modes.items())
-                      for (suf1, suf2) in list(suffixes.items()))
+    file_modes = dict(
+        (mode1 + suf1, (mode2 + suf2 if mode2 else mode2))
+        for (mode1, mode2) in list(file_modes.items())
+        for (suf1, suf2) in list(suffixes.items())
+    )
 
-    file_modes = {"".join(sorted(k)): v
-                  for (k, v) in list(file_modes.items())}
+    file_modes = {"".join(sorted(k)): v for (k, v) in list(file_modes.items())}
 
     return file_modes
 
@@ -157,7 +148,7 @@ class TestStreamsRetrocompatibility(unittest.TestCase):
         try:
             stream = opener(name, mode)  # open EXISTING file
             stream.close()
-            truncate = (os.path.getsize(name) == 0)
+            truncate = os.path.getsize(name) == 0
             must_create = False
         except EnvironmentError:
             must_create = True
@@ -209,12 +200,14 @@ class TestStreamsRetrocompatibility(unittest.TestCase):
 
         assert read or write
 
-        params = dict(read=read,
-                      write=write,
-                      append=append,
-                      must_create=must_create,
-                      must_not_create=must_not_create,
-                      truncate=truncate)
+        params = dict(
+            read=read,
+            write=write,
+            append=append,
+            must_create=must_create,
+            must_not_create=must_not_create,
+            truncate=truncate,
+        )
         return params
 
     def testModeEquivalences(self):
@@ -240,7 +233,7 @@ class TestStreamsRetrocompatibility(unittest.TestCase):
 
             selected_adv_flags = "".join(subset)  # the sames flags will come in various orders
 
-            #print("-> Testing mode equivalences for", selected_adv_flags)
+            # print("-> Testing mode equivalences for", selected_adv_flags)
 
             _selected_adv_flags_normalized = "".join(sorted(selected_adv_flags))
             is_abnormal_mode = _selected_adv_flags_normalized not in file_modes
@@ -278,7 +271,12 @@ class TestStreamsRetrocompatibility(unittest.TestCase):
                 msg = """
                         %s != %s :
                         %s
-                        %s""" % (selected_stdlib_flags, selected_adv_flags, stdlib_res, adv_res)
+                        %s""" % (
+                    selected_stdlib_flags,
+                    selected_adv_flags,
+                    stdlib_res,
+                    adv_res,
+                )
                 self.assertEqual(stdlib_res, adv_res, msg)
 
                 chosen_flags = random.choice((selected_stdlib_flags, selected_adv_flags))
@@ -294,14 +292,17 @@ class TestStreamsRetrocompatibility(unittest.TestCase):
                 append=adv_res[0]["append"],
                 must_create=adv_res[0]["must_create"],
                 must_not_create=adv_res[0]["must_not_create"],
-                truncate=adv_res[1]["truncate"]
+                truncate=adv_res[1]["truncate"],
             )
 
             real_abilities = self.determine_stream_capabilities(rsfile.rsopen, chosen_flags)
 
             msg = """
                 THEORETICAL: %s
-                REAL:         %s""" % (theoretical_abilities, real_abilities)
+                REAL:         %s""" % (
+                theoretical_abilities,
+                real_abilities,
+            )
             self.assertEqual(theoretical_abilities, real_abilities, msg)
 
             if selected_stdlib_flags:
@@ -309,13 +310,19 @@ class TestStreamsRetrocompatibility(unittest.TestCase):
 
                 msg = """
                     THEORETICAL: %s
-                    LEGACY:      %s""" % (theoretical_abilities, legacy_abilities)
+                    LEGACY:      %s""" % (
+                    theoretical_abilities,
+                    legacy_abilities,
+                )
                 self.assertEqual(theoretical_abilities, legacy_abilities, msg)
 
             abilities_via_fileno = self.determine_stream_capabilities(reopener_via_fileno, chosen_flags)
             msg = """
                 THEORETICAL:         %s
-                REOPENED_VIA_FILENO: %s""" % (theoretical_abilities, abilities_via_fileno)
+                REOPENED_VIA_FILENO: %s""" % (
+                theoretical_abilities,
+                abilities_via_fileno,
+            )
             self.assertEqual(theoretical_abilities, abilities_via_fileno, msg)
 
             '''
@@ -369,8 +376,7 @@ def display_open_modes_correlations_table():
 
         abilities = TestStreamsRetrocompatibility.determine_stream_capabilities(io.open, stdlib_mode)
 
-        abilities = {k: ("true" if v else " ")
-                     for (k, v) in list(abilities.items())}
+        abilities = {k: ("true" if v else " ") for (k, v) in list(abilities.items())}
 
         abilities["std_mode"] = stdlib_mode
         abilities["adv_mode"] = advanced_mode
@@ -397,7 +403,7 @@ def test_main():
     print("** RSFILE_RETROCOMPATIBILITY Test Suite has been run on backends %s **\n" % backends)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     test_main()
 
@@ -407,8 +413,7 @@ if __name__ == '__main__':
         data = display_open_modes_correlations_table()
         # pprint(data)
         ordering = "std_mode adv_mode read write append must_create must_not_create truncate".split()
-        data = [[d[i] for i in ordering]
-                for d in data]
+        data = [[d[i] for i in ordering] for d in data]
         print(tabulate(data, headers=ordering, tablefmt="rst", numalign="left", stralign="left"))
 
         all_advanced_modes = sorted(FILE_MODES_CORRELATION.keys())

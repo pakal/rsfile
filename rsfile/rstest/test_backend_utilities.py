@@ -38,7 +38,7 @@ class TestBackendUtilities(unittest.TestCase):
 
     def testNumberConversions(self):
 
-        num1 = random.randint(0, 2 ** 64 - 1)
+        num1 = random.randint(0, 2**64 - 1)
         num2 = double_dwords_to_pyint(*pyint_to_double_dwords(num1))
         self.assertEqual(num1, num2)
 
@@ -49,22 +49,23 @@ class TestBackendUtilities(unittest.TestCase):
         self.assertEqual(num2, num4)
 
     def testConversionErrors(self):
-        self.assertRaises(ValueError, pyint_to_double_dwords, random.randint(-2 ** 64, -1))
-        self.assertRaises(ValueError, pyint_to_double_dwords, random.randint(-2 ** 32, -1), 0)
+        self.assertRaises(ValueError, pyint_to_double_dwords, random.randint(-(2**64), -1))
+        self.assertRaises(ValueError, pyint_to_double_dwords, random.randint(-(2**32), -1), 0)
 
     def testSignSwitches(self):
-        num1 = random.randint(0, 2 ** 32 - 1)
+        num1 = random.randint(0, 2**32 - 1)
         self.assertEqual(num1, signed_to_unsigned(unsigned_to_signed(num1)))
 
-        num2 = random.randint(-2 ** 31, 2 ** 31 - 1)
+        num2 = random.randint(-(2**31), 2**31 - 1)
         self.assertEqual(num2, unsigned_to_signed(signed_to_unsigned(num2)))
 
-        self.assertEqual(-1, unsigned_to_signed(2 ** 32 - 1))
+        self.assertEqual(-1, unsigned_to_signed(2**32 - 1))
 
     def testErrnoConverter(self):
         self.assertEqual(winerror_to_errno(6), 9)
         self.assertEqual(winerror_to_errno(9999999), 22)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     print("Launching tests for low-level backend utilities")
     unittest.main()

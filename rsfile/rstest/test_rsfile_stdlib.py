@@ -1,27 +1,15 @@
 # -*- coding: utf-8 -*-
 
 
-import rsfile.rsfile_definitions as defs
-
 from rsfile.rstest import _utilities
 
 _utilities.patch_test_supports()
 
-from rsfile.rstest import _worker_process
-
 import sys
 import os
 import unittest
-from pprint import pprint
 
-import array
-import tempfile
 import time
-import itertools
-import threading
-import random
-import multiprocessing, subprocess
-from datetime import datetime, timedelta
 
 import rsfile
 import io, _io, _pyio
@@ -37,6 +25,7 @@ from test import test_support  # NOW ONLY we can import it
 
 ENABLE_LARGE_FILE_TESTS = False
 
+
 def test_original_io():
     """
     Beware, We patch stdlib tests to remove C extension tests, or other tests that can't apply to our python
@@ -46,16 +35,20 @@ def test_original_io():
     test_largefile "
     """
 
-    import _io
-
-    from test import test_io, test_memoryio, test_file, test_bufio, test_fileio, \
-        test_largefile  # python stdlib test suite must be installed for current python interpreter
+    from test import (
+        test_io,
+        test_memoryio,
+        test_file,
+        test_bufio,
+        test_fileio,
+        test_largefile,
+    )  # python stdlib test suite must be installed for current python interpreter
 
     class dummyklass(unittest.TestCase):
         pass
 
     def dummyfunc(*args, **kwargs):
-        print("<DUMMY>", end='')
+        print("<DUMMY>", end="")
 
     # we patch to deal with stale windows files in spite of SHARE_DELETE flag
     # (files only removed when last handle is closed)
@@ -86,6 +79,7 @@ def test_original_io():
         # missing in python<=3.5
         def truncate_blocker(self, *args):
             raise self.UnsupportedOperation("not seekable")
+
         test_io.MockUnseekableIO.truncate = truncate_blocker
 
     if sys.version_info < (3,):
@@ -133,7 +127,7 @@ def test_original_io():
 
     @deco
     def bugfixed(self, f):
-        f.write(b'a')  # in py27 trunk, "binary" modifier was lacking...
+        f.write(b"a")  # in py27 trunk, "binary" modifier was lacking...
 
     test_fileio.AutoFileTests.testErrnoOnClosedWrite = bugfixed
 
@@ -149,7 +143,6 @@ def test_original_io():
     # mytest = test_io.PyIOTest('test_invalid_newline')
     # res = mytest.run()
     # print(res)
-
 
     all_test_suites = []
 
@@ -180,5 +173,5 @@ def test_main():
     print("** RSFILE_STDLIB Test Suite has been run on backends %s **\n" % backends)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     test_main()

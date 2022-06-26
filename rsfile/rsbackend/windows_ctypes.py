@@ -11,12 +11,28 @@ import ctypes.wintypes as wintypes
 from . import raw_win32_ctypes as win32api
 from .raw_win32_ctypes import GetLastError, OVERLAPPED, FILETIME, BY_HANDLE_FILE_INFORMATION, SECURITY_ATTRIBUTES
 
-from .raw_win32_defines import (ERROR_IO_PENDING, ERROR_MORE_DATA, ERROR_NOT_SUPPORTED,
-                                GENERIC_READ, GENERIC_WRITE, FILE_SHARE_WRITE, OPEN_ALWAYS,
-                                FILE_ATTRIBUTE_NORMAL, FILE_BEGIN, LOCKFILE_EXCLUSIVE_LOCK,
-                                FILE_SHARE_READ, OPEN_EXISTING, CREATE_NEW, FILE_CURRENT,
-                                FILE_ATTRIBUTE_READONLY, FILE_ATTRIBUTE_NORMAL, FILE_FLAG_WRITE_THROUGH,
-                                FILE_END, FILE_SHARE_DELETE, LOCKFILE_FAIL_IMMEDIATELY)
+from .raw_win32_defines import (
+    ERROR_IO_PENDING,
+    ERROR_MORE_DATA,
+    ERROR_NOT_SUPPORTED,
+    GENERIC_READ,
+    GENERIC_WRITE,
+    FILE_SHARE_WRITE,
+    OPEN_ALWAYS,
+    FILE_ATTRIBUTE_NORMAL,
+    FILE_BEGIN,
+    LOCKFILE_EXCLUSIVE_LOCK,
+    FILE_SHARE_READ,
+    OPEN_EXISTING,
+    CREATE_NEW,
+    FILE_CURRENT,
+    FILE_ATTRIBUTE_READONLY,
+    FILE_ATTRIBUTE_NORMAL,
+    FILE_FLAG_WRITE_THROUGH,
+    FILE_END,
+    FILE_SHARE_DELETE,
+    LOCKFILE_FAIL_IMMEDIATELY,
+)
 
 # as long as they're supported by the stdlib, let's enjoy these safer version !
 from msvcrt import open_osfhandle as _open_osfhandle, get_osfhandle as _get_osfhandle
@@ -62,8 +78,9 @@ def CreateFile(fileName, desiredAccess, shareMode, attributes, creationDispositi
     else:
         CreateFile = win32api.CreateFileA
 
-    handle = CreateFile(fileName, desiredAccess, shareMode, attributes, creationDisposition, flagsAndAttributes,
-                        hTemplateFile)
+    handle = CreateFile(
+        fileName, desiredAccess, shareMode, attributes, creationDisposition, flagsAndAttributes, hTemplateFile
+    )
 
     if handle == INVALID_HANDLE_VALUE:
         raise ctypes.WinError()
@@ -158,24 +175,20 @@ def WriteFile(handle, data, overlapped=None):
         # data_to_write = ctypes.c_char_p(data) # doesn't work, buffer size too small problems...
         data_to_write = ctypes.create_string_buffer(data)
 
-    ''' Not required ATM:
+    """ Not required ATM:
     elif isinstance(data, memoryview):
         data_to_write = ctypes.c_char_p(data.tobytes()) 
     elif isinstance(data, array):
         data_to_write = ctypes.POINTER(ctypes.c_char).from_buffer_copy(data)
         # TO BE COMPARED WITH - ctypes.c_char_p(data.tostring()) 
-    '''
+    """
 
     address = data_to_write  # ctypes.addressof(data_to_write)
 
     bytes_written = wintypes.DWORD(0)
 
     # no need to use WriteFileEx here...
-    res = win32api.WriteFile(handle,
-                             address,
-                             len(data),
-                             ctypes.byref(bytes_written),
-                             overlapped)
+    res = win32api.WriteFile(handle, address, len(data), ctypes.byref(bytes_written), overlapped)
 
     if not res:
         err = ctypes.GetLastError()
@@ -217,11 +230,7 @@ def ReadFile(handle, buffer_or_int, overlapped=None):
 
     # print (locals())
     # no need to use ReadFileEx here...
-    res = win32api.ReadFile(handle,
-                            address,
-                            bytes_to_read,
-                            ctypes.byref(bytes_read),
-                            overlapped)
+    res = win32api.ReadFile(handle, address, bytes_to_read, ctypes.byref(bytes_read), overlapped)
 
     if not res:
         err = ctypes.GetLastError()
@@ -233,39 +242,42 @@ def ReadFile(handle, buffer_or_int, overlapped=None):
     if overlapped:
         return (err, bytearray(target_buffer))  # untested feature
     elif isinstance(buffer_or_int, int):
-        return (err, target_buffer.raw[0:bytes_read.value])
+        return (err, target_buffer.raw[0 : bytes_read.value])
     else:
-        return (err, buffer_or_int[0:bytes_read.value])
+        return (err, buffer_or_int[0 : bytes_read.value])
 
 
 def LockFileEx(handle, dwFlags, nbytesLow, nbytesHigh, overlapped):
-    result = win32api.LockFileEx(handle,  # HANDLE hFile
-                                 dwFlags,  # DWORD dwFlags
-                                 0,  # DWORD dwReserved
-                                 nbytesLow,  # DWORD nNumberOfBytesToLockLow
-                                 nbytesHigh,  # DWORD nNumberOfBytesToLockHigh
-                                 ctypes.byref(overlapped) if overlapped else None,  # lpOverlapped
-                                 )
+    result = win32api.LockFileEx(
+        handle,  # HANDLE hFile
+        dwFlags,  # DWORD dwFlags
+        0,  # DWORD dwReserved
+        nbytesLow,  # DWORD nNumberOfBytesToLockLow
+        nbytesHigh,  # DWORD nNumberOfBytesToLockHigh
+        ctypes.byref(overlapped) if overlapped else None,  # lpOverlapped
+    )
     if not result:
         raise ctypes.WinError()  # can take an error code as argument, else uses GetLastError()
 
 
 def UnlockFileEx(handle, nbytesLow, nbytesHigh, overlapped):
-    result = win32api.UnlockFileEx(handle,  # HANDLE hFile
-                                   0,  # DWORD dwReserved
-                                   nbytesLow,  # DWORD nNumberOfBytesToLockLow
-                                   nbytesHigh,  # DWORD nNumberOfBytesToLockHigh
-                                   ctypes.byref(overlapped) if overlapped else None,  # lpOverlapped
-                                   )
+    result = win32api.UnlockFileEx(
+        handle,  # HANDLE hFile
+        0,  # DWORD dwReserved
+        nbytesLow,  # DWORD nNumberOfBytesToLockLow
+        nbytesHigh,  # DWORD nNumberOfBytesToLockHigh
+        ctypes.byref(overlapped) if overlapped else None,  # lpOverlapped
+    )
     if not result:
         raise ctypes.WinError()
 
 
-if (__name__ == "__main__"):
+if __name__ == "__main__":
 
     try:
-        handle = CreateFile("", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE, None, OPEN_ALWAYS,
-                            FILE_ATTRIBUTE_NORMAL, 0)
+        handle = CreateFile(
+            "", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE, None, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0
+        )
     except:
         pass
     else:
@@ -277,8 +289,9 @@ if (__name__ == "__main__"):
 
     filename = "@TESTFN"
 
-    handle = CreateFile(filename, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE, None, OPEN_ALWAYS,
-                        FILE_ATTRIBUTE_NORMAL, 0)
+    handle = CreateFile(
+        filename, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE, None, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0
+    )
 
     string = "hello"
 
@@ -292,7 +305,7 @@ if (__name__ == "__main__"):
     print("WRITE BYTES : ", res)
     assert 0 <= res[1] <= 5
 
-    g = array(b'b', b"vvvvv")
+    g = array(b"b", b"vvvvv")
     res = WriteFile(handle, g)
     print("WRITE ARRAY : ", res)
     assert 0 <= res[1] <= 5
@@ -311,9 +324,9 @@ if (__name__ == "__main__"):
     res = GetFileSize(handle)
     assert res == 10
 
-    LockFileEx(handle, LOCKFILE_EXCLUSIVE_LOCK, 0xffffffff, 0xffffffff, OVERLAPPED())
+    LockFileEx(handle, LOCKFILE_EXCLUSIVE_LOCK, 0xFFFFFFFF, 0xFFFFFFFF, OVERLAPPED())
 
-    UnlockFileEx(handle, 0xffffffff, 0xffffffff, OVERLAPPED())
+    UnlockFileEx(handle, 0xFFFFFFFF, 0xFFFFFFFF, OVERLAPPED())
 
     assert GetFileInformationByHandle(handle)
 
@@ -326,7 +339,7 @@ if (__name__ == "__main__"):
     res = ReadFile(handle, f)
     print("Readinto bytearray", repr(res[1]))
 
-    g = array(b'b', b"vvvvv")
+    g = array(b"b", b"vvvvv")
     res = ReadFile(handle, g)
     print("Readinto array", repr(res[1]))
 

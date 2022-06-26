@@ -1,9 +1,15 @@
 # -*- coding: utf-8 -*-
 
 
-import sys, os, time, random, string, multiprocessing, threading
-import rsfile
 import io
+import multiprocessing
+import os
+import random
+import sys
+import threading
+import time
+
+import rsfile
 
 VERBOSE_MODE = False
 
@@ -17,8 +23,8 @@ _streams_already_initialized = False
 
 
 def _init_output_streams(multiprocessing_lock):
-    """Sets a locking system (preferably, with a multiprocessing lock) 
-    on standard output streams so that outputs don't get mixed 
+    """Sets a locking system (preferably, with a multiprocessing lock)
+    on standard output streams so that outputs don't get mixed
     on the console together.
     """
 
@@ -95,8 +101,15 @@ def writer_without_file_locking(rsfile_stream, multiprocessing_lock, character, 
                 rsfile_stream.write(character * divisor)
 
 
-def chunk_writer_reader(targetFileName, multiprocessing_lock, character, ioOffset=0, payLoad=10000,
-                        mustAlwaysSucceedLocking=False, lockingKwargs={}):
+def chunk_writer_reader(
+    targetFileName,
+    multiprocessing_lock,
+    character,
+    ioOffset=0,
+    payLoad=10000,
+    mustAlwaysSucceedLocking=False,
+    lockingKwargs={},
+):
     _init_output_streams(multiprocessing_lock)
 
     logger("Process %s created with args " % (multiprocessing.current_process().name), locals())
@@ -112,17 +125,22 @@ def chunk_writer_reader(targetFileName, multiprocessing_lock, character, ioOffse
                 # doesn't work with partial functions - kwargs = dict(((key, value) for (key, value) in
                 # lockingKwargs.items() if key in targetFile.lock_file.func_code.co_varnames[1:]))
                 kwargs = lockingKwargs
-                kwargs['shared'] = False
+                kwargs["shared"] = False
 
-                logger("Process %s (%s) wanna lock file with args " % (
-                    multiprocessing.current_process().name, threading.currentThread().name), kwargs)
+                logger(
+                    "Process %s (%s) wanna lock file with args "
+                    % (multiprocessing.current_process().name, threading.currentThread().name),
+                    kwargs,
+                )
 
                 with targetFile.lock_file(**kwargs):
 
-                    logger("Process %s (%s) has the lock ! " % (
-                        multiprocessing.current_process().name, threading.currentThread().name))
+                    logger(
+                        "Process %s (%s) has the lock ! "
+                        % (multiprocessing.current_process().name, threading.currentThread().name)
+                    )
 
-                    if (random.randint(0, 1)):
+                    if random.randint(0, 1):
                         targetFile.seek(ioOffset)
                         targetFile.write(character * payLoad)
                     else:
@@ -134,49 +152,70 @@ def chunk_writer_reader(targetFileName, multiprocessing_lock, character, ioOffse
 
                     targetFile.seek(ioOffset)
 
-                    logger("Process %s (%s) reads %s bytes at offset %s ***" % (
-                        multiprocessing.current_process().name, threading.currentThread().name, payLoad,
-                        targetFile.tell()))
+                    logger(
+                        "Process %s (%s) reads %s bytes at offset %s ***"
+                        % (
+                            multiprocessing.current_process().name,
+                            threading.currentThread().name,
+                            payLoad,
+                            targetFile.tell(),
+                        )
+                    )
 
                     data = targetFile.read(payLoad)
 
-                    if (data != character * payLoad):
-                        logger("PROBLEM IN %s: " % multiprocessing.current_process().name, data,
-                               "            ><            ", character * payLoad)
+                    if data != character * payLoad:
+                        logger(
+                            "PROBLEM IN %s: " % multiprocessing.current_process().name,
+                            data,
+                            "            ><            ",
+                            character * payLoad,
+                        )
                         sys.exit(8)
 
-                logger("Process %s (%s) unlocks file" % (
-                    multiprocessing.current_process().name, threading.currentThread().name))
+                logger(
+                    "Process %s (%s) unlocks file"
+                    % (multiprocessing.current_process().name, threading.currentThread().name)
+                )
 
             except rsfile.LockingException:
-                if (mustAlwaysSucceedLocking):
+                if mustAlwaysSucceedLocking:
                     raise
                 else:
                     # logger"couldnt lock file, ok..."
                     pass
     import rsfile.rsfile_registries as RG
 
-    logger("Process %s (%s) <<<<exiting>>>> - lock is %s" % (
-        multiprocessing.current_process().name, threading.currentThread().name, RG.IntraProcessLockRegistry.mutex))
+    logger(
+        "Process %s (%s) <<<<exiting>>>> - lock is %s"
+        % (multiprocessing.current_process().name, threading.currentThread().name, RG.IntraProcessLockRegistry.mutex)
+    )
     sys.exit(0)
 
 
-def chunk_reader(targetFileName, multiprocessing_lock, character=None, ioOffset=0, payLoad=10000,
-                 mustAlwaysSucceedLocking=False, lockingKwargs={}):
+def chunk_reader(
+    targetFileName,
+    multiprocessing_lock,
+    character=None,
+    ioOffset=0,
+    payLoad=10000,
+    mustAlwaysSucceedLocking=False,
+    lockingKwargs={},
+):
     _init_output_streams(multiprocessing_lock)
 
     for i in range(random.randint(5, 15)):
 
         time.sleep(random.random() / 5)
 
-        with io.open(targetFileName, "rb", buffering=0)  as targetFile:
+        with io.open(targetFileName, "rb", buffering=0) as targetFile:
 
             try:
 
                 # doesn't work with new partial objects : kwargs = dict(((key, value) for (key, value) in
                 # lockingKwargs.items() if key in targetFile.lock_file.func_code.co_varnames[1:]))
                 kwargs = lockingKwargs
-                kwargs['shared'] = True
+                kwargs["shared"] = True
 
                 with targetFile.lock_file(**kwargs):
 
@@ -184,33 +223,47 @@ def chunk_reader(targetFileName, multiprocessing_lock, character=None, ioOffset=
 
                     targetFile.seek(ioOffset)
 
-                    logger("Process (reader) %s (%s) reads %s bytes at offset %s ***" % (
-                        multiprocessing.current_process().name, threading.currentThread().name, payLoad,
-                        targetFile.tell()))
+                    logger(
+                        "Process (reader) %s (%s) reads %s bytes at offset %s ***"
+                        % (
+                            multiprocessing.current_process().name,
+                            threading.currentThread().name,
+                            payLoad,
+                            targetFile.tell(),
+                        )
+                    )
 
                     data = targetFile.read(payLoad)
 
-                    if (character is not None):
-                        if (len(data) and data != character * payLoad):
+                    if character is not None:
+                        if len(data) and data != character * payLoad:
                             sys.exit(3)
 
-
             except rsfile.LockingException:
-                if (mustAlwaysSucceedLocking):
+                if mustAlwaysSucceedLocking:
                     raise
                 else:
                     # logger"couldnt lock file, ok..."
                     pass
 
 
-def lock_tester(resultQueue, targetFileName, multiprocessing_lock, multiprocess, ioOffset=0, whence=os.SEEK_SET,
-                pause=0, lockingKwargs={}, res_by_exit_code=False):
+def lock_tester(
+    resultQueue,
+    targetFileName,
+    multiprocessing_lock,
+    multiprocess,
+    ioOffset=0,
+    whence=os.SEEK_SET,
+    pause=0,
+    lockingKwargs={},
+    res_by_exit_code=False,
+):
     """Tries to lock the file with the given locking parameters, and returns whether it succeeded or not,
     and the time it took.
     """
     _init_output_streams(multiprocessing_lock)
 
-    with io.open(targetFileName, "r+b", buffering=0)  as targetFile:
+    with io.open(targetFileName, "r+b", buffering=0) as targetFile:
 
         targetFile.seek(ioOffset, whence)
 
@@ -269,8 +322,10 @@ def fd_inheritance_tester(read, write, append, fileno=None, handle=None):
             time.sleep(10)"""
 
             if not f.size() or not f.tell():
-                raise IOError("Expected a non empty file with a moved file pointer, whereas size()=%d and tell()=%d" % (
-                    f.size(), f.tell()))
+                raise IOError(
+                    "Expected a non empty file with a moved file pointer, whereas size()=%d and tell()=%d"
+                    % (f.size(), f.tell())
+                )
 
             if read:
                 f.seek(0)
