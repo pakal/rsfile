@@ -20,7 +20,7 @@ build: off
 image: Ubuntu
 
 install:
-- python -m pip install sphinx tabulate
+- python -m pip install sphinx tabulate tox
 
 test_script:
 - python -m tox
