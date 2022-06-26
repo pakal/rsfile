@@ -105,15 +105,22 @@ class _text_forwarder_mixin(object):
         self._checkClosed()
         raise defs.BadValueTypeError("Text stream can't be read into buffer")
 
-    def __repr__(self):
-        self.buffer  # raises exception if object is uninitialized
-        clsname = self.__class__.__name__
+    def __repr__(self):  # Copied from _pyio.py!
+        result = "<{}.{}".format(self.__class__.__module__,
+                                 self.__class__.__qualname__)
         try:
             name = self.name
         except AttributeError:
-            return "<%s.%s>" % (__name__, clsname)
+            pass
         else:
-            return "<%s.%s name=%r>" % (__name__, clsname, name)
+            result += " name={0!r}".format(name)
+        try:
+            mode = self.mode
+        except AttributeError:
+            pass
+        else:
+            result += " mode={0!r}".format(mode)
+        return result + " encoding={0!r}>".format(self.encoding)
 
     def __getattr__(self, name):
         # print ("--> taking ", name, "in ", self)
