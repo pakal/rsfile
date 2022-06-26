@@ -96,31 +96,9 @@ class _text_forwarder_mixin(object):
         self._reset_buffers()
         return self.buffer.unlock_file(*args, **kwargs)
 
-    def __USELESS__close(self):
-        if not self.closed:
-            self.flush()  # we do NOT swallow exceptions !
-            self.buffer.close()
-
     def readinto(self, buffer):  # to please test suite...
         self._checkClosed()
         raise defs.BadValueTypeError("Text stream can't be read into buffer")
-
-    def __repr__(self):  # Copied from _pyio.py!
-        result = "<{}.{}".format(self.__class__.__module__,
-                                 self.__class__.__qualname__)
-        try:
-            name = self.name
-        except AttributeError:
-            pass
-        else:
-            result += " name={0!r}".format(name)
-        try:
-            mode = self.mode
-        except AttributeError:
-            pass
-        else:
-            result += " mode={0!r}".format(mode)
-        return result + " encoding={0!r}>".format(self.encoding)
 
     def __getattr__(self, name):
         # print ("--> taking ", name, "in ", self)
@@ -159,16 +137,7 @@ class RSBufferedRandom(defs.io_module.BufferedRandom, RSBufferedWriter, RSBuffer
 
 
 class RSTextIOWrapper(_text_forwarder_mixin, defs.io_module.TextIOWrapper):
-
-    def write(self, s):
-        """
-        Override to mimick more tolerant behaviour of files created by open() builtin on py27,
-        which allow mixing str and unicode.
-        """
-        if isinstance(s, bytes) and sys.version_info < (3,) and getattr(self, "_tolerant_mode", False):
-            #print("We have to coerce value %r in RSTextIOWrapper" % s)
-            s = s.decode(sys.getfilesystemencoding())  #
-        return super(RSTextIOWrapper, self).write(s)
+    pass
 
 
 class RSThreadSafeWrapper(object):
