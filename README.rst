@@ -30,12 +30,12 @@ INSTALL
 QUICKSTART
 ------------
 
-::
+.. code-block:: python
 
     from rsfile import rsopen
 
     with rsopen("myfile.txt", "w") as f:
-        f.write(u"This string will be veeeeeryyyyy safely written to file.")
+        f.write("This string will be veeeeeryyyyy safely written to file.")
 
     with rsopen("myfile.txt", "WANISB", locking=False, thread_safe=False) as f:
         f.write(b"See the docs for info on these cool new modes and parameters.")
