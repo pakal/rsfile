@@ -19,7 +19,7 @@ else:
 
 HAS_X_OPEN_FLAG = sys.version_info >= (3, 3)
 
-STDLIB_OPEN_FLAGS = set("xarw+btU")
+STDLIB_OPEN_FLAGS = set("xarw+bt" + ("U" if sys.version_info < (3, 11) else ""))  # Universal newline got removed in 3.11
 ADVANCED_OPEN_FLAGS = set("RAW+-CNSIEBT")  # + and - are only left for retrocompatibility
 
 # beware, using C-backed IO doesn't work ATM because of class layout conflicts
