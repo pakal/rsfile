@@ -977,23 +977,23 @@ class TestRSFileStreams(unittest.TestCase):
                 res1 = b - a
 
                 # LIGHTEST SYNC
-                a = time.time()
+                a = time.perf_counter()
                 for i in range(N):
                     f.write(b"b")
                     f.sync(metadata=False, full_flush=False)
-                b = time.time()
+                b = time.perf_counter()
                 res2 = b - a
 
                 assert res2 > 1.05 * res1, (res1, res2)  # it takes time to datasync()
 
                 # HEAVIEST SYNC
-                a = time.time()
+                a = time.perf_counter()
                 for i in range(N):
                     f.write(b"c")
                     # print("We issue full sync")
                     f.sync(metadata=True, full_flush=True)
                     # print("STOP")
-                b = time.time()
+                b = time.perf_counter()
                 res3 = b - a
 
                 if defs.RSFILE_IMPLEMENTATION == "windows":
