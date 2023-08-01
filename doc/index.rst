@@ -17,14 +17,14 @@ Because RSFile adds multiple layers of securities to I/O streams, and is a pure 
 
 Compatibility-wise, RSFile is compliant with the stdlib test suite (except some testcases which check C-extension behaviours or "ResourceWarning" emitting). It may be used on regular files as well as on other stream types (anonymous pipes, named fifos, devices...), although its advanced features only work on "normal", seekable and lockable, files.
 
-Beware, Windows users: `os.pipe()` returns anonymous pipes which appear seekable for stdlib io module ; `rsfile` corrects this and shows them as non-seekable.
+Beware, Windows users: `os.pipe()` returns anonymous pipes which appear seekable for stdlib io module ; `rsfile` corrects this and shows them as non-seekable. Also, non-blocking streams can become a nightmare when used with Python's IO stack, avoid them (see https://github.com/python/cpython/issues/57531).
 
 .. note::
     Regarding exceptions encountered in RSFile:
 
-    - wrong arguments raise ValueError or TypeError
-    - some improper workflows, especially when locking, lead to RuntimeError
-    - for the rest of file I/O troubles, the library will raise subclasses of **EnvironmentError**, which may depend on the backend used, and on whether or not you are under `the new OSError hierarchy <https://docs.python.org/3/library/exceptions.html#OSError>`_ ; so better catch them "defensively".
+    - Wrong arguments raise ValueError or TypeError
+    - Some improper workflows, especially when locking, lead to RuntimeError
+    - For the rest of file I/O troubles, the library will raise subclasses of **EnvironmentError**, which may depend on the backend used, and on whether or not you are under `the new OSError hierarchy <https://docs.python.org/3/library/exceptions.html#OSError>`_ ; so better catch them "defensively".
 
 .. toctree::
 	:maxdepth: 4

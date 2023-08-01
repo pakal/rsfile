@@ -108,7 +108,7 @@ Then, to achieve inheritance, three operations must be done.
 
     - On windows, the standard call "CreateProcess()" is fine.
     - On unix-like systems, a fork+exec is necessary: fork() alone doesn't do the whole job, as all 
-      file descriptors are ALWAYS duplicated to the child process ; only exec()
+      file descriptors are ALWAYS duplicated to the child process; only exec()
       can handle the closing of unwanted streams (see FD_CLOEXEC). Note that on these systems, spawn() is usually
       a wrapper around fork+exec, so it should work too.
       
@@ -123,7 +123,7 @@ care of the transfer of handle access permissions between processes (eg. Duplica
 
 
 .. rubric::
-    Not: multiprocessing and multithreading
+    Mixing multiprocessing and multithreading
 
 Some race conditions can appear on unix-like systems, if one of your threads forks while another one
 is setting up a stream. Indeed, several stream settings can only be applied by subsequent fcntl() calls,
@@ -217,7 +217,7 @@ So let's have a brief overview of lock families available to us.
 
 
 Common features
-#################
+~~~~~~~~~~~~~~~~~~~~~~
     
 - All following locking systems allow both shared (for read-only operations) and exclusive (for writing operation) locks.
 
@@ -230,7 +230,7 @@ Common features
 
 
 Windows LockFile
-#################
+~~~~~~~~~~~~~~~~~~~~~~
 
 
 **Mandatory, per-handle, non reentrant lock, allowing bytes range locking.**
@@ -254,7 +254,7 @@ Windows LockFile
 
 
 Unix Flock
-#################
+~~~~~~~~~~~~~~~~~~~~~~
 
 **Advisory, per-open-file, reentrant lock, only dealing with the whole file (no bytes range locking).** 
 
@@ -276,7 +276,7 @@ Unix Flock
 
 
 Unix Fcntl
-################
+~~~~~~~~~~~~~~~~~~~~~~
 
 .. note::
     This lock is also known as Posix lock.
@@ -308,7 +308,7 @@ a major gotcha we have to deal with, first...
 
 
 The curse of fcntl locks
-############################
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 There is a disturbing flaw in Posix fcntl lock specifications: when any file descriptor to a disk file is closed,
