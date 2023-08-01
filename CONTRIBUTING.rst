@@ -14,17 +14,17 @@ On Windows this test suite must have been selected during install, on Linux you 
 
 .. note::
     Some tests, like those concerning open() mode equivalences, or locking, are long to execute,
-    so as long as the test process consumes CPU, they're probably still working normally. Some tests, mainly
+    so as long as the test process consumes CPU, they're probably still working normally. Other tests, mainly
     concerning large files, are disabled by default and must be manually enabled by editing flags in test
-    files.
+    files (see ENABLE_LARGE_FILE_TESTS variable).
 
 
 
 Testing using TOX
 ---------------------
 
-- install the latest versions of pip, virtualenv and tox
-- run tox from the folder containing setup.py (possibly with "-e pyXY" or "-e doc" to select a specific environement):
+- Pnstall the latest versions of pip, virtualenv and tox
+- Run tox from the root folder (possibly with "-e pyXY" or "-e doc" to select a specific environment):
 
 $ tox
 
@@ -34,11 +34,9 @@ This will install RSFile into a virtual environment, and launch the test suites.
 Testing manually
 -----------------
 
-To manually launch the test suites against a specific "python" interpreter, use the different commands visible in the "tox.ini", in the form **python -m rsfile.rstest.xxxxxxx**
+To manually launch the test suites against a specific "python" interpreter, use the different commands visible in the "tox.ini", in the form **python -m rsfile.rstest.xxxxxxx**. The "src/" folder must be in your current python paths (ex. by using PYTHONPATH environment variable, or by pip-installing the repository in "editable" mode).
 
 Note that these *.py test files can't all be executed inside the same runner process (ex. using pytest), since they monkey-patch their python environment differently.
-
-Also, double-check that the "rsfile" package imported is well the one you meant, since the current working directory is usually automatically added by python to your "sys.path" on launch.
 
 If you have installed python-tabulate (https://pypi.python.org/pypi/tabulate), the retrocompatibility test will display a table listing the different file opening modes, and their features.
 
@@ -61,16 +59,12 @@ maybe modify rsfileio_win32.py to force a specific low-level backend (if on Wind
 
     $ python -m  rsfile.rstest.run_iobench
 
-Again, be aware of possible confusion between an installed and a "current dir" rsfile packages.
-
 
 BUILDING
 ++++++++++
 
-To build the rsfile package:
+To build the rsfile package, use the standard setuptools "build" command: https://setuptools.pypa.io/en/latest/userguide/quickstart.html
 
-    $ python setup.py sdist --formats=gztar,zip
-
-No need for `bdist_msi` or the weaker `bdist_wininst`: rsfile is pure-python
+Rsfile is pure-python, so buildings wheels is not necessary.
 
 
