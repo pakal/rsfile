@@ -14,9 +14,10 @@
 
 import os
 import sys
+import tomli
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(REPO_ROOT)
+sys.path.append(os.path.join(REPO_ROOT, "src"))
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -32,7 +33,7 @@ extensions = ['sphinx.ext.autodoc', 'sphinx.ext.intersphinx']
 autoclass_content = 'class'  # do NOT include __init__() docstring
 
 # cross-library links - http://www.sphinx-doc.org/en/stable/ext/intersphinx.html
-intersphinx_mapping = {'python': ('https://docs.python.org/3.5', None)}
+intersphinx_mapping = {'python': ('https://docs.python.org/3.11', None)}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -48,14 +49,21 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'RSFile'
-copyright = '2010-2022, Pascal Chambon'
+copyright = '2010-2024, Pascal Chambon'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
 # The short X.Y version.
-version = open(os.path.join(REPO_ROOT, "VERSION")).read()
+pyproject_file = os.path.join(REPO_ROOT, "pyproject.toml")
+print(pyproject_file)
+with open(pyproject_file, "rb") as fd:
+    toml_dict = tomli.load(fd)
+    #print(toml_dict)
+
+version = toml_dict["project"]["version"]
+
 # The full version, including alpha/beta/rc tags.
 release = version
 
@@ -101,7 +109,7 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages.  Major themes that come with
 # Sphinx are currently 'default' and 'sphinxdoc'.
-html_theme = 'default'
+html_theme = 'alabaster'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
