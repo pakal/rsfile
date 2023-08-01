@@ -16,7 +16,7 @@ Possible use cases for this library: concurrently writing to logs without ending
 
 Tested on CPython3, on windows and unix-like systems. *Should* work with IronPython/Jython/PyPy too, since it uses stdlib utilities and ctypes bridges.
 
-**Read the documentation here: http://rsfile.readthedocs.io/**
+**Read the documentation here: https://rsfile.readthedocs.io/en/latest/**
 
 
 INSTALL
