@@ -1,4 +1,17 @@
 
+
+Rsfile 3.1
+============
+
+* Add support for python 3.11 and 3.12b
+* Drop compatibility for Python 3.6 included
+* Remove support for "U" open() mode in Python>=3.11
+* Fix bugs regarding non-blocking pipes (see current troubles on https://github.com/python/cpython/issues/57531)
+* Switch to pyproject.toml package configuration and new "src/" layout
+* Switch to Alabaster sphinx doc template
+* Add .readthedocs.yaml configuration for Read The Docs
+
+
 Rsfile 3.0
 ============
 
