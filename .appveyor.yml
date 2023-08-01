@@ -12,6 +12,8 @@ environment:
     PYTHON: "3.9"
   - TOXENV: py310
     PYTHON: "3.10"
+  - TOXENV: py311
+    PYTHON: "3.11"
 
 stack: python %PYTHON%
 
@@ -20,7 +22,7 @@ build: off
 image: Ubuntu
 
 install:
-- python -m pip install sphinx tabulate tox
+- python -m pip install tox
 
 test_script:
 - python -m tox
