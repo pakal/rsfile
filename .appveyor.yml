@@ -2,8 +2,6 @@
 ---
 environment:
   matrix:
-  - TOXENV: py36
-    PYTHON: "3.6"
   - TOXENV: py37
     PYTHON: "3.7"
   - TOXENV: py38
@@ -14,6 +12,7 @@ environment:
     PYTHON: "3.10"
   - TOXENV: py311
     PYTHON: "3.11"
+  #FIXME add python 3.12 when available
 
 stack: python %PYTHON%
 
