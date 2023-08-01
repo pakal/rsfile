@@ -91,6 +91,10 @@ def test_original_io():
     test_io.PyIOTest.test_large_file_ops = dummyfunc  # we just skip because HEAVY AND LONG
     test_io.TextIOWrapperTest.test_repr = dummyfunc  # repr() of streams changes of course
 
+    # Skip tests dealing with details of C implementation
+    test_io.TestIOCTypes.test_immutable_types = dummyfunc
+    test_io.TestIOCTypes.test_class_hierarchy = dummyfunc
+
     # like in _pyio implementation, in rsfile, we do not detect reentrant access, nor raise RuntimeError to avoid
     # deadlocks
     test_io.PySignalsTest.test_reentrant_write_buffered = dummyfunc

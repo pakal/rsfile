@@ -228,7 +228,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
             pass
 
     def __reduce__(self):
-        raise defs.BadValueTypeError("RSFileIO is not pickleable")
+        raise defs.BadValueTypeError("cannot pickle RSFileIO")
 
     def isatty(self):
         """On OSX the fileio.c implementation fails to recognized /dev/tty as a terminal,
