@@ -13,12 +13,12 @@ python_exe = sys.executable
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 custom_env = os.environ.copy()
-custom_env["PYTHONPATH"] = str(ROOT_DIR)
+custom_env["PYTHONPATH"] = os.path.join(ROOT_DIR, "src")
 
 subprocess.check_call("%s -m coverage erase" % python_exe, shell=True, cwd=ROOT_DIR, env=custom_env)
 
 
-for test_file in glob.glob("rsfile/rstest/test_*.py"):
+for test_file in glob.glob("src/rsfile/rstest/test_*.py"):
     subprocess.check_call("%s -m coverage run -a %s" % (python_exe, test_file), shell=True, cwd=ROOT_DIR, env=custom_env)
     
 subprocess.check_call("%s -m coverage html -d htmlcov" % python_exe, shell=True, cwd=ROOT_DIR, env=custom_env)
