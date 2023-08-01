@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-
 from rsfile.rstest import _utilities
 
 _utilities.patch_test_supports()
@@ -143,10 +142,19 @@ def test_original_io():
     # Skip C-oriented tests
     test_file.CAutoFileTests = dummyklass
 
-    ## To launch a single test ##
-    # mytest = test_io.PyIOTest('test_invalid_newline')
-    # res = mytest.run()
-    # print(res)
+    ## Use this to launch a single test ##
+    '''
+    from unittest import TextTestResult
+	from unittest.runner import _WritelnDecorator
+	from rsfile import rsopen
+    mytest = test_io.PyMiscIOTest('test_nonblock_pipe_write_smallbuf')
+    mytest.open = rsopen
+    mytest.BlockingIOError = BlockingIOError
+    res = mytest.run(result=TextTestResult(_WritelnDecorator(sys.stdout), "", 1))
+    print(res)
+    res.printErrors()
+    return
+    '''
 
     all_test_suites = []
 

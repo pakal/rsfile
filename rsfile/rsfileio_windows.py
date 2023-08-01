@@ -179,10 +179,13 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         #print(">>> Detecting _use_nonblocking_pipe_write_hack!", write, BLOCKING_MODES_ENABLED)
         if write and BLOCKING_MODES_ENABLED:
             _fileno = win32._open_osfhandle(self._handle, (int(append) and os.O_APPEND))
-            if not os.get_blocking(_fileno):
-                #print(">>> We want to use _use_nonblocking_pipe_write_hack!")
-                self._fileno = _fileno
-                self._use_nonblocking_pipe_write_hack = True
+            try:
+                if not os.get_blocking(_fileno):
+                    #print(">>> We want to use _use_nonblocking_pipe_write_hack!")
+                    self._fileno = _fileno
+                    self._use_nonblocking_pipe_write_hack = True
+            except OSError:
+                pass  # probably not a PIPE
 
         # WHATEVER the origin of the stream, we initialize these fields:
         self._lock_registry_inode = self._handle  # we don't care about real inode unique_id, since win32 already
@@ -355,7 +358,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         #print(">> WIN32 READING BYTES", n)
         try:
             (res, mybytes) = win32.ReadFile(self._handle, n)  # returns bytes
-            print(">> WIN32 READ BYTES", len(mybytes))
+            #print(">> WIN32 READ BYTES", len(mybytes))
             return mybytes
         except win32.error as e:
             # ERROR_NO_DATA in non-blocking mode, wrongly reported as "the pipe is being closed"
@@ -410,7 +413,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
 
         # Nothing special for to do with errCode, for files, it seems
         # see https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-writefile
-        print(">> WIN32 WRITE RETURNED", errCode, bytes_written)
+        #print(">> WIN32 WRITE RETURNED", errCode, bytes_written)
         if not bytes_written:
             #print(">> WIN32 WRITE FALLBACK TO NONE")
             return None  # We mimick effects of EAGAIN on Unix
