@@ -189,9 +189,11 @@ def WriteFile(handle, data, overlapped=None):
 
     # no need to use WriteFileEx here...
     res = win32api.WriteFile(handle, address, len(data), ctypes.byref(bytes_written), overlapped)
-
+    #err_ = win32api.GetLastError()
+    #print(">> WRITE RES IS", res, bytes_written.value, err_, overlapped)
     if not res:
         err = ctypes.GetLastError()
+        #print(">> SAW WRITE ERROR", err, "vs", ERROR_IO_PENDING)
         if err != ERROR_IO_PENDING:
             raise ctypes.WinError(err)
     else:

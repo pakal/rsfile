@@ -25,6 +25,8 @@ except ImportError:
 
 WIN32_MSG_ENCODING = locale.getpreferredencoding()
 
+BLOCKING_MODES_ENABLED = hasattr(os, "set_blocking")  # New in python 3.12 for Windows
+
 
 class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
     __POSITION_REFERENCES = {
@@ -104,7 +106,6 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
             self._fileno = fileno
             # print "FILE OPENED VIA FILENO ", fileno
             import msvcrt
-
             assert msvcrt.get_osfhandle == win32._get_osfhandle
             self._handle = win32._get_osfhandle(fileno)  # required immediately
 
@@ -173,6 +174,15 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
             self._handle = int(handle)
             if hasattr(handle, "Detach"):  # pywin32
                 handle.Detach()
+
+        self._use_nonblocking_pipe_write_hack = False
+        #print(">>> Detecting _use_nonblocking_pipe_write_hack!", write, BLOCKING_MODES_ENABLED)
+        if write and BLOCKING_MODES_ENABLED:
+            _fileno = win32._open_osfhandle(self._handle, (int(append) and os.O_APPEND))
+            if not os.get_blocking(_fileno):
+                #print(">>> We want to use _use_nonblocking_pipe_write_hack!")
+                self._fileno = _fileno
+                self._use_nonblocking_pipe_write_hack = True
 
         # WHATEVER the origin of the stream, we initialize these fields:
         self._lock_registry_inode = self._handle  # we don't care about real inode unique_id, since win32 already
@@ -342,8 +352,17 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
     @_broken_pipe_ignorer
     @_win32_error_converter
     def _inner_read(self, n):
-        (res, mybytes) = win32.ReadFile(self._handle, n)  # returns bytes
-        return mybytes
+        #print(">> WIN32 READING BYTES", n)
+        try:
+            (res, mybytes) = win32.ReadFile(self._handle, n)  # returns bytes
+            print(">> WIN32 READ BYTES", len(mybytes))
+            return mybytes
+        except win32.error as e:
+            # ERROR_NO_DATA in non-blocking mode, wrongly reported as "the pipe is being closed"
+            if e.winerror == 232:
+                #print(">> WIN32 READ RETURNS NONE")
+                return None
+            raise
 
     '''
     @_win32_error_converter  # abandoned for now
@@ -366,6 +385,8 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
     @_win32_error_converter
     def _inner_write(self, buffer):
 
+        #print(">> WIN32 WRITING BYTES", len(buffer))
+
         if self._append:  # yep, no atomicity around here, as in truncate(), since FILE_APPEND_DATA can't be used
             self._inner_seek(0, defs.SEEK_END)
 
@@ -374,10 +395,28 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
             # we extend the file with zeros until current file pointer position
             self._inner_extend(cur_pos, zero_fill=True)
 
-        (res, bytes_written) = win32.WriteFile(self._handle, buffer)
-        # nothing to do with res, for files, it seems
+        if self._use_nonblocking_pipe_write_hack:
+            # Non-blocking pipes have horrendous behaviour on Windows
+            # See https://github.com/python/cpython/issues/101881
+            # So we rely on CPython hacks to force-write data into pipe
+            assert self._fileno, self._fileno
+            try:
+                bytes_written = os.write(self._fileno, buffer)
+            except BlockingIOError:
+                bytes_written = 0
+            errCode = None
+        else:
+            (errCode, bytes_written) = win32.WriteFile(self._handle, buffer)
+
+        # Nothing special for to do with errCode, for files, it seems
+        # see https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-writefile
+        print(">> WIN32 WRITE RETURNED", errCode, bytes_written)
+        if not bytes_written:
+            #print(">> WIN32 WRITE FALLBACK TO NONE")
+            return None  # We mimick effects of EAGAIN on Unix
 
         # we let the file pointer where it is, even if we're in append mode (no come-back to previous reading position)
+        #print(">> WIN32 WRITTEN BYTES", bytes_written)
         return bytes_written
 
     # no need for @_win32_error_converter
