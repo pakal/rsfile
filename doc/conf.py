@@ -16,13 +16,12 @@ import os
 import sys
 import tomli
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(os.path.join(REPO_ROOT, "src"))
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-#sys.path.append(os.path.abspath('.'))
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.join(REPO_ROOT, "src"))
 
 # -- General configuration -----------------------------------------------------
 
@@ -57,7 +56,7 @@ copyright = '2010-2024, Pascal Chambon'
 #
 # The short X.Y version.
 pyproject_file = os.path.join(REPO_ROOT, "pyproject.toml")
-print(pyproject_file)
+#print(pyproject_file)
 with open(pyproject_file, "rb") as fd:
     toml_dict = tomli.load(fd)
     #print(toml_dict)

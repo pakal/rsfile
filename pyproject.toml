@@ -33,6 +33,10 @@ classifiers = [
 dependencies = [
 ]
 
+[project.urls]
+Repository = "https://github.com/pakal/rsfile"
+Documentation = "https://rsfile.readthedocs.io/"
+
 #[tool.setuptools]
 #packages = ["my_package"]
 
