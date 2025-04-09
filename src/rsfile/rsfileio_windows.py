@@ -203,13 +203,13 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         """
         # print "<<<File closed : ", self._name
         if getattr(self, "_closefd", False):  # always True except when wrapping external file descriptors
-            if getattr(self, "_fileno", None):
+            if getattr(self, "_fileno", None) is not None:
                 # WARNING - necessary to avoid leaks of C file descriptors
                 try:
                     os.close(self._fileno)  # this closes the underlying native handle as well
                 except OSError as e:
                     raise IOError(errno.EBADF, "bad file descriptor")
-            else:
+            elif getattr(self, "_handle", None) is not None:
                 win32.CloseHandle(self._handle)
 
     @_win32_error_converter
