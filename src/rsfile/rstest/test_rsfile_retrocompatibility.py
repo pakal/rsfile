@@ -81,7 +81,7 @@ def __BROKEN__reopener_via_handle(name, mode):
     f = rsfile.rsopen(name, mode=mode, locking=False, thread_safe=False)
     _disown_file_descriptor(f)
     handle = f.handle()
-    assert handle, handle
+    assert handle is not None, handle
     new_f = rsfile.rsopen(mode=mode, handle=handle, closefd=True)
     assert new_f.handle() == handle
     if defs.RSFILE_IMPLEMENTATION == "windows":

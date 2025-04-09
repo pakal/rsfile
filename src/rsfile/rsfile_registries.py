@@ -107,7 +107,7 @@ class IntraProcessLockRegistryClass(object):
     def _try_locking_range(self, unique_id, handle, new_length, new_start, new_shared):
         # unprotected method - beware
         assert unique_id, unique_id
-        assert handle, handle
+        assert handle is not None, handle
 
         new_end = (new_start + new_length) if new_length else None  # None -> infinity
 
@@ -145,7 +145,7 @@ class IntraProcessLockRegistryClass(object):
         Returns True if there are not locks left for that unique_id
         """
         assert unique_id, unique_id
-        assert handle, handle
+        assert handle is not None, handle
 
         # unprotected method - beware
         if not self._ensure_entry_exists(unique_id, create=False):
@@ -172,7 +172,7 @@ class IntraProcessLockRegistryClass(object):
 
     def register_file_lock(self, unique_id, handle, length, offset, blocking, shared, timeout):
         assert unique_id, unique_id
-        assert handle, handle
+        assert handle is not None, handle
         with self.mutex:
 
             self._check_forking()
@@ -196,7 +196,7 @@ class IntraProcessLockRegistryClass(object):
 
     def unregister_file_lock(self, unique_id, handle, length, offset):
         assert unique_id, unique_id
-        assert handle, handle
+        assert handle is not None, handle
         with self.mutex:
             self._check_forking()
 
@@ -204,7 +204,7 @@ class IntraProcessLockRegistryClass(object):
 
     def remove_file_locks(self, unique_id, handle):
         assert unique_id, unique_id
-        assert handle, handle
+        assert handle is not None, handle
         with self.mutex:
 
             self._check_forking()
