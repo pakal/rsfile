@@ -1,3 +1,8 @@
+Rsfile 3.2
+============
+
+* Strengthen support for python 3.12
+* Add support for python 3.13
 
 
 Rsfile 3.1

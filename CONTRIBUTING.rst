@@ -23,7 +23,7 @@ On Windows this test suite must have been selected during install, on Linux you 
 Testing using TOX
 ---------------------
 
-- Pnstall the latest versions of pip, virtualenv and tox
+- Install the latest versions of pip, virtualenv and tox
 - Run tox from the root folder (possibly with "-e pyXY" or "-e doc" to select a specific environment):
 
 $ tox

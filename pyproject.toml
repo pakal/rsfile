@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "RSFile"
-version = "3.1"
+version = "3.2"
 authors = [
     {name = "Pascal Chambon", email = "pythoniks@gmail.com"},
 ]
@@ -17,13 +17,13 @@ classifiers = [
     "Intended Audience :: Developers",
     "Intended Audience :: Information Technology",
     "Intended Audience :: System Administrators",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: System :: Filesystems",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Operating System :: Microsoft :: Windows",
@@ -36,12 +36,3 @@ dependencies = [
 [project.urls]
 Repository = "https://github.com/pakal/rsfile"
 Documentation = "https://rsfile.readthedocs.io/"
-
-#[tool.setuptools]
-#packages = ["my_package"]
-
-#[tool.setuptools.packages.find]
-#where = ["src"]  # list of folders that contain the packages (["."] by default)
-#include = ["rsfile*"]  # package names should match these glob patterns (["*"] by default)
-#exclude = []  # exclude packages matching these glob patterns (empty by default)
-#namespaces = false  # to disable scanning PEP 420 namespaces (true by default)
