@@ -14,6 +14,10 @@ from .rsfile_registries import IntraProcessLockRegistry, _default_rsfile_options
 
 USE_MEMORYVIEW_CAST = hasattr(memoryview, "cast")
 
+# Does io.IOBase finalizer log the exception if the close() method fails?
+# The exception is ignored silently by default in release build.
+_IOBASE_EMITS_UNRAISABLE = (sys.version_info >= (3, 13)) or (hasattr(sys, "gettotalrefcount") or sys.flags.dev_mode)
+
 
 class RSFileIOAbstract(defs.io_module.RawIOBase):
     """
@@ -105,8 +109,13 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         if must_create and must_not_create:
             raise defs.BadValueTypeError("File can't be wanted both as existing and unexisting.")
 
-        if not closefd and not (fileno or handle):
+        if not closefd and not (fileno is not None or handle is not None):
             raise defs.BadValueTypeError("Cannot use closefd=False without providing a descriptor to wrap.")
+
+        self._unique_id = None  # unique identifier of the file, eg. (device, inode) pair
+        self._fileno = None  # C style file descriptor, might be created only on request
+        self._handle = None  # native platform handle other than fileno - if existing
+        self._closefd = closefd  # set BEFORE creating streams
 
         # variables to determine future write/read operations
         self._readable = read
@@ -123,6 +132,11 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
             name = path
             self._origin = "path"
         elif fileno is not None:
+            if isinstance(fileno, bool):
+                import warnings
+                warnings.warn("bool is used as a file descriptor",
+                              RuntimeWarning, stacklevel=3)
+                fileno = int(fileno)
             if int(fileno) < 0:
                 raise defs.BadValueTypeError("A fileno to be wrapped can't be negative.")
             name = fileno
@@ -142,11 +156,6 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
             except EnvironmentError: # weirdo path, just make it absolue...
                 self._path = os.path.abspath(path)
         """
-
-        self._unique_id = None  # unique identifier of the file, eg. (device, inode) pair
-        self._fileno = None  # C style file descriptor, might be created only on request
-        self._handle = None  # native platform handle other than fileno - if existing
-        self._closefd = closefd  # set BEFORE creating streams
 
         if path:
             null_char = "\0" if isinstance(path, str) else b"\0"
@@ -187,8 +196,9 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
                 # Else it's an Illegal Seek, probably because of a Pipe stream, so we let go
 
     def __repr__(self):
-        return '<rsfile.RSFileIO name=%s mode="%s" origin="%s" closefd=%s>' % (
-            '"%s"' % self.name if isinstance(self.name, str) else self.name,
+        return "<%s name=%r mode='%s' origin='%s' closefd=%s>" % (
+            self.__class__.__name__,
+            self.name,
             self.mode,
             self.origin,
             self._closefd,
@@ -201,19 +211,22 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
             try:
                 defs.io_module.RawIOBase.close(self)  # we first mark the stream as closed... it flushes, also.
             finally:
-                # even if implicit flush() failed, we properly close underlying streams
 
                 with IntraProcessLockRegistry.mutex:
 
-                    for (handle, shared, start, end) in IntraProcessLockRegistry.remove_file_locks(
-                        self._lock_registry_inode, self._lock_registry_descriptor
-                    ):
-                        # print (">>>>>>>> ", (handle, shared, start, end))
-                        length = None if end is None else (end - start)
-                        self._inner_file_unlock(length, start)
+                    # We are careful, in case object initialization failed
+                    if hasattr(self, "_lock_registry_inode") and hasattr(self, "_lock_registry_descriptor"):
+                        for (handle, shared, start, end) in IntraProcessLockRegistry.remove_file_locks(
+                            self._lock_registry_inode, self._lock_registry_descriptor
+                        ):
+                            # print (">>>>>>>> ", (handle, shared, start, end))
+                            length = None if end is None else (end - start)
+                            self._inner_file_unlock(length, start)
 
-                    self._inner_close_streams()  # should mark the raw stream as closed even if some operations fail
+                    # Mark the raw stream as closed, even if some operations failed
+                    self._inner_close_streams()  # Might raise OverflowError
 
+    '''
     def __del__(self):
         """Destructor.  Calls close()."""
         # The try/except block is in case this is called at program
@@ -226,6 +239,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
             self.close()
         except:
             pass
+    '''
 
     def __reduce__(self):
         raise defs.BadValueTypeError("cannot pickle RSFileIO")
@@ -253,6 +267,8 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
     def mode(self):
 
         # see _fileio.c reference implementation
+        if self.closed:
+            return "closed"  # We can't call writable() etc. on closed stream
 
         if defs.HAS_X_OPEN_FLAG:
             if self._must_create:
@@ -710,4 +726,5 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         self._unsupported("file_unlock")
 
 
+assert RSFileIOAbstract.__del__ is defs.io_module.IOBase.__del__  # Ensure the default implementation is used
 defs.io_module.RawIOBase.register(RSFileIOAbstract)

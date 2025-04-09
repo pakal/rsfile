@@ -18,7 +18,23 @@ def BUILTIN_OPEN_FUNC_REPLACEMENT(*args, **kwargs):
 
 
 # HACK, else, it becomes a bound method in test suites...
-BUILTIN_OPEN_FUNC_REPLACEMENT = functools.partial(BUILTIN_OPEN_FUNC_REPLACEMENT)
+BUILTIN_OPEN_FUNC_REPLACEMENT = staticmethod(functools.partial(BUILTIN_OPEN_FUNC_REPLACEMENT))
+
+
+# we replace the most basic file io type by a backward-compatible but enhanced version
+class RSFileIOWrapper(RSFileIO):
+    """
+    Interface to rsFile accepting the limited "fopen()" modes (no file locking, no O_EXCL|O_CREAT semantic...)
+    """
+
+    def __init__(self, name, mode="r", closefd=True):
+
+        (raw_kwargs, extended_kwargs) = parse_standard_args(name, mode, None, None, closefd)
+        if extended_kwargs["text"]:
+            raise BadValueTypeError("Raw stream can't be created in text mode")
+        RSFileIO.__init__(self, **raw_kwargs)
+        if self.seekable() and extended_kwargs["truncate"]:
+            self.truncate(0)  # this mimicks basic rawFileIO, without file locking
 
 
 def monkey_patch_io_module(module=None):
@@ -32,26 +48,10 @@ def monkey_patch_io_module(module=None):
 
     if module is None:
         import io
-
         module = io
 
-    # we replace the most basic file io type by a backward-compatible but enhanced version
-    class RSFileIORawWrapper(RSFileIO):
-        """
-        Interface to rsFile accepting the limited "fopen()" modes (no file locking, no O_EXCL|O_CREAT semantic...)
-        """
-
-        def __init__(self, name, mode="r", closefd=True):
-
-            (raw_kwargs, extended_kwargs) = parse_standard_args(name, mode, None, None, closefd)
-            if extended_kwargs["text"]:
-                raise BadValueTypeError("Raw stream can't be created in text mode")
-            RSFileIO.__init__(self, **raw_kwargs)
-            if self.seekable() and extended_kwargs["truncate"]:
-                self.truncate(0)  # this mimicks basic rawFileIO, without file locking
-
     # Important Patching ! #
-    module.FileIO = RSFileIORawWrapper
+    module.FileIO = RSFileIOWrapper
     module.BufferedReader = RSBufferedReader
     module.BufferedWriter = RSBufferedWriter
     module.BufferedRandom = RSBufferedRandom

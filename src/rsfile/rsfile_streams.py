@@ -21,6 +21,15 @@ else:
         raise ImportError("No unix backend available : %s" % e)
 
 
+def __rsfile_stream_repr__(self):
+    clsname = self.__class__.__name__
+    try:
+        name = self.name
+    except AttributeError:
+        return "<%s>" % clsname
+    else:
+        return "<%s name=%r>" % (clsname, name)
+
 class _buffer_forwarder_mixin(object):
     def _reset_buffers(self):
         self.seek(0, os.SEEK_CUR)  # we flush i/o buffers, didn't work on py26
@@ -55,14 +64,7 @@ class _buffer_forwarder_mixin(object):
             finally:
                 self.raw.close()
 
-    def __repr__(self):
-        clsname = self.__class__.__name__
-        try:
-            name = self.name
-        except AttributeError:
-            return "<%s.%s>" % (__name__, clsname)
-        else:
-            return "<%s.%s name=%r>" % (__name__, clsname, name)
+    __repr__ = __rsfile_stream_repr__
 
     def __getattr__(self, name):
         # print ("--> taking ", name, "in ", self)
@@ -101,6 +103,8 @@ class _text_forwarder_mixin(object):
     def readinto(self, buffer):  # to please test suite...
         self._checkClosed()
         raise defs.BadValueTypeError("Text stream can't be read into buffer")
+
+    __repr__ = __rsfile_stream_repr__
 
     def __getattr__(self, name):
         # print ("--> taking ", name, "in ", self)
@@ -173,7 +177,7 @@ class RSThreadSafeWrapper(object):
 
         if not name.startswith("_") and callable(attr):
             # print ("<<<<<<< WRAPPING METHOD", name)
-            attr = functools.partial(self._secure_call, name)
+            attr = staticmethod(functools.partial(self._secure_call, name))
             # IMPORTANT : cache the thread-safe caller in object, so that we bypass this __getattr__ next time
             setattr(self, name, attr)
 
@@ -186,7 +190,7 @@ class RSThreadSafeWrapper(object):
         return "Thread Safe Wrapper around %s" % self.wrapped_stream
 
     def __repr__(self):
-        return "RSThreadSafeWrapper(%r)" % self.wrapped_stream
+        return "<RSThreadSafeWrapper around %r>" % self.wrapped_stream
 
     def __enter__(self):
         """Context management protocol.  Returns self."""

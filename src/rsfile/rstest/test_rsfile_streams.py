@@ -162,18 +162,32 @@ class TestRSFileStreams(unittest.TestCase):
         bad_fd = _make_bad_fd()
         self.assertRaises(IOError, io.open, bad_fd, "wb", buffering=0)
 
-    def testRSFileIORepr(self):
+    def testStreamReps(self):
         fd = os.open(TESTFN, os.O_WRONLY | os.O_CREAT)
         try:
             with io.FileIO(fd, "w", closefd=False) as f:
                 assert f.closefd == False
-                self.assertEqual(repr(f), """<rsfile.RSFileIO name=%r mode="wb" origin="fileno" closefd=False>""" % fd)
+                self.assertEqual(repr(f), """<RSFileIOWrapper name=%r mode='wb' origin='fileno' closefd=False>""" % fd)
+            self.assertEqual(repr(f), """<RSFileIOWrapper name=%r mode='closed' origin='fileno' closefd=False>""" % fd)
         finally:
             os.close(fd)
 
         with io.FileIO(TESTFN, "w") as f:
             assert f.closefd == True
-            self.assertEqual(repr(f), """<rsfile.RSFileIO name="%s" mode="wb" origin="path" closefd=True>""" % TESTFN)
+            self.assertEqual(repr(f), """<RSFileIOWrapper name='%s' mode='wb' origin='path' closefd=True>""" % TESTFN)
+        self.assertEqual(repr(f), """<RSFileIOWrapper name='%s' mode='closed' origin='path' closefd=True>""" % TESTFN)
+
+        with open(TESTFN, "wt", encoding="utf8") as f:
+            self.assertEqual(repr(f), "<RSTextIOWrapper name='@TESTING'>")
+        self.assertEqual(repr(f), "<RSTextIOWrapper name='@TESTING'>")
+
+        with open(TESTFN, "rb") as f:
+            self.assertEqual(repr(f), "<RSBufferedReader name='@TESTING'>")
+        self.assertEqual(repr(f), "<RSBufferedReader name='@TESTING'>")
+
+        with open(TESTFN, "rb", buffering=0) as f:
+            self.assertEqual(repr(f), "<RSFileIO name='@TESTING' mode='rb' origin='path' closefd=True>")
+        self.assertEqual(repr(f), "<RSFileIO name='@TESTING' mode='closed' origin='path' closefd=True>")
 
     def testRawFileGarbageCollection(self):
         # FileIO objects are collected, and collecting them flushes

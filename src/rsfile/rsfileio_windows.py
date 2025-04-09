@@ -199,12 +199,11 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         is also closed by a call to _close, so it is not necessary to
         call the Win32 function CloseHandle on the original handle.
 
-        This function may raise IOError !
+        This function may raise IOError/OverflowError !
         """
-
         # print "<<<File closed : ", self._name
-        if self._closefd:  # always True except when wrapping external file descriptors
-            if self._fileno:
+        if getattr(self, "_closefd", False):  # always True except when wrapping external file descriptors
+            if getattr(self, "_fileno", None):
                 # WARNING - necessary to avoid leaks of C file descriptors
                 try:
                     os.close(self._fileno)  # this closes the underlying native handle as well
