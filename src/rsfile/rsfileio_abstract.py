@@ -181,8 +181,8 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
 
             # These two keys, set by _inner_create_streams(), are used to
             # identify the file and handle in the intraprocess lock registry
-            assert self._lock_registry_inode, self._lock_registry_inode
-            assert self._lock_registry_descriptor, self._lock_registry_descriptor
+            assert self._lock_registry_inode is not None, self._lock_registry_inode
+            assert self._lock_registry_descriptor is not None, self._lock_registry_descriptor
 
         except OverflowError as e:
             raise defs.BadValueTypeError(e)  # probably a too big filedescriptor number

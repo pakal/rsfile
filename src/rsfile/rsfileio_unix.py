@@ -143,13 +143,14 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
 
     @_unix_error_converter
     def _inner_close_streams(self):
-        if self._closefd:
-            with IntraProcessLockRegistry.mutex:
-                # safety mechanisms for fcntl() and its Unlock-All-On-Single-Close semantic
-                IntraProcessLockRegistry.add_unique_id_data(self._lock_registry_inode, self._lock_registry_descriptor)
-                self._purge_pending_related_file_descriptors()
-                # we assume that there are chances for this to be the only handle pointing this precise file
-                IntraProcessLockRegistry.try_deleting_unique_id_entry(self._lock_registry_inode)
+        if getattr(self, "_closefd", False):
+            if hasattr(self, "_lock_registry_inode") and hasattr(self, "_lock_registry_descriptor"):
+                with IntraProcessLockRegistry.mutex:
+                    # safety mechanisms for fcntl() and its Unlock-All-On-Single-Close semantic
+                    IntraProcessLockRegistry.add_unique_id_data(self._lock_registry_inode, self._lock_registry_descriptor)
+                    self._purge_pending_related_file_descriptors()
+                    # we assume that there are chances for this to be the only handle pointing this precise file
+                    IntraProcessLockRegistry.try_deleting_unique_id_entry(self._lock_registry_inode)
 
     @_unix_error_converter
     def _inner_reduce(self, size):
