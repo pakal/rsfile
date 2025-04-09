@@ -67,6 +67,8 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
     See RSOpen() docs for the semantic of other parameters.
     """
 
+    _initialization_finished = False
+
     def __init__(
         self,
         path=None,  # it seems pywin32 already uses unicode versions of these functions, so it's cool  :-)
@@ -195,7 +197,12 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
                     raise
                 # Else it's an Illegal Seek, probably because of a Pipe stream, so we let go
 
+        self._initialization_finished = True
+
     def __repr__(self):
+        if not self._initialization_finished:
+            raise ValueError("Uninitialized raw file instance")
+
         return "<%s name=%r mode='%s' origin='%s' closefd=%s>" % (
             self.__class__.__name__,
             self.name,

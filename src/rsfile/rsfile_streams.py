@@ -22,6 +22,9 @@ else:
 
 
 def __rsfile_stream_repr__(self):
+    if not self._initialization_finished:
+        raise ValueError("Uninitialized stream instance")
+
     clsname = self.__class__.__name__
     try:
         name = self.name
@@ -30,7 +33,15 @@ def __rsfile_stream_repr__(self):
     else:
         return "<%s name=%r>" % (clsname, name)
 
+
 class _buffer_forwarder_mixin(object):
+
+    _initialization_finished = False
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._initialization_finished = True
+
     def _reset_buffers(self):
         self.seek(0, os.SEEK_CUR)  # we flush i/o buffers, didn't work on py26
 
@@ -75,6 +86,13 @@ class _buffer_forwarder_mixin(object):
 
 
 class _text_forwarder_mixin(object):
+
+    _initialization_finished = False
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._initialization_finished = True
+
     def _reset_buffers(self):
         self.seek(0, os.SEEK_CUR)  # we flush i/o buffers, didn't work on py26
 
