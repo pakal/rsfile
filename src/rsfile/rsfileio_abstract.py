@@ -529,7 +529,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
             raise defs.BadValueTypeError("offset must be None or an integer.")
 
         if whence not in defs.SEEK_VALUES:
-            raise defs.BadValueTypeError("whence must be a valid SEEK_\* value")
+            raise defs.BadValueTypeError("whence must be a valid SEEK_* value")
 
         if shared is not None and shared not in (True, False):
             raise defs.BadValueTypeError("shared must be None or True/False.")
@@ -632,7 +632,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
             raise defs.BadValueTypeError("offset must be None or positive integer.")
 
         if whence not in defs.SEEK_VALUES:
-            raise defs.BadValueTypeError("whence must be a valid SEEK_\* value")
+            raise defs.BadValueTypeError("whence must be a valid SEEK_* value")
 
         # import multiprocessing
         # print ("---------->", multiprocessing.current_process().name, " UNLOCKED ", (unix.LOCK_UN, length,
