@@ -18,8 +18,9 @@ def BUILTIN_OPEN_FUNC_REPLACEMENT(*args, **kwargs):
 
 
 # HACK, else, it becomes a bound method in test suites...
-BUILTIN_OPEN_FUNC_REPLACEMENT = staticmethod(functools.partial(BUILTIN_OPEN_FUNC_REPLACEMENT))
-
+BUILTIN_OPEN_FUNC_REPLACEMENT = functools.partial(BUILTIN_OPEN_FUNC_REPLACEMENT)
+if sys.version_info >= (3, 13):
+    BUILTIN_OPEN_FUNC_REPLACEMENT = staticmethod(BUILTIN_OPEN_FUNC_REPLACEMENT)   # To avoid warnings with functools.partial()
 
 # we replace the most basic file io type by a backward-compatible but enhanced version
 class RSFileIOWrapper(RSFileIO):

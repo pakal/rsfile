@@ -188,8 +188,8 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
                 pass  # probably not a PIPE
 
         # WHATEVER the origin of the stream, we initialize these fields:
-        self._lock_registry_inode = self._handle  # we don't care about real inode unique_id, since win32 already
-        # distinguishes which handle owns a lock
+        # we don't care about real inode unique_id, since win32 already distinguishes which handle owns a lock
+        self._lock_registry_inode = self._handle
         self._lock_registry_descriptor = self._handle
 
     @_win32_error_converter
@@ -210,6 +210,7 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
                 except OSError as e:
                     raise IOError(errno.EBADF, "bad file descriptor")
             elif getattr(self, "_handle", None) is not None:
+                assert not isinstance(self._handle, str), repr(self._handle)
                 win32.CloseHandle(self._handle)
 
     @_win32_error_converter

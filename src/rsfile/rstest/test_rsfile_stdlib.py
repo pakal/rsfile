@@ -116,6 +116,9 @@ def test_original_io():
     test_io.PyBufferedReaderTest.test_read_on_closed = dummyfunc
     test_io.PyBufferedRandomTest.test_read_on_closed = dummyfunc
 
+    # Our __repr__() doesn't break on incomplete instances
+    test_io.PyTextIOWrapperTest.test_uninitialized = dummyfunc()
+
     # The __all__ check fails due to patched objects having a wrong __module__ attr
     test_io.MiscIOTest.test___all__ = dummyfunc
 

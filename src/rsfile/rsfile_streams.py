@@ -177,9 +177,10 @@ class RSThreadSafeWrapper(object):
 
         if not name.startswith("_") and callable(attr):
             # print ("<<<<<<< WRAPPING METHOD", name)
-            attr = staticmethod(functools.partial(self._secure_call, name))
+            def _method_proxy(*args, **kwargs):
+                return self._secure_call(name, *args, **kwargs)
             # IMPORTANT : cache the thread-safe caller in object, so that we bypass this __getattr__ next time
-            setattr(self, name, attr)
+            setattr(self, name, _method_proxy)
 
         return attr
 
