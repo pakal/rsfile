@@ -1,8 +1,14 @@
+Rsfile 3.3
+============
+
+* Fix python 3.13 compatibility under Linux/OSX
+
+
 Rsfile 3.2
 ============
 
 * Strengthen support for python 3.12
-* Add support for python 3.13
+* Add support for python 3.13 (on Windows)
 
 
 Rsfile 3.1
