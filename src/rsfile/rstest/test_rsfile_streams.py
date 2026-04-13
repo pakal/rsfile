@@ -488,7 +488,8 @@ class TestRSFileStreams(unittest.TestCase):
 
     def testReadWriteDataTypes(self):
 
-        array_type = b"b" if sys.version_info < (3,) else "b"
+        # Python 3+ only (minimum version is 3.7)
+        array_type = "b"
 
         with io.open(TESTFN, "wb") as f:
             f.write(b"ab")

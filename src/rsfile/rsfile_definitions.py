@@ -17,7 +17,9 @@ if sys.platform == "win32":  # even on 64bits windows OS
 else:
     RSFILE_IMPLEMENTATION = "unix"
 
-HAS_X_OPEN_FLAG = sys.version_info >= (3, 3)
+# The "x" (exclusive creation) flag is available in Python 3.3+
+# Since minimum version is 3.7, it's always available
+HAS_X_OPEN_FLAG = True
 
 STDLIB_OPEN_FLAGS = set("xarw+bt" + ("U" if sys.version_info < (3, 11) else ""))  # Universal newline got removed in 3.11
 ADVANCED_OPEN_FLAGS = set("RAW+-CNSIEBT")  # + and - are only left for retrocompatibility
@@ -30,7 +32,7 @@ class BadValueTypeError(ValueError, TypeError):
     pass  # joined class to handle differences between different python version...
 
 
-class LockingException(IOError):
+class LockingException(OSError):
     """
     Exception raised when rsfile detects a locking problem, but backends
     might raise their own EnvironmentError subclasses, too so beware.

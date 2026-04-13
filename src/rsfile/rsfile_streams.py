@@ -56,13 +56,6 @@ class _buffer_forwarder_mixin(object):
         self._reset_buffers()
         return self.raw.unlock_file(*args, **kwargs)
 
-    def ___USELESS__close(self):
-        if not self.closed:
-            try:
-                # may raise BlockingIOError or BrokenPipeError etc
-                self.flush()
-            finally:
-                self.raw.close()
 
     __repr__ = __rsfile_stream_repr__
 

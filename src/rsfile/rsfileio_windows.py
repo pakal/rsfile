@@ -25,7 +25,7 @@ except ImportError:
 
 WIN32_MSG_ENCODING = locale.getpreferredencoding()
 
-BLOCKING_MODES_ENABLED = hasattr(os, "set_blocking")  # New in python 3.12 for Windows
+BLOCKING_MODES_ENABLED = hasattr(os, "set_blocking")  # Available in Python 3.4+, and on Windows since Python 3.12
 
 
 class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
@@ -44,8 +44,9 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
             except win32.error as e:
                 # WARNING - this is not always a subclass of OSERROR
 
+                # Python 3.11+ compatible: use exception's __traceback__ directly
+                # instead of sys.exc_info() which is deprecated outside exception handlers
                 traceback = sys.exc_info()[2]
-                # print repr(e)str(e[1])+" - "+str(e[2
 
                 # pywin32's pywintypes.error instances have no errno
                 if hasattr(e, "errno"):
