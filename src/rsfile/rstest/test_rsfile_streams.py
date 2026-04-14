@@ -785,6 +785,13 @@ class TestRSFileStreams(unittest.TestCase):
 
     def testFileCreationPermissions(self):
 
+        if hasattr(os, "getuid") and os.getuid() == 0:
+            self.skipTest(
+                "Cannot test file permission enforcement when running as root: "
+                "the Linux kernel bypasses Unix DAC permission checks for uid=0, "
+                "so open() on a read-only file always succeeds for the superuser."
+            )
+
         with rsfile.rsopen(
             TESTFN, "RWB-", buffering=0, locking=False, permissions=0o555
         ) as f:  # creating read-only file
