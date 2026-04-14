@@ -1,128 +1,97 @@
-# Plan: Reusing CPython's Old Test Files to Test rsfile on Python 3.13+
+# Plan: Keep test_original_io Working on Python 3.13 and 3.14
 
-## Background
+## Design Principle
 
-`test_original_io()` in `src/rsfile/rstest/test_rsfile_stdlib.py` validates rsfile by
-monkey-patching `io`/`_io`/`_pyio` and then running CPython's own IO test suite against them.
-It currently imports test modules **live at runtime** from the installed Python's `test` package:
+**Always import tests live from CPython's installed test suite** — `from test import test_io, ...`.
+The `src/rsfile/rstest/stdlib/` snapshot files remain reference backups only, never imported.
+
+The goal is to inject rsfile's IO primitives into CPython's own test classes so those tests
+validate rsfile instead of `_io`/`_pyio`.
+
+---
+
+## What Actually Changed in 3.13 / 3.14
+
+All six test module imports still work unchanged on Python 3.13 and 3.14:
 
 ```python
 from test import test_io, test_memoryio, test_file, test_bufio, test_fileio, test_largefile
 ```
 
-The `src/rsfile/rstest/stdlib/` directory already holds version-pinned snapshots of
-CPython's `test_io.py` (`test_io_py311.py`, `test_io_py312.py`) and every `_pyio` module
-back to Python 2.7 — but **none of these backup files are ever imported**. They are dead
-assets.
+The structural changes that do matter:
 
-This plan activates that snapshot strategy for `test_io.py` and fixes two compounding bugs
-that mean rsfile's `FileIO` has never actually been exercised by the `test_fileio` sub-suite.
-
----
-
-## What Changed in CPython's Test Suite at Python 3.13
-
-After cloning / fetching the CPython repo and diffing `Lib/test/test_io.py` across tags:
-
-| Version | Key change in `load_tests()` |
-|---------|------------------------------|
-| ≤ 3.12  | Mocks: 8 standard mocks. Does **not** set `is_C` on test classes. `io.__all__ + ["IncrementalNewlineDecoder"]` |
-| 3.13    | Adds `MockCharPseudoDevFileIO` to injected mocks. **Sets `is_C = True/False`** on every test class. Some test methods branch on `self.is_C`. |
-| 3.14    | Adds `ProtocolsTest` (tests new `io.Reader`/`io.Writer` structural ABCs) to the suite. |
-
-The `test_fileio.py` module gained explicit `CAutoFileTests` / `PyAutoFileTests` concrete
-classes in Python 3.10 (inheriting from the `AutoFileTests` mixin) and has been structurally
-stable since.
+| Change | Python version | Impact on rsfile |
+|--------|---------------|-----------------|
+| `load_tests()` sets `is_C = True/False` on every test class | 3.13 | Safe: C* classes are already `dummyklass`; Py* correctly get `is_C = False` |
+| `MockCharPseudoDevFileIO` injected into Py* namespaces | 3.13 | Safe: enables `test_tell_character_device_file` / `test_seek_character_device_file` on `PyBufferedReaderTest`, which test `_pyio.BufferedReader` internals, not rsfile's FileIO |
+| `ProtocolsTest` added to `load_tests()` test list | 3.14 | Tests `io.Reader`/`io.Writer` structural ABCs — no rsfile-specific code, let it run |
+| `CAutoFileTests` / `PyAutoFileTests` explicit split | ≥ 3.9 (stable) | Addressed below — see Bug 1 |
 
 ---
 
-## Bug 1 — Broken FileIO Injection (all Python versions)
+## Bug 1 — FileIO Is Never Injected into test_fileio (all versions)
 
-**Location:** `src/rsfile/rstest/test_rsfile_stdlib.py` line 131
+**File:** `src/rsfile/rstest/test_rsfile_stdlib.py` line 131
 
 ```python
-# CURRENT — broken, has no effect
+# Current — no-op: _FileIO is not an attribute referenced by any test class
 test_fileio._FileIO = rsfile.io_module.FileIO
 ```
 
-`_FileIO` is not referenced by any test class across Python 3.9–3.14.  
-The concrete classes `CAutoFileTests` and `PyAutoFileTests` each carry a **class-level**
-`FileIO = _io.FileIO` / `FileIO = _pyio.FileIO` attribute; `self.FileIO(...)` is what
-instantiates the file object under test.
-
-**Result:** rsfile's `FileIO` is never substituted. The `PyAutoFileTests` suite silently
-runs against `_pyio.FileIO` (CPython's pure-Python implementation) instead of rsfile's.
-
----
-
-## Bug 2 — C Concrete Classes Not Dummied Out in test_fileio
-
-**Location:** same file, same block
-
-The code dummies out `CIOTest`, `CBufferedReaderTest`, etc. from `test_io`, but it never
-dummies `CAutoFileTests` or `COtherFileTests` from `test_fileio`. Those classes still run
-against `_io.FileIO` (the real C extension), which passes — falsely giving confidence.
-
----
-
-## Implementation Plan
-
-### Step 1 — Fetch the Missing CPython Snapshot
-
-Fetch `Lib/test/test_io.py` from the CPython repository at the `v3.13.0` tag and save it
-into the existing stdlib backup directory:
-
-```bash
-# from the project root
-python -c "
-import urllib.request, pathlib
-url = 'https://raw.githubusercontent.com/python/cpython/v3.13.0/Lib/test/test_io.py'
-dest = pathlib.Path('src/rsfile/rstest/stdlib/test_io_py313.py')
-urllib.request.urlretrieve(url, dest)
-print('saved', dest)
-"
-```
-
-Optionally repeat for 3.14 once a stable tag exists (`v3.14.0`).
-
-> `_pyio_py313_backup.py` already exists — no new `_pyio` backup needed.
-
----
-
-### Step 2 — Replace the Live Import with Version-Dispatched Snapshot Imports
-
-**File:** `src/rsfile/rstest/test_rsfile_stdlib.py`, lines 37–50
+`test_fileio` has two concrete test classes (present since Python 3.9):
 
 ```python
-# BEFORE
+class CAutoFileTests(AutoFileTests, unittest.TestCase):
+    FileIO = _io.FileIO      # ← C extension
+
+class PyAutoFileTests(AutoFileTests, unittest.TestCase):
+    FileIO = _pyio.FileIO    # ← pure-Python; THIS is what needs replacing
+```
+
+Tests call `self.FileIO(TESTFN, 'w')` — so `test_fileio._FileIO = ...` never has any effect.
+rsfile's `FileIO` is never exercised by this sub-suite.
+
+Same problem for `OtherFileTests`:
+
+```python
+class COtherFileTests(OtherFileTests, unittest.TestCase):
+    FileIO = _io.FileIO
+
+class PyOtherFileTests(OtherFileTests, unittest.TestCase):
+    FileIO = _pyio.FileIO    # ← also needs replacing
+```
+
+---
+
+## Bug 2 — Python 2.7 Dead Code
+
+Lines 141–148 of `test_rsfile_stdlib.py`:
+
+```python
+# bugfix of testErrnoOnClosedWrite() test in python2.7
+deco = test_fileio.AutoFileTests.__dict__["ClosedFDRaises"]
+@deco
+def bugfixed(self, f):
+    f.write(b"a")  # in py27 trunk, "binary" modifier was lacking...
+test_fileio.AutoFileTests.testErrnoOnClosedWrite = bugfixed
+```
+
+Minimum supported Python is 3.7. Remove entirely.
+
+---
+
+## Implementation
+
+### Change A — Fix try/except import block (lines 37–50)
+
+No structural change to the imports. Keep the try/except as a safety net for minimal
+Python installations (Debian/Ubuntu packages often omit the `test` package). Only improve
+the error message to name the failing module:
+
+```python
 try:
     from test import (
         test_io,
-        test_memoryio,
-        ...
-    )
-except ImportError as e:
-    ...
-    return
-
-# AFTER
-try:
-    # Use version-pinned snapshots of test_io for reproducibility.
-    # The snapshot matches the test suite of the Python version being tested,
-    # so patches stay stable even as the installed Python evolves.
-    if sys.version_info >= (3, 14):
-        from rsfile.rstest.stdlib import test_io_py314 as test_io  # once available
-    elif sys.version_info >= (3, 13):
-        from rsfile.rstest.stdlib import test_io_py313 as test_io
-    elif sys.version_info >= (3, 12):
-        from rsfile.rstest.stdlib import test_io_py312 as test_io
-    elif sys.version_info >= (3, 11):
-        from rsfile.rstest.stdlib import test_io_py311 as test_io
-    else:
-        from test import test_io
-
-    # The remaining modules are structurally stable; import live.
-    from test import (
         test_memoryio,
         test_file,
         test_bufio,
@@ -130,95 +99,81 @@ try:
         test_largefile,
     )
 except ImportError as e:
-    print(f"Warning: Could not import stdlib test modules "
-          f"(Python {sys.version_info.major}.{sys.version_info.minor}): {e}")
+    print(f"Warning: Could not import stdlib test module — {e} "
+          f"(Python {sys.version_info.major}.{sys.version_info.minor})")
+    print("Install the Python test package (e.g. python3-lib2to3 or libpython3-dev) "
+          "to enable stdlib IO tests.")
     print("Skipping stdlib IO tests.")
     return
 ```
 
----
+### Change B — Fix test_fileio injection (lines 131–148)
 
-### Step 3 — Fix the test_fileio Patching Block
-
-**File:** `src/rsfile/rstest/test_rsfile_stdlib.py`, lines 131–148
-
-Remove the broken block entirely and replace with:
+Replace the entire broken block with:
 
 ```python
-# --- test_fileio: correct substitution ---
-
-# Dummy out C-backed concrete classes (use _io.FileIO, not rsfile).
+# Skip C-backed concrete test classes (they test _io.FileIO directly).
 test_fileio.CAutoFileTests = dummyklass
 test_fileio.COtherFileTests = dummyklass
 
-# Inject rsfile's FileIO into the Python-backed concrete test class.
+# Inject rsfile's FileIO into the Python-backed concrete test classes.
 test_fileio.PyAutoFileTests.FileIO = rsfile.io_module.FileIO
+test_fileio.PyOtherFileTests.FileIO = rsfile.io_module.FileIO
 
-# Skip methods that don't apply to rsfile (applied to the mixin so
-# PyAutoFileTests inherits the skip; CAutoFileTests is already dummied).
+# These patches apply to the AutoFileTests / OtherFileTests mixins so that
+# PyAutoFileTests / PyOtherFileTests inherit the skips.
+# (CAutoFileTests/COtherFileTests are already dummied out above.)
 test_fileio.AutoFileTests.testMethods = dummyfunc      # C-specific method signatures
-test_fileio.AutoFileTests.testErrors  = dummyfunc      # errno differs between C/Py
+test_fileio.AutoFileTests.testErrors  = dummyfunc      # errno differs between C and Py
 test_fileio.AutoFileTests.testBlksize = dummyfunc      # rsfile has no _blksize
 test_fileio.AutoFileTests.testRepr    = dummyfunc      # repr() differs
 test_fileio.AutoFileTests.testReprNoCloseFD = dummyfunc
-
-# testInvalidFd lives on OtherFileTests; different exception types between C and Py
-test_fileio.OtherFileTests.testInvalidFd = dummyfunc
+test_fileio.OtherFileTests.testInvalidFd = dummyfunc   # exception types differ
 ```
 
-The Python 2.7-era `ClosedFDRaises` decorator workaround (lines 141–148 of the current
-file) is dead code and is removed along with this block.
+The Python 2.7 `ClosedFDRaises` workaround (lines 141–148) is removed here.
+
+### Change C — No new patches needed for 3.13 / 3.14
+
+- **`is_C` attribute**: C* classes are already `dummyklass`; Py* classes correctly receive
+  `is_C = False` from `load_tests()`. The `self.is_C` branches in `TextIOWrapperTest`
+  (lines 2756, 3831, 3840, 3851, 3855 of test_io.py) take the right (Py) path.
+  No additional patches required.
+
+- **`MockCharPseudoDevFileIO`**: Injected into `PyBufferedReaderTest` etc. as
+  `PyMockCharPseudoDevFileIO`. The two new tests (`test_tell_character_device_file`,
+  `test_seek_character_device_file`) test `_pyio.BufferedReader` with a mock raw IO —
+  not rsfile's FileIO. They should pass without patches.
+
+- **`ProtocolsTest` (3.14)**: Tests `io.Reader`/`io.Writer` structural ABCs against
+  plain Python classes. No rsfile-specific behaviour. Let it run; dummy it out only if
+  it fails:
+  ```python
+  # Uncomment if ProtocolsTest fails on 3.14:
+  # if sys.version_info >= (3, 14):
+  #     if hasattr(test_io, 'ProtocolsTest'):
+  #         test_io.ProtocolsTest = dummyklass
+  ```
 
 ---
 
-### Step 4 — Add Python 3.13+ Patches for test_io
+## Summary of Lines Touched in test_rsfile_stdlib.py
 
-After the existing patch block, add a version guard:
+| Lines | Change |
+|-------|--------|
+| 47–49 | Improve ImportError message |
+| 131   | Remove `test_fileio._FileIO = rsfile.io_module.FileIO` |
+| 132–139 | Replace method patches on mixin with explicit class patches (Change B) |
+| 141–148 | Remove Python 2.7 `ClosedFDRaises` dead code |
 
-```python
-if sys.version_info >= (3, 13):
-    # load_tests() now sets is_C=True on C* classes and is_C=False on Py* classes.
-    # All C* classes are already replaced with dummyklass so this is safe.
-    # MockCharPseudoDevFileIO is injected into Py* test namespaces.
-    # Guard against any new method that may fail with rsfile:
-    if hasattr(test_io.PyIOTest, 'test_char_pseudo_dev'):
-        test_io.PyIOTest.test_char_pseudo_dev = dummyfunc
-
-if sys.version_info >= (3, 14):
-    # ProtocolsTest checks io.Reader / io.Writer structural ABCs (new in 3.14).
-    # These verify stdlib protocol correctness, not rsfile-specific behaviour.
-    # Leave enabled; dummy out only if they fail:
-    # test_io.ProtocolsTest = dummyklass  # uncomment if needed
-    pass
-```
+Net effect: ~10 lines removed, ~8 lines added.
 
 ---
 
-## Files Changed / Created
-
-| File | Action |
-|------|--------|
-| `src/rsfile/rstest/stdlib/test_io_py313.py` | **Create** — CPython v3.13.0 snapshot |
-| `src/rsfile/rstest/stdlib/test_io_py314.py` | **Create** — CPython 3.14 snapshot (once stable) |
-| `src/rsfile/rstest/test_rsfile_stdlib.py`   | **Modify** — Steps 2, 3, 4 above |
-
----
-
-## Why Snapshot Files Instead of Always Using Live Imports
-
-| Concern | Live import (`from test import test_io`) | Snapshot (`test_io_py313.py`) |
-|---------|------------------------------------------|-------------------------------|
-| Reproducibility | Test changes invisibly when Python is upgraded | Fixed to a known CPython commit |
-| C/Py divergence gating | We patch `CXxx = dummyklass` after import; any import-time side-effects from the C path still run | Full control; can patch before module-level code runs |
-| Forward compatibility | A future CPython version could remove the module or rename classes | We choose when to add a new snapshot |
-| Version mismatch | Running py3.13 always uses py3.13's test_io (correct) | Same, because dispatch is on `sys.version_info` |
-
----
-
-## Verification Sequence
+## Verification
 
 ```bash
-# Direct per-version smoke test
+# Smoke-test each Python version directly
 py -3.11 -m rsfile.rstest.test_rsfile_stdlib
 py -3.12 -m rsfile.rstest.test_rsfile_stdlib
 py -3.13 -m rsfile.rstest.test_rsfile_stdlib
@@ -228,12 +183,9 @@ py -3.14 -m rsfile.rstest.test_rsfile_stdlib
 tox run -e py311,py312,py313,py314
 ```
 
-**Key things to verify:**
-
-- `PyAutoFileTests` tests actually execute and report results (previously they ran against
-  `_pyio.FileIO`, not rsfile — check that failures now surface)
-- `CAutoFileTests` produces zero test results (it is a `dummyklass`)
-- No `AttributeError` on any of the new patch targets (`test_fileio.PyAutoFileTests.FileIO`,
-  `test_fileio.CAutoFileTests`, etc.)
-- `is_C`-gated code paths in `PyTextIOWrapperTest` take the `is_C = False` branch
-  (correct for rsfile's pure-Python implementation)
+What to check:
+- `PyAutoFileTests` tests now **run and use rsfile's FileIO** (they will show failures
+  if rsfile's FileIO is missing a method, rather than silently passing with `_pyio.FileIO`)
+- `CAutoFileTests` produces **zero test results** (it is `dummyklass`)
+- No `AttributeError` on `PyAutoFileTests.FileIO` or `PyOtherFileTests.FileIO`
+- Py* tests in test_io with `self.is_C` checks pass (they take the `is_C = False` branch)
