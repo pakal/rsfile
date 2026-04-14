@@ -3,6 +3,8 @@ Rsfile 3.4 (dev)
 
 * Optimize operations with internal stat() call on file open
 * Accept and document ``os.PathLike`` file paths across ``rsopen()``, ``RSFileIO``, and utility helpers
+* Drop support for Python 3.7
+* Add support for Python 3.14
 
 
 Rsfile 3.3
