@@ -26,6 +26,9 @@ if sys.version_info >= (3, 13):
 class RSFileIOWrapper(RSFileIO):
     """
     Interface to rsFile accepting the limited "fopen()" modes (no file locking, no O_EXCL|O_CREAT semantic...)
+
+    The ``name`` argument accepts the same path input types as :class:`io.FileIO`, including
+    ``str``, ``bytes``, and ``os.PathLike`` objects.
     """
 
     def __init__(self, name, mode="r", closefd=True):
@@ -66,6 +69,8 @@ def monkey_patch_open_builtin():
     """
     Replaces the default open() builtin with a version compatible in signature and semantic (no file locking or
     thread safety on stream opening), which returns rsfile streams on invocation.
+
+    File path arguments follow :func:`rsfile.rsopen`, so ``str``, ``bytes``, and ``os.PathLike`` values are accepted.
     """
 
     new_open = BUILTIN_OPEN_FUNC_REPLACEMENT
@@ -89,6 +94,8 @@ def read_from_file(
     """
     Returns the *whole* content of the file ``filename``, as a binary or unicode string
     depending on the boolean ``binary``.
+
+    ``filename`` accepts ``str``, ``bytes``, and ``os.PathLike`` values.
 
     Other arguments are similar to those of :func:`rsfile.rsopen`.
 
@@ -146,6 +153,8 @@ def write_to_file(
     """
     Write the binary or unicode string ``data`` to the file ``filename``.
 
+    ``filename`` accepts ``str``, ``bytes``, and ``os.PathLike`` values.
+
     Other arguments are similar to those of :func:`rsfile.rsopen`.
 
     This function may raise *EnvironmentError* exceptions.
@@ -191,6 +200,8 @@ def append_to_file(
 ):
     """
     Append the binary or unicode string ``data`` to the file ``filename``.
+
+    ``filename`` accepts ``str``, ``bytes``, and ``os.PathLike`` values.
 
     Other arguments are similar to those of :func:`rsfile.rsopen`.
 

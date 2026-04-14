@@ -5,6 +5,21 @@ RSFile Streams
 .. module:: rsfile.rsiobase
 
 
+For filesystem-backed streams, RSFile follows the stdlib path protocol: wherever a file path is accepted,
+you may pass a :class:`str`, :class:`bytes`, or :class:`os.PathLike` object such as :class:`pathlib.Path`.
+
+
+Raw file stream constructor
+---------------------------
+
+.. currentmodule:: rsfile
+
+.. autoclass:: RSFileIO
+
+
+.. currentmodule:: rsfile.rsiobase
+
+
 .. autoclass:: RSIOBase
     
     

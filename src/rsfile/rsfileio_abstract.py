@@ -34,9 +34,9 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
     These parameters determine if a new raw file stream will be opened from the filesystem, or
     if an existing one will be wrapped by the new RSFileIo instance.
 
-    - *path* (unicode/bytes or None): The path of the regular file to be opened.
+    - *path* (str/bytes/os.PathLike or None): The path of the regular file to be opened.
       If ``fileno`` or ``handle`` is provided, ``path`` is only used as additional
-      information.
+      information. Path-like objects are normalized through :func:`os.fspath`.
     - *fileno* (integer or None): if provided, it must be an open C-style file
       descriptor, compatible with the *Mode parameters* requested, and which will be used
       as an underlying raw stream. Such file descriptors should be available on all platforms,

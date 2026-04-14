@@ -32,12 +32,15 @@ QUICKSTART
 
 .. code-block:: python
 
+    from pathlib import Path
     from rsfile import rsopen
 
-    with rsopen("myfile.txt", "w") as f:
+    path = Path("myfile.txt")
+
+    with rsopen(path, "w") as f:
         f.write("This string will be veeeeeryyyyy safely written to file.")
 
-    with rsopen("myfile.txt", "WANISB", locking=False, thread_safe=False) as f:
+    with rsopen(path, "WANISB", locking=False, thread_safe=False) as f:
         f.write(b"See the docs for info on these cool new modes and parameters.")
 
 
