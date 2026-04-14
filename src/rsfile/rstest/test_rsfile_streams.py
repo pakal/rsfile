@@ -1218,6 +1218,110 @@ class TestRSFileStreams(unittest.TestCase):
             data = f.read()
             self.assertEqual(data, "aéc")  # was well encoded on write() above
 
+    def testDefaultBufferSize(self):
+        """DEFAULT_BUFFER_SIZE is 128 KB (raised from 8 KB in py3.14)."""
+        self.assertEqual(defs.DEFAULT_BUFFER_SIZE, 128 * 1024)
+
+    def testStatAtOpen(self):
+        """_stat_atopen is populated after open and cleared after close() and truncate()."""
+        import stat as _stat_module
+
+        with io.open(TESTFN, "wb", buffering=0) as seed:
+            seed.write(b"hello")
+
+        # --- Open via path ---
+        raw = rsfile.RSFileIO(path=TESTFN, read=True, write=True)
+        try:
+            if defs.RSFILE_IMPLEMENTATION == "unix":
+                # Unix always has a fileno at open time, so _stat_atopen is populated
+                self.assertIsNotNone(raw._stat_atopen)
+                self.assertTrue(_stat_module.S_ISREG(raw._stat_atopen.st_mode))
+            else:
+                # Windows path-opened files start with only a handle (no fileno),
+                # so _stat_atopen is None until a fileno is explicitly requested
+                self.assertIsNone(raw._stat_atopen)
+
+            # truncate() must invalidate the cached stat
+            raw.truncate(0)
+            self.assertIsNone(raw._stat_atopen)
+        finally:
+            raw.close()
+
+        # close() must also clear _stat_atopen
+        self.assertIsNone(raw._stat_atopen)
+
+        # --- Open via fileno (both platforms have os.fstat() on fd) ---
+        fd = os.open(TESTFN, os.O_RDONLY)
+        try:
+            raw_fd = rsfile.RSFileIO(fileno=fd, read=True, closefd=False)
+            try:
+                self.assertIsNotNone(raw_fd._stat_atopen,
+                    "_stat_atopen should be populated when wrapping an existing fd")
+            finally:
+                raw_fd.close()
+        finally:
+            os.close(fd)
+
+    def testBlksizeProperty(self):
+        """_blksize returns a positive int; falls back to DEFAULT_BUFFER_SIZE when stat is unavailable."""
+        with io.open(TESTFN, "wb", buffering=0) as seed:
+            seed.write(b"hello")
+
+        raw = rsfile.RSFileIO(path=TESTFN, read=True)
+        try:
+            blksize = raw._blksize
+            self.assertIsInstance(blksize, int)
+            self.assertGreater(blksize, 0)
+
+            # Without _stat_atopen (e.g. after truncate) the property returns DEFAULT_BUFFER_SIZE
+            raw._stat_atopen = None
+            self.assertEqual(raw._blksize, defs.DEFAULT_BUFFER_SIZE)
+        finally:
+            raw.close()
+
+    def testIsattyOpenOnly(self):
+        """_isatty_open_only() returns False for regular files and is consistent with isatty()."""
+        with io.open(TESTFN, "wb", buffering=0) as seed:
+            seed.write(b"hello")
+
+        raw = rsfile.RSFileIO(path=TESTFN, read=True)
+        try:
+            # Regular files are never TTYs
+            self.assertFalse(raw._isatty_open_only())
+            self.assertFalse(raw.isatty())
+
+            # With _stat_atopen cleared the method falls back to os.isatty() — still False
+            raw._stat_atopen = None
+            self.assertFalse(raw._isatty_open_only())
+        finally:
+            raw.close()
+
+    def testDefaultBufferingSize(self):
+        """rsopen() default buffering satisfies: DEFAULT_BUFFER_SIZE <= buf_size <= 8 MiB."""
+        with io.open(TESTFN, "wb", buffering=0) as seed:
+            seed.write(b"hello")
+
+        # thread_safe=False so we get the buffered object directly (no wrapper)
+        with rsfile.rsopen(TESTFN, "RWB", locking=False, thread_safe=False) as f:
+            buf_size = f.buffer_size
+            self.assertGreaterEqual(
+                buf_size, defs.DEFAULT_BUFFER_SIZE,
+                "Default buffer size must be at least DEFAULT_BUFFER_SIZE (128 KB)"
+            )
+            self.assertLessEqual(
+                buf_size, 8192 * 1024,
+                "Default buffer size must not exceed the 8 MiB cap"
+            )
+
+        # Explicit blksize-driven path: if _blksize == DEFAULT_BUFFER_SIZE then buf_size equals it
+        raw = rsfile.RSFileIO(path=TESTFN, read=True, write=True)
+        try:
+            raw._stat_atopen = None  # force _blksize → DEFAULT_BUFFER_SIZE
+            expected = max(min(raw._blksize, 8192 * 1024), defs.DEFAULT_BUFFER_SIZE)
+            self.assertEqual(expected, defs.DEFAULT_BUFFER_SIZE)
+        finally:
+            raw.close()
+
 
 def test_main():
     def _launch_test_on_single_backend():
