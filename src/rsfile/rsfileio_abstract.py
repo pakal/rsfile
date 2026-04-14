@@ -90,6 +90,9 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         if append:
             write = True  # append implies write
 
+        if path is not None and not isinstance(path, int) and hasattr(os, "fspath"):
+            path = os.fspath(path)
+
         # we retrieve the dict of provided arguments, except self
         kwargs = locals()
         del kwargs["self"]

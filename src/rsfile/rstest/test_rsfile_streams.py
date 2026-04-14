@@ -11,6 +11,7 @@ from rsfile.rstest import _worker_process
 
 import sys
 import os
+import pathlib
 import unittest
 import copy
 from pprint import pprint
@@ -106,6 +107,45 @@ class TestRSFileStreams(unittest.TestCase):
         self.assertRaises(MyExceptionClass, open, TESTFN, errors=99)
 
         self.assertRaises(MyExceptionClass, open, TESTFN, thread_safe=False, mutex=threading.RLock())
+
+    def testPathLikeFilepaths(self):
+        class StrPathLike(object):
+            def __init__(self, value):
+                self._value = value
+
+            def __fspath__(self):
+                return self._value
+
+        class BadPathLike(object):
+            def __fspath__(self):
+                return 123
+
+        std_path = pathlib.Path(TESTFN)
+        custom_path = StrPathLike(TESTFN)
+
+        with rsfile.rsopen(std_path, "WB", buffering=0, locking=False, thread_safe=False) as f:
+            f.write(b"abc")
+
+        with rsfile.rsopen(custom_path, "RB", buffering=0, locking=False, thread_safe=False) as f:
+            self.assertEqual(f.read(), b"abc")
+
+        std_raw, _ = rsfile.parse_standard_args(std_path, "rb", None, None, True)
+        adv_raw, _ = rsfile.parse_advanced_args(std_path, "RB", None, None, True)
+        self.assertEqual(std_raw["path"], os.fspath(std_path))
+        self.assertEqual(adv_raw["path"], os.fspath(std_path))
+
+        with rsfile.RSFileIO(std_path, read=True) as raw:
+            self.assertEqual(raw.name, os.fspath(std_path))
+            self.assertEqual(raw.read(3), b"abc")
+
+        rsfile.write_to_file(std_path, b"def", must_not_create=True, locking=False)
+        rsfile.append_to_file(std_path, b"ghi", must_not_create=True, locking=False)
+        self.assertEqual(rsfile.read_from_file(std_path, binary=True, locking=False), b"defghi")
+
+        self.assertRaises(TypeError, rsfile.rsopen, BadPathLike(), "rb", locking=False)
+        self.assertRaises(TypeError, rsfile.parse_standard_args, BadPathLike(), "rb", None, None, True)
+        self.assertRaises(TypeError, rsfile.parse_advanced_args, BadPathLike(), "RB", None, None, True)
+        self.assertRaises(TypeError, rsfile.RSFileIO, BadPathLike(), read=True)
 
     def testSeekBehaviour(self):
         with io.open(TESTFN, "w+b") as f:

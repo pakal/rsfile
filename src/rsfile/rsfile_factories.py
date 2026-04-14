@@ -35,7 +35,8 @@ def rsopen(
     .. rubric::
         PARAMETERS
 
-    ``name`` is the path to the file, required if no existing fileno or handle is provided for wrapping
+    ``name`` is the path to the file (``str``/``bytes``/``os.PathLike``), required if no existing fileno or
+    handle is provided for wrapping
     through the ``fileno``/``handle`` arguments.
 
     ``mode`` is the access mode of the stream, it can be given either as a standard mode string, or as an advanced
@@ -342,6 +343,9 @@ if sys.version_info >= (3, 10):
 def parse_standard_args(name, mode, fileno, handle, closefd):
     # note: name can also be a fileno here, for retrocompatibility...
 
+    if USE_FSPATH and name is not None and not isinstance(name, int):
+        name = os.fspath(name)
+
     modes = set(mode)
     if not mode or modes - defs.STDLIB_OPEN_FLAGS or len(mode) > len(modes):
         raise defs.BadValueTypeError("invalid mode: %r" % mode)
@@ -405,6 +409,9 @@ def parse_standard_args(name, mode, fileno, handle, closefd):
 
 
 def parse_advanced_args(path, mode, fileno, handle, closefd):
+    if USE_FSPATH and path is not None and not isinstance(path, int):
+        path = os.fspath(path)
+
     modes = set(mode)
     if modes - set(defs.ADVANCED_OPEN_FLAGS) or len(mode) > len(modes):
         raise defs.BadValueTypeError("invalid mode: %r" % mode)
