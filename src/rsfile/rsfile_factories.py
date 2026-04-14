@@ -36,8 +36,7 @@ def rsopen(
         PARAMETERS
 
     ``name`` is the path to the file (``str``/``bytes``/``os.PathLike``), required if no existing fileno or
-    handle is provided for wrapping
-    through the ``fileno``/``handle`` arguments.
+    handle is provided for wrapping through the ``fileno``/``handle`` arguments.
 
     ``mode`` is the access mode of the stream, it can be given either as a standard mode string, or as an advanced
     mode string (see :ref:`file opening modes<file_opening_modes>`).
@@ -143,7 +142,7 @@ def rsopen(
     access.
 
     By default, RSFile opening follows the "O_CREATE alone" semantic : files are created if not existing,
-    else they're simply opened. "C" and "N" flags,  mutually exclusive, alter this behaviour. The old corresponding
+    else they're simply opened. "C" and "N" flags, mutually exclusive, alter this behaviour. The old corresponding
     "-" and "+" flags, ambiguous, are deprecated but still supported.
 
     - with "C" (exclusive creation): file opening fails if the file already exists.
