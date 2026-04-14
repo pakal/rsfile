@@ -6,7 +6,7 @@ from os import SEEK_SET, SEEK_CUR, SEEK_END
 
 SEEK_VALUES = (SEEK_SET, SEEK_CUR, SEEK_END)
 
-DEFAULT_BUFFER_SIZE = 8 * 1024  # in bytes
+DEFAULT_BUFFER_SIZE = 128 * 1024  # in bytes
 
 # we backup these, just in case
 from io import open as original_io_open

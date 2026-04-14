@@ -207,6 +207,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
     def close(self):
 
         if not self.closed:
+            self._stat_atopen = None  # invalidate cached stat on close
 
             try:
                 defs.io_module.RawIOBase.close(self)  # we first mark the stream as closed... it flushes, also.
@@ -226,20 +227,13 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
                     # Mark the raw stream as closed, even if some operations failed
                     self._inner_close_streams()  # Might raise OverflowError
 
-    '''
-    def __del__(self):
-        """Destructor.  Calls close()."""
-        # The try/except block is in case this is called at program
-        # exit time, when it's possible that globals have already been
-        # deleted, and then the close() call might fail.  Since
-        # there's nothing we can do about such failures and they annoy
-        # the end users, we suppress the traceback.
-        # BEWARE, also called if __init__() itself raised an exception!
-        try:
-            self.close()
-        except:
-            pass
-    '''
+    def _dealloc_warn(self, source):
+        """Called by IOBase.__del__ (py3.14+) to emit ResourceWarning for unclosed files."""
+        if (getattr(self, "_fileno", None) is not None or getattr(self, "_handle", None) is not None) and \
+                getattr(self, "_closefd", False) and not self.closed:
+            import warnings
+            warnings.warn(f"unclosed file {source!r}", ResourceWarning,
+                          stacklevel=2, source=self)
 
     def __reduce__(self):
         raise defs.BadValueTypeError("cannot pickle RSFileIO")
@@ -248,6 +242,24 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
         """On OSX the fileio.c implementation fails to recognized /dev/tty as a terminal,
         when using custom rsfile classes, so let's use this '_pyio.py' implementation instead"""
         return os.isatty(self.fileno())
+
+    def _isatty_open_only(self):
+        """Check whether the file is a TTY, using cached stat to skip the syscall for non-character-devices."""
+        stat_atopen = getattr(self, "_stat_atopen", None)
+        if stat_atopen is not None and not stat.S_ISCHR(stat_atopen.st_mode):
+            return False
+        return os.isatty(self.fileno())
+
+    @property
+    def _blksize(self):
+        """Preferred I/O block size, sourced from stat at open time (mirrors py3.14 FileIO._blksize property)."""
+        stat_atopen = getattr(self, "_stat_atopen", None)
+        if stat_atopen is None:
+            return defs.DEFAULT_BUFFER_SIZE
+        blksize = getattr(stat_atopen, "st_blksize", 0)
+        if not blksize:
+            return defs.DEFAULT_BUFFER_SIZE
+        return blksize
 
     def seekable(self):
         self._checkClosed()
@@ -400,8 +412,12 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
             buffer = memoryview(buffer).cast("B")
 
         mybytes = self._inner_read(len(buffer))
+        if mybytes is None:
+            return None  # non-blocking stream, no data available yet
+        assert isinstance(mybytes, bytes), type(mybytes)
         byteslen = len(mybytes)
-        assert mybytes is None or isinstance(mybytes, bytes), type(mybytes)
+        if byteslen > len(buffer):
+            raise ValueError(f"readinto returned {byteslen} outside buffer size {len(buffer)}")
 
         if isinstance(buffer, array):
             typecode = b"b" if (sys.version_info[:2] < (3, 0)) else "b"  # typecode weirdness...
@@ -460,6 +476,7 @@ class RSFileIOAbstract(defs.io_module.RawIOBase):
 
         self._checkSeekable()  # handles PIPES, already checks if closed
         self._checkWritable()  # Important !
+        self._stat_atopen = None  # file size is changing, cached stat is no longer valid
 
         if size is None:
             size = self.tell()

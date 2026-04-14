@@ -291,21 +291,14 @@ def rsopen(
             buffering = -1
 
         line_buffering = False
-        if buffering == 1 or buffering < 0 and raw.isatty():
+        isatty_fn = getattr(raw, "_isatty_open_only", raw.isatty)
+        if buffering == 1 or buffering < 0 and isatty_fn():
             buffering = -1
             line_buffering = True
         if buffering < 0:
-            buffering = defs.DEFAULT_BUFFER_SIZE
-            # do not trigger the libc compatibility layer on windows,
-            # since anyway it seems to have no st_blksize...
-            if raw._fileno:
-                try:
-                    bs = os.fstat(raw._fileno).st_blksize
-                except (os.error, AttributeError):
-                    pass
-                else:
-                    if bs > 1:
-                        buffering = bs
+            # Use cached block size from stat (if available), capped at 8 MiB, with DEFAULT_BUFFER_SIZE as floor.
+            blksize = getattr(raw, "_blksize", defs.DEFAULT_BUFFER_SIZE)
+            buffering = max(min(blksize, 8192 * 1024), defs.DEFAULT_BUFFER_SIZE)
 
         assert buffering >= 0, "abnormal buffering size %r encountered" % buffering
         if buffering == 0:

@@ -192,6 +192,14 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         # we don't care about real inode unique_id, since win32 already distinguishes which handle owns a lock
         self._lock_registry_inode = self._handle
         self._lock_registry_descriptor = self._handle
+        # Cache stat at open time; Windows has no st_blksize but we store it for _isatty_open_only() etc.
+        if self._fileno is not None:
+            try:
+                self._stat_atopen = os.fstat(self._fileno)
+            except OSError:
+                self._stat_atopen = None
+        else:
+            self._stat_atopen = None
 
     @_win32_error_converter
     def _inner_close_streams(self):

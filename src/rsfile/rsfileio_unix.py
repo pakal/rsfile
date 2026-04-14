@@ -140,6 +140,10 @@ class RSFileIO(rsfileio_abstract.RSFileIOAbstract):
         # WHATEVER the origin of the stream, we initialize these fields:
         self._lock_registry_inode = self.unique_id()  # enforces caching of unique_id
         self._lock_registry_descriptor = self._fileno
+        try:
+            self._stat_atopen = os.fstat(self._fileno)
+        except OSError:
+            self._stat_atopen = None
 
     @_unix_error_converter
     def _inner_close_streams(self):
