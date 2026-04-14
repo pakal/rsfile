@@ -45,7 +45,10 @@ def test_original_io():
             test_largefile,
         )  # python stdlib test suite must be installed for current python interpreter
     except ImportError as e:
-        print(f"Warning: Could not import all test modules (Python {sys.version_info.major}.{sys.version_info.minor}): {e}")
+        print(f"Warning: Could not import stdlib test module — {e} "
+              f"(Python {sys.version_info.major}.{sys.version_info.minor})")
+        print("Install the Python test package"
+              "to enable stdlib IO tests.")
         print("Skipping stdlib IO tests.")
         return
 
@@ -128,24 +131,21 @@ def test_original_io():
     # The __all__ check fails due to patched objects having a wrong __module__ attr
     test_io.MiscIOTest.test___all__ = dummyfunc
 
-    test_fileio._FileIO = rsfile.io_module.FileIO
-    test_fileio.AutoFileTests.testMethods = dummyfunc  # messy C functions signatures...
-    test_fileio.AutoFileTests.testErrors = dummyfunc  # incoherent errors returned on bad fd, between C and Py
-    # implementations...
-    test_fileio.OtherFileTests.testInvalidFd = dummyfunc  # different exception types...
-    test_fileio.AutoFileTests.testBlksize = dummyfunc  # rsfile doesn't use raw._blksize optimizations for now
+    # Skip C-backed concrete test classes (they test _io.FileIO directly).
+    test_fileio.CAutoFileTests = dummyklass
+    test_fileio.COtherFileTests = dummyklass
 
+    # Inject rsfile's FileIO into the Python-backed concrete test classes.
+    test_fileio.PyAutoFileTests.FileIO = rsfile.io_module.FileIO
+    test_fileio.PyOtherFileTests.FileIO = rsfile.io_module.FileIO
+
+    # Patches on the mixins; inherited by Py* concrete classes (C* are dummied above).
+    test_fileio.AutoFileTests.testMethods = dummyfunc  # C-specific method signatures
+    test_fileio.AutoFileTests.testErrors = dummyfunc  # errno differs between C and Py implementations
+    test_fileio.OtherFileTests.testInvalidFd = dummyfunc  # different exception types
+    test_fileio.AutoFileTests.testBlksize = dummyfunc  # rsfile doesn't implement _blksize
     test_fileio.AutoFileTests.testRepr = dummyfunc  # repr() of streams changes of course
-    test_fileio.AutoFileTests.testReprNoCloseFD = dummyfunc  # repr() of streams changes of course
-
-    # bugfix of testErrnoOnClosedWrite() test in python2.7
-    deco = test_fileio.AutoFileTests.__dict__["ClosedFDRaises"]  # decorator must not become unbound method !
-
-    @deco
-    def bugfixed(self, f):
-        f.write(b"a")  # in py27 trunk, "binary" modifier was lacking...
-
-    test_fileio.AutoFileTests.testErrnoOnClosedWrite = bugfixed
+    test_fileio.AutoFileTests.testReprNoCloseFD = dummyfunc
 
     # Skip C-oriented tests
     test_memoryio.CStringIOPickleTest = dummyklass
@@ -154,6 +154,11 @@ def test_original_io():
 
     # Skip C-oriented tests
     test_file.CAutoFileTests = dummyklass
+    test_file.COtherFileTests = dummyklass
+
+    # rsfile doesn't implement _blksize (added to OtherFileTests in Python 3.14)
+    if hasattr(test_file.OtherFileTests, "testDefaultBufferSize"):
+        test_file.OtherFileTests.testDefaultBufferSize = dummyfunc
 
     ## Use this to launch a single test ##
     '''
