@@ -49,8 +49,7 @@ def test_original_io():
               f"(Python {sys.version_info.major}.{sys.version_info.minor})")
         print("Install the Python test package"
               "to enable stdlib IO tests.")
-        print("Skipping stdlib IO tests.")
-        return
+        raise
 
     class dummyklass(unittest.TestCase):
         pass
