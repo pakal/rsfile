@@ -485,7 +485,9 @@ class TestRSFileStreams(unittest.TestCase):
                     self.assertNotEqual(reader.times(), times)  # different times for OSX
                 else:
                     self.assertEqual(reader.times(), times)  # same times ofr Linux
-                self.assertNotEqual(reader.times(), old_times)
+                if is_named_pipe or IS_OSX:
+                    self.assertNotEqual(reader.times(), old_times)
+                # else: recent Linux kernels don't update timestamps of anonymous pipes anymore
 
                 self.assertRaises(IOError, writer.buffer.raw.truncate)
                 self.assertRaises(IOError, reader.buffer.raw.truncate)
