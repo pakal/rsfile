@@ -10,5 +10,6 @@ _build/
 build/*
 dist/*
 htmlcov/*
+tmp/
 MANIFEST
 
