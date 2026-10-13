@@ -80,7 +80,10 @@ def rsopen(
       issue atomic calls (read(), write()...) on the stream they have inherited, and to protect themselves by a
       "with myfile.mutex", if they must do several operations in an atomic way.
       Beware, userspace buffers are duplicated by fork(), not shared: buffered streams must be flushed
-      while holding the mutex, for written data to reach the file atomically.
+      while holding the mutex, for written data to reach the file atomically. Similarly, buffered reads
+      advance the shared file offset by whole read-ahead blocks, so other processes may skip data: for
+      concurrent reads, use unbuffered streams (buffering=0), or seek() to an explicit absolute position
+      while holding the mutex, before reading.
 
     - For now streams are not pickleable, so on windows (or after a fork+exec), each child process must open its own
       rsfile stream, and possibly provide it a shared interprocess ``mutex`` transferred separately.
