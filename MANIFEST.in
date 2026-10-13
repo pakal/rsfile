@@ -1,0 +1,4 @@
+include README.rst
+include CHANGELOG.rst
+include CONTRIBUTING.rst
+include License.txt
