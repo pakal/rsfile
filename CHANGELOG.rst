@@ -1,7 +1,9 @@
-Rsfile 3.4 (dev)
+Rsfile 3.4
 ================
 
+* Increase default I/O buffer size, using cached file block size (stat) for buffering decisions
 * Optimize operations with internal stat() call on file open
+* Document the fork()+buffering caveat: buffered streams must be flushed while holding the mutex, for atomic writes across forked processes
 * Accept and document ``os.PathLike`` file paths across ``rsopen()``, ``RSFileIO``, and utility helpers
 * Drop support for Python 3.7
 * Add support for Python 3.14
