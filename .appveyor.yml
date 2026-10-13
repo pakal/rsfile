@@ -2,12 +2,13 @@
 ---
 environment:
   matrix:
-  - TOXENV: py37
-    PYTHON: "3.7"
-  - TOXENV: py38
-    PYTHON: "3.8"
-  - TOXENV: py39
-    PYTHON: "3.9"
+#  VERSIONS NOT SUPPORTED ANYMORE:
+#  - TOXENV: py37
+#    PYTHON: "3.7"
+#  - TOXENV: py38
+#    PYTHON: "3.8"
+#  - TOXENV: py39
+#    PYTHON: "3.9"
   - TOXENV: py310
     PYTHON: "3.10"
   - TOXENV: py311
@@ -16,13 +17,14 @@ environment:
     PYTHON: "3.12"
   - TOXENV: py313
     PYTHON: "3.13"
-  #FIXME add python 3.14 when available
+  - TOXENV: py314
+    PYTHON: "3.14"
 
 stack: python %PYTHON%
 
 build: off
 
-image: Ubuntu2204
+image: Ubuntu2404
 
 install:
 - python -m pip install tox
