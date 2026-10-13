@@ -47,7 +47,7 @@ def test_original_io():
     except ImportError as e:
         print(f"Warning: Could not import stdlib test module — {e} "
               f"(Python {sys.version_info.major}.{sys.version_info.minor})")
-        print("Install the Python test package"
+        print("Install the Python test package "
               "to enable stdlib IO tests.")
         raise
 
