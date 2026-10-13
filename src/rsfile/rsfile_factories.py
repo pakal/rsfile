@@ -79,6 +79,8 @@ def rsopen(
     - If a multiprocessing lock is in place, multiprocessing done via forking (without exec) allows all processes to
       issue atomic calls (read(), write()...) on the stream they have inherited, and to protect themselves by a
       "with myfile.mutex", if they must do several operations in an atomic way.
+      Beware, userspace buffers are duplicated by fork(), not shared: buffered streams must be flushed
+      while holding the mutex, for written data to reach the file atomically.
 
     - For now streams are not pickleable, so on windows (or after a fork+exec), each child process must open its own
       rsfile stream, and possibly provide it a shared interprocess ``mutex`` transferred separately.

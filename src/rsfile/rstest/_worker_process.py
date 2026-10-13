@@ -88,17 +88,24 @@ def writer_without_file_locking(rsfile_stream, multiprocessing_lock, character, 
 
     logger("Process %s created with args " % (multiprocessing.current_process().name), locals())
 
+    # IMPORTANT : userspace buffers are NOT shared between forked processes (only the file offset is),
+    # so we must flush while holding the interprocess lock, else buffered data gets written later at
+    # arbitrary boundaries (or lost at os._exit()), interleaved with other processes' chunks.
+
     for i in range(10):
 
         logger("Process %s writing chunk of characters %s" % (multiprocessing.current_process().name, character))
         data_chunk = character * chunk_length
-        rsfile_stream.write(data_chunk)  # ATOMIC on unix systems thanks to fork and interprocess lock
+        with rsfile_stream.mutex:  # ATOMIC on unix systems thanks to fork and interprocess lock
+            rsfile_stream.write(data_chunk)
+            rsfile_stream.flush()
 
         time.sleep(0.1)
 
         with rsfile_stream.mutex:  # ATOMIC thanks to interprocess lock
             for i in range(chunk_length // divisor):
                 rsfile_stream.write(character * divisor)
+            rsfile_stream.flush()
 
 
 def chunk_writer_reader(
